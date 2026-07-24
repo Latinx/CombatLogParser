@@ -1,31 +1,42 @@
-const yearDefault = (new Date()).getFullYear();
-export default function parseDateTime(dateTime, year = yearDefault) {
-  // Example input: 2/13 21:58:49.757
-  // https://jsperf.com/2-part-split-vs-indexof/1
-  // https://jsperf.com/wow-datetime-parsing/1 - also string-based parsing is unreliable due to differences per locale
+export default function parseDateTime(dateTime) {
+  // Example input: 7/10/2026 18:13:53.145-4
+  // Date format: M/D/YYYY or MM/DD/YYYY
+  // Time format: HH:MM:SS.mmm±TZ (timezone offset like -4, -05:00, +02:00)
   const dateTimeSeparatorIndex = dateTime.indexOf(' ');
   const date = dateTime.substr(0, dateTimeSeparatorIndex);
   const time = dateTime.substr(dateTimeSeparatorIndex + 1);
 
-  const dateSeparatorIndex = date.indexOf('/');
-  const month = date.substr(0, dateSeparatorIndex);
-  const day = date.substr(dateSeparatorIndex + 1);
+  const dateParts = date.split('/');
+  const month = parseInt(dateParts[0], 10);
+  const day = parseInt(dateParts[1], 10);
+  const year = parseInt(dateParts[2], 10);
 
-  // const minuteSeparatorIndex = time.indexOf(':');
-  // const hour = time.substr(0, minuteSeparatorIndex);
-  // const minutesAndSeconds = time.substr(minuteSeparatorIndex + 1);
-  // const secondSeparatorIndex = minutesAndSeconds.indexOf(':');
-  // const minute = minutesAndSeconds.substr(0, secondSeparatorIndex);
-  // const secondsAndMilliseconds = minutesAndSeconds.substr(secondSeparatorIndex + 1);
-  // const millisecondSeparatorIndex = secondsAndMilliseconds.indexOf('.');
-  // const second = secondsAndMilliseconds.substr(0, millisecondSeparatorIndex);
-  // const millisecond = secondsAndMilliseconds.substr(millisecondSeparatorIndex + 1);
-  // Time actually has static positions
-  const hour = time.substr(0, 2);
-  const minute = time.substr(3, 2);
-  const second = time.substr(6, 2);
-  const millisecond = time.substr(9);
+  // Time has timezone offset at the end, find where the milliseconds end
+  // Time format: HH:MM:SS.mmm±TZ or HH:MM:SS.mmm
+  const timeMatch = time.match(/^(\d{2}):(\d{2}):(\d{2})\.(\d{3})([+-]\d{1,2}(?::?\d{2})?)?$/);
+  if (!timeMatch) {
+    throw new Error(`Invalid time format: ${time}`);
+  }
 
-  // noinspection JSCheckFunctionSignatures
-  return new Date(year, month - 1, day, hour, minute, second, millisecond);
+  const hour = parseInt(timeMatch[1], 10);
+  const minute = parseInt(timeMatch[2], 10);
+  const second = parseInt(timeMatch[3], 10);
+  const millisecond = parseInt(timeMatch[4], 10);
+  const tzOffset = timeMatch[5];
+
+  // Create date in UTC then adjust for timezone offset
+  const dateObj = new Date(Date.UTC(year, month - 1, day, hour, minute, second, millisecond));
+
+  if (tzOffset) {
+    // Parse timezone offset (e.g., -4, -05:00, +02:00)
+    const sign = tzOffset[0] === '-' ? -1 : 1;
+    const offsetParts = tzOffset.substring(1).split(':');
+    const offsetHours = parseInt(offsetParts[0], 10);
+    const offsetMinutes = offsetParts[1] ? parseInt(offsetParts[1], 10) : 0;
+    const totalOffsetMinutes = sign * (offsetHours * 60 + offsetMinutes);
+    // Adjust date by timezone offset to get UTC
+    dateObj.setMinutes(dateObj.getMinutes() - totalOffsetMinutes);
+  }
+
+  return dateObj;
 }

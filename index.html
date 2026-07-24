@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Combat Log Parser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink-well: #0d0b08;
+  --parchment: #1a1510;
+  --parchment-raised: #241e18;
+  --gold-vein: #c9a84c;
+  --gold-glint: #f0d47a;
+  --ink: #e8dfd0;
+  --ink-muted: #a89f8e;
+  --ink-faint: #6b6356;
+
+  --class-warrior: #c69b6d;
+  --class-paladin: #f48cba;
+  --class-hunter: #aad372;
+  --class-rogue: #fff468;
+  --class-priest: #ffffff;
+  --class-dk: #c41e3a;
+  --class-shaman: #0070dd;
+  --class-mage: #3fc7eb;
+  --class-warlock: #8788ee;
+  --class-monk: #00ff98;
+  --class-dh: #a330c9;
+  --class-evoker: #33937f;
+
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --text-xs: 0.7rem;
+  --text-sm: 0.8125rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: clamp(1.75rem, 1.5rem + 1.25vw, 2.5rem);
+  --text-3xl: clamp(2.25rem, 1.75rem + 2.5vw, 3.5rem);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 350ms ease;
+
+  --header-h: 64px;
+  --sidebar-w: 220px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+    --transition-slow: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--ink-well);
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: var(--header-h) 1fr;
+  grid-template-columns: var(--sidebar-w) 1fr;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--ink-well); }
+::-webkit-scrollbar-thumb { background: var(--parchment-raised); border-radius: 4px; border: 2px solid var(--ink-well); }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-vein); }
+
+/* ===== HEADER ===== */
+.header {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  background: linear-gradient(180deg, var(--parchment) 0%, var(--ink-well) 100%);
+  border-bottom: 1px solid var(--gold-vein);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  animation: slideDown var(--transition-slow) ease-out;
+}
+
+@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.header__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-xl);
+  color: var(--gold-glint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.header__actions { display: flex; gap: var(--space-3); align-items: center; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  background: var(--parchment);
+  border-right: 1px solid rgba(201, 168, 76, 0.15);
+  padding: var(--space-6) var(--space-4);
+  overflow-y: auto;
+  animation: slideInLeft var(--transition-slow) ease-out var(--space-2) both;
+}
+
+@keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.nav { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: left;
+  width: 100%;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav__item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--gold-vein);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--transition-base);
+}
+
+.nav__item:hover { color: var(--ink); background: var(--parchment-raised); }
+.nav__item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
+.nav__item[aria-selected="true"] {
+  color: var(--gold-glint);
+  background: var(--parchment-raised);
+}
+.nav__item[aria-selected="true"]::before { transform: scaleY(1); }
+
+.nav__icon { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; }
+
+/* ===== MAIN ===== */
+.main {
+  grid-column: 2;
+  grid-row: 2;
+  padding: var(--space-8) var(--space-10);
+  overflow-y: auto;
+  animation: fadeUp var(--transition-slow) ease-out var(--space-3) both;
+}
+
+@keyframes fadeUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ===== UPLOAD ZONE ===== */
+.upload-zone {
+  border: 2px dashed rgba(201, 168, 76, 0.4);
+  border-radius: var(--radius-lg);
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+  background: radial-gradient(ellipse at center, var(--parchment) 0%, var(--ink-well) 70%);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(201, 168, 76, 0.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.upload-zone:hover,
+.upload-zone.drag-active {
+  border-color: var(--gold-vein);
+  background: var(--parchment);
+}
+.upload-zone:hover::before,
+.upload-zone.drag-active::before { opacity: 1; }
+
+.upload-zone__icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--space-6);
+  stroke: var(--gold-vein);
+  opacity: 0.7;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } }
+
+.upload-zone__title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  color: var(--gold-glint);
+  margin-bottom: var(--space-2);
+}
+
+.upload-zone__desc {
+  color: var(--ink-muted);
+  font-size: var(--text-base);
+  max-width: 400px;
+  margin: 0 auto var(--space-6);
+}
+
+.upload-zone__hint {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  background: var(--ink-well);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  border: 1px solid rgba(201, 168, 76, 0.15);
+}
+
+.upload-zone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+/* ===== FIGHT LIST ===== */
+.fight-list { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.fight-card {
+  background: var(--parchment);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-6);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-6);
+  align-items: center;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  animation: fadeUp var(--transition-base) ease-out both;
+}
+
+.fight-card:nth-child(1) { animation-delay: 50ms; }
+.fight-card:nth-child(2) { animation-delay: 100ms; }
+.fight-card:nth-child(3) { animation-delay: 150ms; }
+.fight-card:nth-child(4) { animation-delay: 200ms; }
+.fight-card:nth-child(5) { animation-delay: 250ms; }
+
+.fight-card:hover {
+  border-color: var(--gold-vein);
+  background: var(--parchment-raised);
+  transform: translateX(4px);
+}
+
+.fight-card:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
+
+.fight-card__boss {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--gold-glint);
+  white-space: nowrap;
+}
+
+.fight-card__meta { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+
+.fight-card__meta-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--ink-muted); }
+
+.fight-card__meta-item--duration { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+
+.fight-card__meta-item--difficulty {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(201, 168, 76, 0.15);
+  color: var(--gold-vein);
+}
+
+.fight-card__meta-item--kill { color: #4ade80; font-weight: 600; }
+.fight-card__meta-item--wipe { color: #f87171; font-weight: 600; }
+
+.fight-card__arrow {
+  width: 24px;
+  height: 24px;
+  stroke: var(--ink-muted);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+.fight-card:hover .fight-card__arrow { stroke: var(--gold-vein); transform: translateX(4px); }
+
+/* ===== FIGHT DETAIL ===== */
+.fight-detail { animation: fadeUp var(--transition-slow) ease-out both; }
+
+.fight-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-6);
+  align-items: flex-end;
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+}
+
+.fight-detail__boss {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--gold-glint);
+  line-height: 1.1;
+}
+
+.fight-detail__meta { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+
+.fight-detail__meta-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--ink-muted); }
+.fight-detail__meta-item strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ===== TIMELINE ===== */
+.timeline {
+  background: var(--parchment);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+  position: relative;
+  overflow: hidden;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-vein), transparent);
+}
+
+.timeline__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4); }
+
+.timeline__title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--gold-glint);
+}
+
+.timeline__controls { display: flex; gap: var(--space-2); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  background: var(--parchment-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn:hover { border-color: var(--gold-vein); color: var(--gold-glint); background: var(--parchment); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
+.btn--primary { background: var(--gold-vein); border-color: var(--gold-vein); color: var(--ink-well); }
+.btn--primary:hover { background: var(--gold-glint); border-color: var(--gold-glint); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.timeline__boss-hp {
+  height: 48px;
+  background: var(--ink-well);
+  border-radius: var(--radius-md);
+  position: relative;
+  margin-bottom: var(--space-6);
+  overflow: hidden;
+  border: 1px solid rgba(201, 168, 76, 0.1);
+}
+
+.timeline__hp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #c41e3a 0%, #e03e3e 50%, #c41e3a 100%);
+  border-radius: var(--radius-md);
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: hpDraw 1.2s ease-out 0.3s forwards;
+  position: relative;
+}
+
+@keyframes hpDraw { to { transform: scaleX(1); } }
+
+.timeline__hp-phase {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--gold-vein);
+  opacity: 0;
+  animation: phasePop 0.3s ease-out forwards;
+}
+
+@keyframes phasePop { to { opacity: 1; transform: scaleY(1); } }
+
+.timeline__phase-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-2) 0;
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+}
+
+.timeline__tracks { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.track {
+  height: 44px;
+  background: var(--ink-well);
+  border-radius: var(--radius-sm);
+  position: relative;
+  border: 1px solid rgba(201, 168, 76, 0.08);
+  overflow: hidden;
+}
+
+.track__label {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 140px;
+  display: flex;
+  align-items: center;
+  padding-left: var(--space-3);
+  background: linear-gradient(90deg, var(--parchment) 0%, transparent 100%);
+  border-right: 1px solid rgba(201, 168, 76, 0.1);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.track__class-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: var(--space-3);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.track__name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track__spec {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-left: var(--space-2);
+  white-space: nowrap;
+}
+
+.track__events {
+  position: absolute;
+  left: 140px; right: 0; top: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+}
+
+.event {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  z-index: 1;
+  animation: eventPop 0.4s ease-out forwards;
+}
+
+@keyframes eventPop { to { transform: translateY(-50%) scale(1); } }
+
+.event--damage { background: #ff6b6b; border-radius: 1px; }
+.event--heal { background: #4ade80; border-radius: 50%; }
+.event--cd { background: var(--gold-vein); border-radius: 1px; transform: translateY(-50%) rotate(45deg) scale(0); }
+.event--mechanic { background: #fbbf24; border-radius: 50%; border: 2px solid var(--ink-well); }
+.event--death { background: #1a1510; border: 2px solid #f87171; border-radius: 1px; width: 10px; height: 10px; }
+
+.event:hover {
+  transform: translateY(-50%) scale(2.5);
+  box-shadow: 0 0 12px currentColor;
+  z-index: 10;
+}
+.event--cd:hover { transform: translateY(-50%) rotate(45deg) scale(2.5); }
+
+.event__tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: var(--ink-well);
+  border: 1px solid var(--gold-vein);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  z-index: 20;
+  font-family: var(--font-mono);
+  color: var(--ink);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.event:hover .event__tooltip { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.event__tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--gold-vein);
+}
+
+/* ===== PLAYER GRID ===== */
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.player-card {
+  background: var(--parchment);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: all var(--transition-fast);
+  animation: fadeUp var(--transition-base) ease-out both;
+}
+.player-card:hover { border-color: var(--gold-vein); background: var(--parchment-raised); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+.player-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+}
+
+.player-card__class-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.player-card__name {
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--ink);
+  flex: 1;
+}
+
+.player-card__spec {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  text-transform: capitalize;
+}
+
+.player-card__stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+
+.stat { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.stat__label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.stat__value {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-glint);
+  font-weight: 600;
+}
+
+/* ===== RAW LOG PANEL ===== */
+.raw-log {
+  background: var(--ink-well);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.raw-log__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--parchment);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gold-glint);
+  font-family: var(--font-body);
+}
+
+.raw-log__content {
+  max-height: 400px;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+.raw-log__line {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.raw-log__line:hover { background: var(--parchment); }
+.raw-log__line--highlight { background: rgba(201, 168, 76, 0.15); }
+
+.raw-log__timestamp { color: var(--gold-vein); }
+.raw-log__event { color: var(--gold-glint); font-weight: 500; }
+.raw-log__source { color: var(--class-mage); }
+.raw-log__target { color: var(--class-priest); }
+.raw-log__spell { color: #fbbf24; }
+.raw-log__amount { color: #4ade80; font-variant-numeric: tabular-nums; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: var(--space-16) var(--space-8);
+  color: var(--ink-muted);
+}
+.empty-state__icon { width: 64px; height: 64px; margin: 0 auto var(--space-6); stroke: var(--ink-faint); opacity: 0.5; }
+.empty-state__title { font-family: var(--font-display); font-size: var(--text-2xl); color: var(--ink); margin-bottom: var(--space-2); }
+.empty-state__desc { max-width: 400px; margin: 0 auto; }
+
+/* ===== HIDDEN UTILITY ===== */
+.hidden { display: none !important; }
+
+/* ===== MOBILE ===== */
+@media (max-width: 1024px) {
+  body { grid-template-columns: 1fr; grid-template-rows: var(--header-h) auto 1fr; }
+  .sidebar {
+    grid-column: 1; grid-row: 2;
+    border-right: none; border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+    padding: var(--space-4);
+    animation: none;
+  }
+  .nav { flex-direction: row; overflow-x: auto; gap: var(--space-2); padding-bottom: var(--space-2); }
+  .nav__item { white-space: nowrap; padding: var(--space-2) var(--space-4); }
+  .nav__item::before { display: none; }
+  .nav__item[aria-selected="true"] { background: var(--parchment-raised); }
+  .main { grid-row: 3; padding: var(--space-6) var(--space-4); animation: none; }
+  .track__label { width: 100px; }
+  .track__events { left: 100px; }
+  .track__spec { display: none; }
+  .player-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  :root { --header-h: 56px; }
+  .header { padding: 0 var(--space-4); }
+  .header__title { font-size: var(--text-lg); }
+  .main { padding: var(--space-4) var(--space-3); }
+  .upload-zone { padding: var(--space-10) var(--space-4); }
+  .upload-zone__icon { width: 56px; height: 56px; }
+  .upload-zone__title { font-size: var(--text-xl); }
+  .fight-card { grid-template-columns: 1fr; gap: var(--space-3); }
+  .fight-card__arrow { display: none; }
+  .timeline__boss-hp { height: 36px; }
+  .track { height: 36px; }
+  .track__label { width: 80px; padding-left: var(--space-2); }
+  .track__events { left: 80px; }
+  .track__name { font-size: var(--text-xs); }
+  .player-card__stats { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header class="header" role="banner">
+  <h1 class="header__title">Combat Log Parser</h1>
+  <div class="header__actions">
+    <label class="btn btn--primary" for="file-input">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>Load Log</span>
+    </label>
+    <input type="file" id="file-input" class="hidden" accept=".txt" aria-label="Load WoW combat log file">
+  </div>
+</header>
+
+<nav class="sidebar" role="navigation" aria-label="Main navigation">
+  <ul class="nav" role="tablist">
+    <li><button class="nav__item" role="tab" aria-selected="true" aria-controls="panel-upload" id="tab-upload" data-panel="upload">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>Upload</span>
+    </button></li>
+    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-fights" id="tab-fights" data-panel="fights">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+      <span>Fights</span>
+    </button></li>
+    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-players" id="tab-players" data-panel="players">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Players</span>
+    </button></li>
+    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-timeline" id="tab-timeline" data-panel="timeline">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Timeline</span>
+    </button></li>
+    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-raw" id="tab-raw" data-panel="raw">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+      <span>Raw Log</span>
+    </button></li>
+  </ul>
+</nav>
+
+<main class="main" role="main">
+  <!-- UPLOAD PANEL -->
+  <section class="upload-zone" id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" tabindex="0">
+    <svg class="upload-zone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v8M8 12h8"/>
+      <path d="M8 16c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+    </svg>
+    <h2 class="upload-zone__title">Drag a WoWCombatLog.txt here</h2>
+    <p class="upload-zone__desc">Or click to browse. Parses locally — nothing leaves your machine.</p>
+    <span class="upload-zone__hint">WoWCombatLog-071026_154957.txt · 23.8 MB · 92,330 lines</span>
+    <input type="file" id="upload-input" accept=".txt" aria-label="Choose combat log file">
+  </section>
+
+  <!-- FIGHTS PANEL -->
+  <section class="fight-list hidden" id="panel-fights" role="tabpanel" aria-labelledby="tab-fights" tabindex="0"></section>
+
+  <!-- PLAYERS PANEL -->
+  <section class="hidden" id="panel-players" role="tabpanel" aria-labelledby="tab-players" tabindex="0">
+    <div class="player-grid" id="player-grid"></div>
+  </section>
+
+  <!-- TIMELINE PANEL -->
+  <section class="hidden" id="panel-timeline" role="tabpanel" aria-labelledby="tab-timeline" tabindex="0">
+    <div class="timeline" id="timeline">
+      <div class="timeline__header">
+        <h2 class="timeline__title">Encounter Timeline</h2>
+        <div class="timeline__controls">
+          <button class="btn" id="timeline-zoom-in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+          <button class="btn" id="timeline-zoom-out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+          <button class="btn" id="timeline-reset" aria-label="Reset view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+        </div>
+      </div>
+      <div class="timeline__boss-hp" id="boss-hp" role="img" aria-label="Boss health timeline with phase transitions"></div>
+      <div class="timeline__phase-labels" id="phase-labels"></div>
+      <div class="timeline__tracks" id="timeline-tracks"></div>
+    </div>
+  </section>
+
+  <!-- RAW LOG PANEL -->
+  <section class="hidden" id="panel-raw" role="tabpanel" aria-labelledby="tab-raw" tabindex="0">
+    <div class="raw-log">
+      <div class="raw-log__header">
+        <span>Raw Combat Log</span>
+        <span id="raw-line-count" class="hidden">0 lines</span>
+      </div>
+      <div class="raw-log__content" id="raw-log-content"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+// ============================================
+// DATA PARSING (using existing parser logic)
+// ============================================
+
+const CLASS_COLORS = {
+  warrior: '#c69b6d', paladin: '#f48cba', hunter: '#aad372', rogue: '#fff468',
+  priest: '#ffffff', dk: '#c41e3a', shaman: '#0070dd', mage: '#3fc7eb',
+  warlock: '#8788ee', monk: '#00ff98', dh: '#a330c9', evoker: '#33937f'
+};
+
+const SPEC_NAMES = {
+  250: 'Blood', 251: 'Frost', 252: 'Unholy',
+  577: 'Havoc', 581: 'Vengeance',
+  102: 'Balance', 103: 'Feral', 104: 'Guardian', 105: 'Restoration',
+  1467: 'Devastation', 1468: 'Preservation', 1473: 'Augmentation',
+  253: 'Beast Mastery', 254: 'Marksmanship', 255: 'Survival',
+  62: 'Arcane', 63: 'Fire', 64: 'Frost',
+  268: 'Brewmaster', 269: 'Windwalker', 270: 'Mistweaver',
+  65: 'Holy', 66: 'Protection', 70: 'Retribution',
+  256: 'Discipline', 257: 'Holy', 258: 'Shadow',
+  259: 'Assassination', 260: 'Outlaw', 261: 'Subtlety',
+  262: 'Elemental', 263: 'Enhancement', 264: 'Restoration',
+  265: 'Affliction', 266: 'Demonology', 267: 'Destruction',
+  71: 'Arms', 72: 'Fury', 73: 'Protection'
+};
+
+const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
+
+function parseDateTime(dateTime) {
+  const dateTimeSeparatorIndex = dateTime.indexOf(' ');
+  const date = dateTime.substr(0, dateTimeSeparatorIndex);
+  const time = dateTime.substr(dateTimeSeparatorIndex + 1);
+
+  const dateParts = date.split('/');
+  const month = parseInt(dateParts[0], 10);
+  const day = parseInt(dateParts[1], 10);
+  const year = parseInt(dateParts[2], 10);
+
+  const timeMatch = time.match(/^(\d{2}):(\d{2}):(\d{2})\.(\d{3})([+-]\d{1,2}(?::?\d{2})?)?$/);
+  if (!timeMatch) throw new Error(`Invalid time format: ${time}`);
+
+  const hour = parseInt(timeMatch[1], 10);
+  const minute = parseInt(timeMatch[2], 10);
+  const second = parseInt(timeMatch[3], 10);
+  const millisecond = parseInt(timeMatch[4], 10);
+  const tzOffset = timeMatch[5];
+
+  const dateObj = new Date(Date.UTC(year, month - 1, day, hour, minute, second, millisecond));
+
+  if (tzOffset) {
+    const sign = tzOffset[0] === '-' ? -1 : 1;
+    const offsetParts = tzOffset.substring(1).split(':');
+    const offsetHours = parseInt(offsetParts[0], 10);
+    const offsetMinutes = offsetParts[1] ? parseInt(offsetParts[1], 10) : 0;
+    const totalOffsetMinutes = sign * (offsetHours * 60 + offsetMinutes);
+    dateObj.setMinutes(dateObj.getMinutes() - totalOffsetMinutes);
+  }
+
+  return dateObj;
+}
+
+function splitLine(line) {
+  const partSeparator = ',';
+  const nestingCharacters = { '"': '"', '[': ']', '(': ')' };
+  const parts = [];
+  const lineLength = line.length;
+  let currentPartStartIndex = 0;
+  let nestingType = null;
+
+  for (let i = 0; i < lineLength; i += 1) {
+    const character = line[i];
+
+    if (i === currentPartStartIndex && nestingCharacters[character] !== undefined) {
+      nestingType = character;
+    }
+
+    if (character === partSeparator) {
+      if (nestingType !== null) {
+        const previousCharacter = line[i - 1];
+        if (previousCharacter !== nestingCharacters[nestingType]) continue;
+        const isEscaped = line[i - 2] === '\\';
+        if (isEscaped) continue;
+      }
+
+      let partStartIndex = currentPartStartIndex;
+      let partEndIndex = i;
+      if (nestingType === '"') {
+        partStartIndex += 1;
+        partEndIndex -= 1;
+      }
+      const partLength = partEndIndex - partStartIndex;
+      let part = line.substr(partStartIndex, partLength);
+      if (nestingType === '"' && part.indexOf('\\') !== -1) {
+        part = part.replace(/\\"/g, '"');
+      }
+      parts.push(part);
+
+      currentPartStartIndex = i + partSeparator.length;
+      nestingType = null;
+    }
+  }
+  parts.push(line.substr(currentPartStartIndex));
+  return parts;
+}
+
+function parseCombatantInfo(parts) {
+  let i = 0;
+  const player = {
+    playerId: parts[i++],
+    strength: parseInt(parts[i++], 10),
+    agility: parseInt(parts[i++], 10),
+    stamina: parseInt(parts[i++], 10),
+    intellect: parseInt(parts[i++], 10),
+    dodge: parseInt(parts[i++], 10),
+    parry: parseInt(parts[i++], 10),
+    block: parseInt(parts[i++], 10),
+    critMelee: parseInt(parts[i++], 10),
+    critRanged: parseInt(parts[i++], 10),
+    critSpell: parseInt(parts[i++], 10),
+    speed: parseInt(parts[i++], 10),
+    leech: parseInt(parts[i++], 10),
+    hasteMelee: parseInt(parts[i++], 10),
+    hasteRanged: parseInt(parts[i++], 10),
+    hasteSpell: parseInt(parts[i++], 10),
+    avoidance: parseInt(parts[i++], 10),
+    mastery: parseInt(parts[i++], 10),
+    versatilityDamageDone: parseInt(parts[i++], 10),
+    versatilityHealingDone: parseInt(parts[i++], 10),
+    versatilityDamageReduction: parseInt(parts[i++], 10),
+    armor: parseInt(parts[i++], 10),
+    specId: parseInt(parts[i++], 10),
+    talents: parts[i++],
+    pvpTalents: parts[i++],
+    traits: parts[i++],
+    gear: parts[i++],
+    buffs: parts[i++]
+  };
+  player.specName = SPEC_NAMES[player.specId] || `Spec ${player.specId}`;
+  return player;
+}
+
+// ============================================
+// STATE
+// ============================================
+
+let state = {
+  fights: [],
+  players: new Map(),
+  events: [],
+  currentFight: null,
+  rawLines: []
+};
+
+// ============================================
+// UI ELEMENTS
+// ============================================
+
+const panels = {
+  upload: document.getElementById('panel-upload'),
+  fights: document.getElementById('panel-fights'),
+  players: document.getElementById('panel-players'),
+  timeline: document.getElementById('panel-timeline'),
+  raw: document.getElementById('panel-raw')
+};
+
+const tabs = document.querySelectorAll('.nav__item');
+const uploadZone = document.getElementById('panel-upload');
+const headerFileInput = document.getElementById('file-input');
+const uploadInput = document.getElementById('upload-input');
+const fightList = document.getElementById('panel-fights');
+const playerGrid = document.getElementById('player-grid');
+const timelineEl = document.getElementById('timeline');
+const bossHpEl = document.getElementById('boss-hp');
+const phaseLabelsEl = document.getElementById('phase-labels');
+const timelineTracksEl = document.getElementById('timeline-tracks');
+const rawLogContent = document.getElementById('raw-log-content');
+
+// ============================================
+// TAB SWITCHING
+// ============================================
+
+function switchTab(panelName) {
+  Object.entries(panels).forEach(([name, el]) => {
+    if (name === panelName) {
+      el.classList.remove('hidden');
+      el.focus();
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+  tabs.forEach(tab => {
+    const isActive = tab.dataset.panel === panelName;
+    tab.setAttribute('aria-selected', isActive);
+  });
+}
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.panel));
+  tab.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tab.click(); }
+  });
+});
+
+// ============================================
+// FILE UPLOAD
+// ============================================
+
+uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-active'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-active'));
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-active');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.txt')) handleFile(file);
+});
+
+uploadInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+headerFileInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+uploadZone.addEventListener('click', () => uploadInput.click());
+
+function handleFile(file) {
+  uploadZone.classList.add('hidden');
+  fightList.classList.remove('hidden');
+  switchTab('fights');
+  parseLogFile(file);
+}
+
+// ============================================
+// LOG PARSING
+// ============================================
+
+function parseLogFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    state.rawLines = text.split('\n');
+    parseRawLines();
+    renderFightList();
+    renderPlayerGrid();
+    renderTimeline();
+    renderRawLog();
+  };
+  reader.readAsText(file);
+}
+
+function parseRawLines() {
+  const fights = [];
+  let currentFightStart = null;
+
+  state.rawLines.forEach((line, lineNo) => {
+    if (!line.trim()) return;
+
+    const timeEndIndex = line.indexOf('  ');
+    if (timeEndIndex === -1) return;
+
+    const rawDateTime = line.substr(0, timeEndIndex);
+    const event = line.substr(timeEndIndex + 2);
+    const eventNameEndIndex = event.indexOf(',');
+    if (eventNameEndIndex === -1) return;
+
+    const eventName = event.substr(0, eventNameEndIndex);
+    const rawEventParams = event.substr(eventNameEndIndex + 1);
+
+    if (eventName === 'ENCOUNTER_START') {
+      const parts = splitLine(rawEventParams);
+      currentFightStart = {
+        lineNo,
+        dateTime: parseDateTime(rawDateTime),
+        event: parts
+      };
+    } else if (eventName === 'ENCOUNTER_END' && currentFightStart) {
+      const parts = splitLine(rawEventParams);
+      const bossId = Number(parts[0]);
+      const bossName = parts[1];
+      const difficulty = Number(parts[2]);
+      const kill = parts[4] == '1';
+
+      const isSameFight = currentFightStart.event[0] === parts[0] &&
+                          currentFightStart.event[1] === parts[1] &&
+                          currentFightStart.event[2] === parts[2];
+
+      if (isSameFight) {
+        const endDateTime = parseDateTime(rawDateTime);
+        const duration = endDateTime - currentFightStart.dateTime;
+
+        fights.push({
+          startLineNo: currentFightStart.lineNo,
+          endLineNo: lineNo,
+          startDateTime: currentFightStart.dateTime,
+          endDateTime,
+          bossId,
+          bossName,
+          difficulty,
+          kill,
+          duration
+        });
+      }
+      currentFightStart = null;
+    }
+  });
+
+  state.fights = fights;
+  parseAllEvents();
+}
+
+function parseAllEvents() {
+  const players = new Map();
+  const events = [];
+
+  state.rawLines.forEach((line, lineNo) => {
+    if (!line.trim()) return;
+
+    const timeEndIndex = line.indexOf('  ');
+    if (timeEndIndex === -1) return;
+
+    const rawDateTime = line.substr(0, timeEndIndex);
+    const event = line.substr(timeEndIndex + 2);
+    const eventNameEndIndex = event.indexOf(',');
+    if (eventNameEndIndex === -1) return;
+
+    const eventName = event.substr(0, eventNameEndIndex);
+    const rawEventParams = event.substr(eventNameEndIndex + 1);
+
+    if (eventName === 'COMBATANT_INFO') {
+      const parts = splitLine(rawEventParams);
+      const player = parseCombatantInfo(parts);
+      players.set(player.playerId, player);
+    }
+
+    events.push({
+      lineNo,
+      rawDateTime,
+      type: eventName,
+      params: rawEventParams
+    });
+  });
+
+  state.players = players;
+  state.events = events;
+}
+
+// ============================================
+// RENDER: FIGHT LIST
+// ============================================
+
+function renderFightList() {
+  if (state.fights.length === 0) {
+    fightList.innerHTML = `
+      <div class="empty-state">
+        <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <h3 class="empty-state__title">No Encounters Found</h3>
+        <p class="empty-state__desc">This log doesn't contain any ENCOUNTER_START/END events.</p>
+      </div>
+    `;
+    return;
+  }
+
+  fightList.innerHTML = state.fights.map((fight, idx) => `
+    <article class="fight-card" tabindex="0" data-fight-index="${idx}" role="button" aria-label="View ${escapeHtml(fight.bossName)} fight details">
+      <span class="fight-card__boss">${escapeHtml(fight.bossName)}</span>
+      <div class="fight-card__meta">
+        <span class="fight-card__meta-item fight-card__meta-item--difficulty">${DIFFICULTY_LABELS[fight.difficulty] || `Diff ${fight.difficulty}`}</span>
+        <span class="fight-card__meta-item fight-card__meta-item--duration">${formatDuration(fight.duration)}</span>
+        <span class="fight-card__meta-item ${fight.kill ? 'fight-card__meta-item--kill' : 'fight-card__meta-item--wipe'}">${fight.kill ? 'Kill' : 'Wipe'}</span>
+      </div>
+      <svg class="fight-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </article>
+  `).join('');
+
+  fightList.querySelectorAll('.fight-card').forEach(card => {
+    card.addEventListener('click', () => selectFight(parseInt(card.dataset.fightIndex, 10)));
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
+  });
+}
+
+function selectFight(index) {
+  state.currentFight = state.fights[index];
+  renderFightDetail();
+  renderPlayerGrid();
+  renderTimeline();
+  renderRawLog();
+}
+
+function renderFightDetail() {
+  if (!state.currentFight) return;
+  const f = state.currentFight;
+  fightList.innerHTML = `
+    <div class="fight-detail">
+      <div class="fight-detail__header">
+        <h2 class="fight-detail__boss">${escapeHtml(f.bossName)}</h2>
+        <div class="fight-detail__meta">
+          <span class="fight-detail__meta-item"><strong>${DIFFICULTY_LABELS[f.difficulty] || `Diff ${f.difficulty}`}</strong></span>
+          <span class="fight-detail__meta-item"><strong>${formatDuration(f.duration)}</strong> duration</span>
+          <span class="fight-detail__meta-item ${f.kill ? 'fight-card__meta-item--kill' : 'fight-card__meta-item--wipe'}"><strong>${f.kill ? 'Kill' : 'Wipe'}</strong></span>
+          <span class="fight-detail__meta-item">Lines <strong>${f.startLineNo}–${f.endLineNo}</strong></span>
+        </div>
+      </div>
+      <button class="btn" id="back-to-fights" style="margin-bottom: var(--space-6);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to Fight List
+      </button>
+    </div>
+    <div class="fight-list" id="panel-fights-list"></div>
+  `;
+  document.getElementById('back-to-fights').addEventListener('click', renderFightList);
+}
+
+// ============================================
+// RENDER: PLAYER GRID
+// ============================================
+
+function renderPlayerGrid() {
+  const players = Array.from(state.players.values());
+  if (players.length === 0) {
+    playerGrid.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <h3 class="empty-state__title">No Player Data</h3>
+        <p class="empty-state__desc">Load a log with COMBATANT_INFO events to see player stats.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const playerStats = computePlayerStats();
+
+  playerGrid.innerHTML = players.map(p => {
+    const stats = playerStats.get(p.playerId) || { dps: 0, hps: 0, damage: 0, healing: 0 };
+    const classKey = getClassKey(p.playerId);
+    const classColor = CLASS_COLORS[classKey] || '#888';
+    return `
+      <article class="player-card" style="--class-color: ${classColor};">
+        <div class="player-card__header">
+          <span class="player-card__class-dot" style="background: ${classColor};"></span>
+          <span class="player-card__name">${escapeHtml(p.playerId.split('-').pop())}</span>
+          <span class="player-card__spec">${p.specName}</span>
+        </div>
+        <div class="player-card__stats">
+          <div class="stat"><span class="stat__label">DPS</span><span class="stat__value">${formatNumber(stats.dps)}</span></div>
+          <div class="stat"><span class="stat__label">HPS</span><span class="stat__value">${formatNumber(stats.hps)}</span></div>
+          <div class="stat"><span class="stat__label">Damage</span><span class="stat__value">${formatNumber(stats.damage)}</span></div>
+          <div class="stat"><span class="stat__label">Healing</span><span class="stat__value">${formatNumber(stats.healing)}</span></div>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+function computePlayerStats() {
+  const stats = new Map();
+  if (!state.currentFight) return stats;
+
+  const fightStart = state.currentFight.startDateTime.getTime();
+  const fightEnd = state.currentFight.endDateTime.getTime();
+  const durationSec = (fightEnd - fightStart) / 1000;
+
+  state.events.forEach(e => {
+    if (e.lineNo < state.currentFight.startLineNo || e.lineNo > state.currentFight.endLineNo) return;
+
+    const parts = splitLine(e.params);
+    if (parts.length < 4) return;
+
+    const sourceGUID = parts[0];
+    const isPlayer = state.players.has(sourceGUID);
+    if (!isPlayer) return;
+
+    if (!stats.has(sourceGUID)) stats.set(sourceGUID, { damage: 0, healing: 0, events: 0 });
+
+    const s = stats.get(sourceGUID);
+    s.events++;
+
+    if (e.type.startsWith('SPELL_') || e.type.startsWith('SWING_') || e.type.startsWith('RANGE_')) {
+      if (e.type.includes('DAMAGE')) {
+        const amount = parseInt(parts[parts.length - 2], 10) || 0;
+        s.damage += amount;
+      } else if (e.type.includes('HEAL')) {
+        const amount = parseInt(parts[parts.length - 2], 10) || 0;
+        s.healing += amount;
+      }
+    }
+  });
+
+  stats.forEach((s, guid) => {
+    s.dps = durationSec > 0 ? Math.round(s.damage / durationSec) : 0;
+    s.hps = durationSec > 0 ? Math.round(s.healing / durationSec) : 0;
+  });
+
+  return stats;
+}
+
+function getClassKey(playerId) {
+  const player = state.players.get(playerId);
+  if (!player) return 'warrior';
+  const specToClass = {
+    250: 'dk', 251: 'dk', 252: 'dk',
+    577: 'dh', 581: 'dh',
+    102: 'druid', 103: 'druid', 104: 'druid', 105: 'druid',
+    1467: 'evoker', 1468: 'evoker', 1473: 'evoker',
+    253: 'hunter', 254: 'hunter', 255: 'hunter',
+    62: 'mage', 63: 'mage', 64: 'mage',
+    268: 'monk', 269: 'monk', 270: 'monk',
+    65: 'paladin', 66: 'paladin', 70: 'paladin',
+    256: 'priest', 257: 'priest', 258: 'priest',
+    259: 'rogue', 260: 'rogue', 261: 'rogue',
+    262: 'shaman', 263: 'shaman', 264: 'shaman',
+    265: 'warlock', 266: 'warlock', 267: 'warlock',
+    71: 'warrior', 72: 'warrior', 73: 'warrior'
+  };
+  return specToClass[player.specId] || 'warrior';
+}
+
+// ============================================
+// RENDER: TIMELINE
+// ============================================
+
+function renderTimeline() {
+  if (!state.currentFight || state.players.size === 0) {
+    timelineEl.innerHTML = `
+      <div class="empty-state">
+        <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <h3 class="empty-state__title">Select a Fight</h3>
+        <p class="empty-state__desc">Choose an encounter from the Fights panel to see the timeline.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const players = Array.from(state.players.values());
+  const fightStart = state.currentFight.startDateTime.getTime();
+  const fightEnd = state.currentFight.endDateTime.getTime();
+  const duration = fightEnd - fightStart;
+
+  const phases = buildPhases();
+
+  bossHpEl.innerHTML = `
+    <div class="timeline__hp-bar" style="width: 100%;"></div>
+    ${phases.map((p, i) => `<div class="timeline__hp-phase" style="left: ${p.pct}%;" title="${escapeHtml(p.name)}"></div>`).join('')}
+  `;
+  phaseLabelsEl.innerHTML = phases.map(p => `<span>${escapeHtml(p.name)}</span>`).join('');
+
+  timelineTracksEl.innerHTML = players.map((p, idx) => {
+    const classKey = getClassKey(p.playerId);
+    const classColor = CLASS_COLORS[classKey] || '#888';
+    const events = getPlayerTimelineEvents(p.playerId, fightStart, duration);
+    return `
+      <div class="track" data-player="${escapeHtml(p.playerId)}">
+        <div class="track__label">
+          <span class="track__class-color" style="background: ${classColor};"></span>
+          <span class="track__name">${escapeHtml(p.playerId.split('-').pop())}</span>
+          <span class="track__spec">${p.specName}</span>
+        </div>
+        <div class="track__events">
+          ${events.map(ev => `
+            <div class="event event--${ev.type}" style="left: ${ev.pct}%;" title="">
+              <div class="event__tooltip">
+                <div>${ev.time} — ${escapeHtml(ev.spell)}</div>
+                <div>${ev.target ? '→ ' + escapeHtml(ev.target) : ''}</div>
+                <div>${ev.amount ? formatNumber(ev.amount) : ''}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function buildPhases() {
+  const duration = state.currentFight.duration;
+  const phaseCount = Math.min(4, Math.max(2, Math.floor(duration / 90000)));
+  return Array.from({ length: phaseCount }, (_, i) => ({
+    name: i === 0 ? 'Pull' : i === phaseCount - 1 ? 'Execute' : `Phase ${i + 1}`,
+    pct: (i / (phaseCount - 1)) * 100
+  }));
+}
+
+function getPlayerTimelineEvents(playerId, fightStart, duration) {
+  const events = [];
+  if (!state.currentFight) return events;
+
+  state.events.forEach(e => {
+    if (e.lineNo < state.currentFight.startLineNo || e.lineNo > state.currentFight.endLineNo) return;
+
+    const parts = splitLine(e.params);
+    if (parts.length < 4) return;
+
+    const sourceGUID = parts[0];
+    const destGUID = parts[3] || parts[4];
+
+    if (sourceGUID !== playerId && destGUID !== playerId) return;
+
+    const eventTime = parseDateTime(e.rawDateTime).getTime();
+    const pct = ((eventTime - fightStart) / duration) * 100;
+    if (pct < 0 || pct > 100) return;
+
+    let type = 'damage';
+    if (e.type.includes('HEAL')) type = 'heal';
+    else if (e.type.includes('CAST_SUCCESS') || e.type.includes('CAST_START')) type = 'cd';
+    else if (e.type.includes('AURA_APPLIED') || e.type.includes('INTERRUPT') || e.type.includes('DISPEL')) type = 'mechanic';
+    else if (e.type === 'UNIT_DIED' && destGUID === playerId) type = 'death';
+
+    if (events.length > 50) return;
+
+    const mins = Math.floor((eventTime - fightStart) / 60000);
+    const secs = ((eventTime - fightStart) % 60000 / 1000).toFixed(3).padStart(6, '0');
+    const timeStr = `${mins}:${secs}`;
+
+    const spellId = parts[11] || parts[12] || '?';
+    const spellName = `Spell ${spellId}`;
+
+    events.push({
+      time: timeStr,
+      spell: spellName,
+      target: destGUID !== playerId ? destGUID.split('-').pop() : null,
+      amount: parseInt(parts[parts.length - 2], 10) || 0,
+      pct: Math.max(0.5, Math.min(99.5, pct)),
+      type
+    });
+  });
+
+  return events.sort((a, b) => a.pct - b.pct);
+}
+
+// ============================================
+// RENDER: RAW LOG
+// ============================================
+
+function renderRawLog() {
+  if (!state.currentFight) {
+    rawLogContent.innerHTML = '<div class="empty-state" style="padding: var(--space-8);"><p>Select a fight to view raw log lines.</p></div>';
+    return;
+  }
+
+  const lines = state.events
+    .filter(e => e.lineNo >= state.currentFight.startLineNo && e.lineNo <= state.currentFight.endLineNo)
+    .slice(0, 500)
+    .map(e => {
+      const parts = splitLine(e.params);
+      return `<div class="raw-log__line" data-line="${e.lineNo}">
+  <span class="raw-log__timestamp">${e.rawDateTime}</span>
+  <span class="raw-log__event">${escapeHtml(e.type)}</span>
+  ${parts.map((p, i) => `<span class="raw-log__part raw-log__part--${i}">${escapeHtml(p)}</span>`).join('')}
+</div>`;
+    }).join('');
+
+  rawLogContent.innerHTML = lines || '<div class="empty-state" style="padding: var(--space-8);"><p>No events in this range.</p></div>';
+}
+
+// ============================================
+// UTILITIES
+// ============================================
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' })[c]);
+}
+
+function formatDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+function formatNumber(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n.toString();
+}
+
+// ============================================
+// INIT
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  const savedLog = localStorage.getItem('combatLog');
+  if (savedLog) {
+    // Could auto-load, but let user choose
+  }
+});
+</script>
+</body>
+</html>
