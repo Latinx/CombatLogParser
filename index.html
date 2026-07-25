@@ -4,19 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Combat Log Parser</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --ink-well: #0d0b08;
-  --parchment: #1a1510;
-  --parchment-raised: #241e18;
-  --gold-vein: #c9a84c;
-  --gold-glint: #f0d47a;
-  --ink: #e8dfd0;
-  --ink-muted: #a89f8e;
-  --ink-faint: #6b6356;
+  --ink-well: #060914;
+  --parchment: #0d1426;
+  --parchment-raised: #141f36;
+  --gold-vein: #ffb14a;
+  --gold-glint: #ffd08a;
+  --ink: #eef4ff;
+  --ink-muted: #aab7cf;
+  --ink-faint: #647089;
+  --gridline: rgba(137, 171, 255, 0.12);
+  --void-blue: #0a1020;
+  --rune-violet: #7d5cff;
+  --healer-mint: #62f2c2;
+  --wipe-red: #ff5b6e;
 
   --class-warrior: #c69b6d;
   --class-paladin: #f48cba;
@@ -31,9 +37,9 @@
   --class-dh: #a330c9;
   --class-evoker: #33937f;
 
-  --font-display: 'Cinzel', Georgia, serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: 'Unbounded', system-ui, sans-serif;
+  --font-body: 'Inter Tight', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
 
   --text-xs: 0.7rem;
   --text-sm: 0.8125rem;
@@ -52,7 +58,6 @@
   --space-8: 2rem;
   --space-10: 2.5rem;
   --space-12: 3rem;
-  --space-16: 4rem;
 
   --radius-sm: 3px;
   --radius-md: 6px;
@@ -67,16 +72,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root {
-    --transition-fast: 0ms;
-    --transition-base: 0ms;
-    --transition-slow: 0ms;
-  }
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+:root {
+  --transition-fast: 0ms;
+  --transition-base: 0ms;
+  --transition-slow: 0ms;
+}
+*, *::before, *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -88,20 +93,25 @@ body {
   font-size: var(--text-base);
   line-height: 1.6;
   color: var(--ink);
-  background: var(--ink-well);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(125, 92, 255, 0.22), transparent 26rem),
+    radial-gradient(circle at 88% 18%, rgba(255, 177, 74, 0.13), transparent 24rem),
+    linear-gradient(180deg, #070b17 0%, #050713 100%);
   min-height: 100vh;
   display: grid;
   grid-template-rows: var(--header-h) 1fr;
   grid-template-columns: var(--sidebar-w) 1fr;
+  letter-spacing: -0.01em;
 }
 
-/* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
+
 ::-webkit-scrollbar-track { background: var(--ink-well); }
+
 ::-webkit-scrollbar-thumb { background: var(--parchment-raised); border-radius: 4px; border: 2px solid var(--ink-well); }
+
 ::-webkit-scrollbar-thumb:hover { background: var(--gold-vein); }
 
-/* ===== HEADER ===== */
 .header {
   grid-column: 1 / -1;
   grid-row: 1;
@@ -109,8 +119,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-6);
-  background: linear-gradient(180deg, var(--parchment) 0%, var(--ink-well) 100%);
-  border-bottom: 1px solid var(--gold-vein);
+  background: rgba(6, 9, 20, 0.82);
+  border-bottom: 1px solid var(--gridline);
+  backdrop-filter: blur(18px);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -122,20 +133,24 @@ body {
 .header__title {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: var(--text-xl);
-  color: var(--gold-glint);
-  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+  color: var(--ink);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+.header__title::before {
+  content: 'BLACKBOX / ';
+  color: var(--gold-vein);
 }
 
 .header__actions { display: flex; gap: var(--space-3); align-items: center; }
 
-/* ===== SIDEBAR ===== */
 .sidebar {
   grid-column: 1;
   grid-row: 2;
-  background: var(--parchment);
-  border-right: 1px solid rgba(201, 168, 76, 0.15);
+  background: linear-gradient(180deg, rgba(13, 20, 38, 0.92), rgba(6, 9, 20, 0.92));
+  border-right: 1px solid var(--gridline);
   padding: var(--space-6) var(--space-4);
   overflow-y: auto;
   animation: slideInLeft var(--transition-slow) ease-out var(--space-2) both;
@@ -158,7 +173,7 @@ body {
   font-weight: 500;
   text-align: left;
   width: 100%;
-  border-radius: var(--radius-md);
+  border-radius: 999px;
   cursor: pointer;
   transition: all var(--transition-fast);
   position: relative;
@@ -171,69 +186,99 @@ body {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
-  background: var(--gold-vein);
-  transform: scaleY(0);
-  transform-origin: top;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(255, 177, 74, 0.22), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
   transition: transform var(--transition-base);
 }
 
-.nav__item:hover { color: var(--ink); background: var(--parchment-raised); }
+.nav__item:hover { color: var(--ink); background: rgba(125, 92, 255, 0.12); }
+
 .nav__item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
+
 .nav__item[aria-selected="true"] {
-  color: var(--gold-glint);
-  background: var(--parchment-raised);
+  color: var(--ink);
+  background: rgba(255, 177, 74, 0.12);
 }
-.nav__item[aria-selected="true"]::before { transform: scaleY(1); }
+
+.nav__item[aria-selected="true"]::before { transform: scaleX(1); }
 
 .nav__icon { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; }
 
-/* ===== MAIN ===== */
+.nav__item[data-panel="players"],
+.nav__item[data-panel="timeline"],
+.nav__item[data-panel="breakdown"],
+.nav__item[data-panel="deaths"],
+.nav__item[data-panel="auras"],
+.nav__item[data-panel="raw"] { display: none; }
+
 .main {
   grid-column: 2;
   grid-row: 2;
   padding: var(--space-8) var(--space-10);
   overflow-y: auto;
   animation: fadeUp var(--transition-slow) ease-out var(--space-3) both;
+  position: relative;
+}
+
+.main::before {
+  content: '';
+  position: fixed;
+  inset: var(--header-h) 0 0 var(--sidebar-w);
+  pointer-events: none;
+  opacity: 0.44;
+  background-image:
+    linear-gradient(var(--gridline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 50% 20%, black, transparent 72%);
 }
 
 @keyframes fadeUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* ===== UPLOAD ZONE ===== */
 .upload-zone {
-  border: 2px dashed rgba(201, 168, 76, 0.4);
-  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 177, 74, 0.34);
+  border-radius: 28px;
   padding: var(--space-16) var(--space-8);
   text-align: center;
-  background: radial-gradient(ellipse at center, var(--parchment) 0%, var(--ink-well) 70%);
+  background:
+    linear-gradient(135deg, rgba(125, 92, 255, 0.18), transparent 35%),
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(98, 242, 194, 0.06) 18px 20px),
+    linear-gradient(180deg, rgba(20, 31, 54, 0.94), rgba(8, 12, 26, 0.94));
   transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255,255,255,0.04);
 }
 
 .upload-zone::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(201, 168, 76, 0.08) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity var(--transition-base);
+  inset: 18% -20%;
+  background: linear-gradient(90deg, transparent, rgba(98, 242, 194, 0.0) 20%, rgba(98, 242, 194, 0.48) 21%, transparent 22%, transparent 42%, rgba(255, 177, 74, 0.48) 43%, transparent 44%, transparent);
+  opacity: 0.5;
+  transform: skewY(-8deg);
+  animation: combatPulse 5.5s linear infinite;
 }
+
+@keyframes combatPulse { from { translate: -28% 0; } to { translate: 28% 0; } }
 
 .upload-zone:hover,
 .upload-zone.drag-active {
-  border-color: var(--gold-vein);
-  background: var(--parchment);
+  border-color: var(--healer-mint);
+  transform: translateY(-2px);
 }
+
 .upload-zone:hover::before,
-.upload-zone.drag-active::before { opacity: 1; }
+.upload-zone.drag-active::before { opacity: 0.82; }
 
 .upload-zone__icon {
   width: 80px;
   height: 80px;
   margin: 0 auto var(--space-6);
-  stroke: var(--gold-vein);
-  opacity: 0.7;
+  stroke: var(--healer-mint);
+  opacity: 0.82;
   animation: pulse 3s ease-in-out infinite;
 }
 
@@ -243,7 +288,8 @@ body {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
   font-weight: 600;
-  color: var(--gold-glint);
+  color: var(--ink);
+  letter-spacing: -0.06em;
   margin-bottom: var(--space-2);
 }
 
@@ -257,23 +303,22 @@ body {
 .upload-zone__hint {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--ink-faint);
-  background: var(--ink-well);
+  color: var(--gold-glint);
+  background: rgba(6, 9, 20, 0.68);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-sm);
   display: inline-block;
-  border: 1px solid rgba(201, 168, 76, 0.15);
+  border: 1px solid var(--gridline);
 }
 
 .upload-zone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-/* ===== FIGHT LIST ===== */
 .fight-list { display: flex; flex-direction: column; gap: var(--space-4); }
 
 .fight-card {
-  background: var(--parchment);
-  border: 1px solid rgba(201, 168, 76, 0.12);
-  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, rgba(20, 31, 54, 0.92), rgba(13, 20, 38, 0.72));
+  border: 1px solid var(--gridline);
+  border-radius: 18px;
   padding: var(--space-5) var(--space-6);
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -291,8 +336,8 @@ body {
 .fight-card:nth-child(5) { animation-delay: 250ms; }
 
 .fight-card:hover {
-  border-color: var(--gold-vein);
-  background: var(--parchment-raised);
+  border-color: rgba(255, 177, 74, 0.54);
+  background: linear-gradient(90deg, rgba(30, 42, 72, 0.98), rgba(13, 20, 38, 0.86));
   transform: translateX(4px);
 }
 
@@ -302,7 +347,8 @@ body {
   font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: 600;
-  color: var(--gold-glint);
+  color: var(--ink);
+  letter-spacing: -0.04em;
   white-space: nowrap;
 }
 
@@ -319,12 +365,63 @@ body {
   font-size: var(--text-xs);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-sm);
-  background: rgba(201, 168, 76, 0.15);
-  color: var(--gold-vein);
+  background: rgba(125, 92, 255, 0.18);
+  color: var(--healer-mint);
 }
 
 .fight-card__meta-item--kill { color: #4ade80; font-weight: 600; }
-.fight-card__meta-item--wipe { color: #f87171; font-weight: 600; }
+
+.fight-card__players {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.fight-card__team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fight-card__team-label {
+  width: 52px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fight-card__team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fight-card__player {
+  display: inline-flex;
+  align-items: center;
+  max-width: 160px;
+  padding: 2px 7px;
+  border-left: 3px solid currentColor;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--player-color, var(--ink-muted));
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fight-card__player--more {
+  border-left-color: var(--gridline);
+  color: var(--ink-faint);
+}
 
 .fight-card__arrow {
   width: 24px;
@@ -333,10 +430,45 @@ body {
   transition: all var(--transition-fast);
   flex-shrink: 0;
 }
+
 .fight-card:hover .fight-card__arrow { stroke: var(--gold-vein); transform: translateX(4px); }
 
-/* ===== FIGHT DETAIL ===== */
 .fight-detail { animation: fadeUp var(--transition-slow) ease-out both; }
+
+.fight-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  padding: var(--space-2);
+  border: 1px solid var(--gridline);
+  border-radius: 999px;
+  background: rgba(6, 9, 20, 0.54);
+}
+
+.fight-subnav__item {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-muted);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fight-subnav__item:hover,
+.fight-subnav__item[aria-selected="true"] {
+  background: rgba(255, 177, 74, 0.14);
+  color: var(--ink);
+}
+
+.fight-subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
 
 .fight-detail__header {
   display: flex;
@@ -359,13 +491,13 @@ body {
 .fight-detail__meta { display: flex; flex-wrap: wrap; gap: var(--space-4); }
 
 .fight-detail__meta-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--ink-muted); }
-.fight-detail__meta-item strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
-/* ===== TIMELINE ===== */
+strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
 .timeline {
-  background: var(--parchment);
-  border: 1px solid rgba(201, 168, 76, 0.12);
-  border-radius: var(--radius-lg);
+  background: rgba(13, 20, 38, 0.84);
+  border: 1px solid var(--gridline);
+  border-radius: 24px;
   padding: var(--space-6);
   margin-bottom: var(--space-8);
   position: relative;
@@ -377,7 +509,7 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--gold-vein), transparent);
+  background: linear-gradient(90deg, transparent, var(--healer-mint), var(--gold-vein), transparent);
 }
 
 .timeline__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4); }
@@ -386,7 +518,8 @@ body {
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 600;
-  color: var(--gold-glint);
+  color: var(--ink);
+  letter-spacing: -0.05em;
 }
 
 .timeline__controls { display: flex; gap: var(--space-2); }
@@ -396,20 +529,25 @@ body {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  background: var(--parchment-raised);
+  border: 1px solid var(--gridline);
+  background: rgba(20, 31, 54, 0.82);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 500;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
-.btn:hover { border-color: var(--gold-vein); color: var(--gold-glint); background: var(--parchment); }
+
+.btn:hover { border-color: var(--gold-vein); color: var(--gold-glint); background: rgba(255, 177, 74, 0.11); }
+
 .btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
+
 .btn--primary { background: var(--gold-vein); border-color: var(--gold-vein); color: var(--ink-well); }
+
 .btn--primary:hover { background: var(--gold-glint); border-color: var(--gold-glint); }
+
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .timeline__boss-hp {
@@ -530,13 +668,14 @@ body {
 .event--heal { background: #4ade80; border-radius: 50%; }
 .event--cd { background: var(--gold-vein); border-radius: 1px; transform: translateY(-50%) rotate(45deg) scale(0); }
 .event--mechanic { background: #fbbf24; border-radius: 50%; border: 2px solid var(--ink-well); }
-.event--death { background: #1a1510; border: 2px solid #f87171; border-radius: 1px; width: 10px; height: 10px; }
+.event--death { background: var(--ink-well); border: 2px solid #f87171; border-radius: 1px; width: 10px; height: 10px; }
 
 .event:hover {
   transform: translateY(-50%) scale(2.5);
   box-shadow: 0 0 12px currentColor;
   z-index: 10;
 }
+
 .event--cd:hover { transform: translateY(-50%) rotate(45deg) scale(2.5); }
 
 .event__tooltip {
@@ -559,7 +698,9 @@ body {
   color: var(--ink);
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
+
 .event:hover .event__tooltip { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
 .event__tooltip::after {
   content: '';
   position: absolute;
@@ -570,7 +711,6 @@ body {
   border-top-color: var(--gold-vein);
 }
 
-/* ===== PLAYER GRID ===== */
 .player-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -588,6 +728,7 @@ body {
   transition: all var(--transition-fast);
   animation: fadeUp var(--transition-base) ease-out both;
 }
+
 .player-card:hover { border-color: var(--gold-vein); background: var(--parchment-raised); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 
 .player-card__header {
@@ -639,11 +780,10 @@ body {
   font-weight: 600;
 }
 
-/* ===== RAW LOG PANEL ===== */
 .raw-log {
-  background: var(--ink-well);
-  border: 1px solid rgba(201, 168, 76, 0.12);
-  border-radius: var(--radius-lg);
+  background: rgba(6, 9, 20, 0.88);
+  border: 1px solid var(--gridline);
+  border-radius: 24px;
   overflow: hidden;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -655,11 +795,11 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-3) var(--space-4);
-  background: var(--parchment);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+  background: rgba(20, 31, 54, 0.8);
+  border-bottom: 1px solid var(--gridline);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--gold-glint);
+  color: var(--ink);
   font-family: var(--font-body);
 }
 
@@ -676,30 +816,351 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
-.raw-log__line:hover { background: var(--parchment); }
-.raw-log__line--highlight { background: rgba(201, 168, 76, 0.15); }
+
+.raw-log__line:hover { background: rgba(125, 92, 255, 0.11); }
+
+.raw-log__line--highlight { background: rgba(255, 177, 74, 0.13); color: var(--gold-glint); }
 
 .raw-log__timestamp { color: var(--gold-vein); }
+
 .raw-log__event { color: var(--gold-glint); font-weight: 500; }
+
 .raw-log__source { color: var(--class-mage); }
+
 .raw-log__target { color: var(--class-priest); }
+
 .raw-log__spell { color: #fbbf24; }
+
 .raw-log__amount { color: #4ade80; font-variant-numeric: tabular-nums; }
 
-/* ===== EMPTY STATE ===== */
 .empty-state {
   text-align: center;
   padding: var(--space-16) var(--space-8);
   color: var(--ink-muted);
 }
+
 .empty-state__icon { width: 64px; height: 64px; margin: 0 auto var(--space-6); stroke: var(--ink-faint); opacity: 0.5; }
+
 .empty-state__title { font-family: var(--font-display); font-size: var(--text-2xl); color: var(--ink); margin-bottom: var(--space-2); }
+
 .empty-state__desc { max-width: 400px; margin: 0 auto; }
 
-/* ===== HIDDEN UTILITY ===== */
+.breakdown-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.breakdown-controls {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+  background: rgba(6, 9, 20, 0.72);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 14px;
+  border: 1px solid var(--gridline);
+}
+
+.filter-btn {
+  background: transparent;
+  border: 1px solid var(--gridline);
+  color: var(--ink-muted);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-btn:hover {
+  border-color: var(--gold-vein);
+  color: var(--ink);
+}
+
+.filter-btn--active {
+  background: var(--gold-vein);
+  color: #211404;
+  border-color: var(--gold-glint);
+  font-weight: 600;
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.breakdown-row {
+  background: rgba(9, 14, 27, 0.88);
+  border: 0;
+  border-bottom: 1px solid rgba(137, 171, 255, 0.09);
+  border-radius: 0;
+  overflow: hidden;
+  transition: background var(--transition-fast);
+}
+
+.breakdown-row:hover {
+  background: rgba(18, 28, 50, 0.92);
+}
+
+.breakdown-row--minion .breakdown-row__header {
+  padding-left: 28px;
+}
+
+.breakdown-row--minion .breakdown-row__info strong {
+  color: var(--ink-muted);
+}
+
+.breakdown-row__header {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 36vw) 190px;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  padding: 3px 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.breakdown-row__bg-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  opacity: 0.10;
+  pointer-events: none;
+  transition: width var(--transition-base);
+}
+
+.breakdown-row__info {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  z-index: 1;
+}
+
+.breakdown-row__info strong,
+.spell-row strong {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.breakdown-row__metrics {
+  position: relative;
+  display: flex;
+  align-items: center;
+  display: grid;
+  grid-template-columns: 82px 62px 46px;
+  gap: 8px;
+  justify-content: flex-end;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.breakdown-row__val {
+  color: var(--gold-glint);
+  font-weight: 500;
+  text-align: right;
+}
+
+.breakdown-row__sub {
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+}
+
+.breakdown-row__spells {
+  padding: 2px 0 6px 24px;
+  background: rgba(6, 9, 20, 0.42);
+  border-top: 1px solid var(--gridline);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spell-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 36vw) 160px;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-xs);
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.spell-row:hover {
+  background: rgba(98, 242, 194, 0.08);
+}
+
+.spell-bar-container {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  margin: 0 var(--space-4);
+  overflow: hidden;
+}
+
+.spell-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rune-violet), var(--gold-vein));
+  border-radius: 3px;
+}
+
+.metric-bar {
+  position: relative;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.metric-bar__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--rune-violet), var(--gold-vein), var(--healer-mint));
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+
+.metric-card {
+  padding: 8px;
+  border: 1px solid var(--gridline);
+  border-radius: 10px;
+  background: rgba(6, 9, 20, 0.54);
+}
+
+.metric-card__label {
+  display: block;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.metric-card__value {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.death-card {
+  background: var(--parchment);
+  border: 1px solid rgba(196, 30, 58, 0.4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+}
+
+.death-card__header {
+  background: rgba(196, 30, 58, 0.15);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(196, 30, 58, 0.3);
+}
+
+.death-card__player {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+}
+
+.death-card__time {
+  color: var(--gold-vein);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.death-log {
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.death-log__entry {
+  display: grid;
+  grid-template-columns: 80px 1fr 140px 100px;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.death-log__entry:hover {
+  background: var(--parchment-raised);
+}
+
+.death-log__entry--damage { color: #f87171; }
+.death-log__entry--heal { color: #4ade80; }
+.death-log__entry--killing-blow { color: #f43f5e; font-weight: 700; background: rgba(244, 63, 94, 0.2); }
+
+.aura-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.aura-card {
+  background: var(--parchment);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.aura-card__title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--gold-glint);
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.aura-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  border-bottom: 1px dashed rgba(201, 168, 76, 0.1);
+}
+
+.aura-item:last-child {
+  border-bottom: none;
+}
+
+.aura-count {
+  font-family: var(--font-mono);
+  color: var(--gold-vein);
+}
+
 .hidden { display: none !important; }
 
-/* ===== MOBILE ===== */
 @media (max-width: 1024px) {
   body { grid-template-columns: 1fr; grid-template-rows: var(--header-h) auto 1fr; }
   .sidebar {
@@ -713,10 +1174,14 @@ body {
   .nav__item::before { display: none; }
   .nav__item[aria-selected="true"] { background: var(--parchment-raised); }
   .main { grid-row: 3; padding: var(--space-6) var(--space-4); animation: none; }
+  .main::before { inset: calc(var(--header-h) + 60px) 0 0 0; }
   .track__label { width: 100px; }
   .track__events { left: 100px; }
   .track__spec { display: none; }
   .player-grid { grid-template-columns: 1fr; }
+  .breakdown-row__header,
+  .spell-row { grid-template-columns: 1fr; }
+  .breakdown-row__metrics { justify-content: flex-start; flex-wrap: wrap; gap: var(--space-3); }
 }
 
 @media (max-width: 640px) {
@@ -768,36 +1233,45 @@ body {
       <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       <span>Timeline</span>
     </button></li>
+    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-breakdown" id="tab-breakdown" data-panel="breakdown">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      <span>Breakdown</span>
+    </button></li>
+    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-deaths" id="tab-deaths" data-panel="deaths">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Deaths</span>
+    </button></li>
+    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-auras" id="tab-auras" data-panel="auras">
+      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/></svg>
+      <span>Auras</span>
+    </button></li>
     <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-raw" id="tab-raw" data-panel="raw">
       <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
       <span>Raw Log</span>
     </button></li>
-  </ul>
+  </ul >
 </nav>
 
 <main class="main" role="main">
-  <!-- UPLOAD PANEL -->
   <section class="upload-zone" id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" tabindex="0">
     <svg class="upload-zone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
       <circle cx="12" cy="12" r="10"/>
-      <path d="M12 8v8M8 12h8"/>
-      <path d="M8 16c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+      <path d="M8 12h8"/>
+      <path d="M12 8v8"/>
+      <path d="M12 4c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8 3.58-8 8-8z"/>
     </svg>
-    <h2 class="upload-zone__title">Drag a WoWCombatLog.txt here</h2>
-    <p class="upload-zone__desc">Or click to browse. Parses locally — nothing leaves your machine.</p>
-    <span class="upload-zone__hint">WoWCombatLog-071026_154957.txt · 23.8 MB · 92,330 lines</span>
+    <h2 class="upload-zone__title">Replay the fight from the wreckage</h2>
+    <p class="upload-zone__desc">Drop a WoWCombatLog file to split combat windows, rank damage, and drill into the player who bent the pull.</p>
+    <span class="upload-zone__hint">Local parse · no upload · built for arena nights and raid review</span>
     <input type="file" id="upload-input" accept=".txt" aria-label="Choose combat log file">
   </section>
 
-  <!-- FIGHTS PANEL -->
   <section class="fight-list hidden" id="panel-fights" role="tabpanel" aria-labelledby="tab-fights" tabindex="0"></section>
 
-  <!-- PLAYERS PANEL -->
   <section class="hidden" id="panel-players" role="tabpanel" aria-labelledby="tab-players" tabindex="0">
-    <div class="player-grid" id="player-grid"></div>
+    <div class="player-grid" id="player-grid"></div >
   </section>
 
-  <!-- TIMELINE PANEL -->
   <section class="hidden" id="panel-timeline" role="tabpanel" aria-labelledby="tab-timeline" tabindex="0">
     <div class="timeline" id="timeline">
       <div class="timeline__header">
@@ -806,36 +1280,46 @@ body {
           <button class="btn" id="timeline-zoom-in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
           <button class="btn" id="timeline-zoom-out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
           <button class="btn" id="timeline-reset" aria-label="Reset view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
-        </div>
-      </div>
-      <div class="timeline__boss-hp" id="boss-hp" role="img" aria-label="Boss health timeline with phase transitions"></div>
-      <div class="timeline__phase-labels" id="phase-labels"></div>
-      <div class="timeline__tracks" id="timeline-tracks"></div>
-    </div>
+        </div >
+      </div >
+      <div class="timeline__boss-hp" id="boss-hp" role="img" aria-label="Boss health timeline with phase transitions"></div >
+      <div class="timeline__phase-labels" id="phase-labels"></div >
+      <div class="timeline__tracks" id="timeline-tracks"></div >
+    </div >
   </section>
 
-  <!-- RAW LOG PANEL -->
+  <section class="hidden" id="panel-breakdown" role="tabpanel" aria-labelledby="tab-breakdown" tabindex="0">
+    <div class="breakdown-view" id="breakdown-view"></div >
+  </section>
+
+  <section class="hidden" id="panel-deaths" role="tabpanel" aria-labelledby="tab-deaths" tabindex="0">
+    <div id="deaths-view"></div >
+  </section>
+
+  <section class="hidden" id="panel-auras" role="tabpanel" aria-labelledby="tab-auras" tabindex="0">
+    <div id="auras-view"></div >
+  </section>
+
   <section class="hidden" id="panel-raw" role="tabpanel" aria-labelledby="tab-raw" tabindex="0">
     <div class="raw-log">
       <div class="raw-log__header">
         <span>Raw Combat Log</span>
         <span id="raw-line-count" class="hidden">0 lines</span>
-      </div>
-      <div class="raw-log__content" id="raw-log-content"></div>
-    </div>
+      </div >
+      <div class="raw-log__content" id="raw-log-content"></div >
+    </div >
   </section>
 </main>
 
 <script>
-// ============================================
-// DATA PARSING (using existing parser logic)
-// ============================================
-
 const CLASS_COLORS = {
   warrior: '#c69b6d', paladin: '#f48cba', hunter: '#aad372', rogue: '#fff468',
-  priest: '#ffffff', dk: '#c41e3a', shaman: '#0070dd', mage: '#3fc7eb',
-  warlock: '#8788ee', monk: '#00ff98', dh: '#a330c9', evoker: '#33937f'
+  priest: '#ffffff', dk: '#c41e3a', deathknight: '#c41e3a', shaman: '#0070dd', mage: '#3fc7eb', druid: '#ff7c0a',
+  warlock: '#8788ee', monk: '#00ff98', dh: '#a330c9', demonhunter: '#a330c9', evoker: '#33937f'
 };
+
+const COMBATLOG_REACTION_FRIENDLY = 0x10;
+const COMBATLOG_REACTION_HOSTILE = 0x40;
 
 const SPEC_NAMES = {
   250: 'Blood', 251: 'Frost', 252: 'Unholy',
@@ -854,6 +1338,9 @@ const SPEC_NAMES = {
 };
 
 const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
+const STORED_LOG_KEY = 'combatLogParser.currentLog';
+const LOG_DB_NAME = 'combatLogParserDB';
+const LOG_STORE_NAME = 'logs';
 
 function parseDateTime(dateTime) {
   const dateTimeSeparatorIndex = dateTime.indexOf(' ');
@@ -968,27 +1455,26 @@ function parseCombatantInfo(parts) {
   return player;
 }
 
-// ============================================
-// STATE
-// ============================================
-
 let state = {
   fights: [],
   players: new Map(),
   events: [],
   currentFight: null,
+  selectedSourceGuid: null,
+  selectedSpellKey: null,
+  selectedFightPanel: 'breakdown',
+  petOwners: new Map(),
   rawLines: []
 };
-
-// ============================================
-// UI ELEMENTS
-// ============================================
 
 const panels = {
   upload: document.getElementById('panel-upload'),
   fights: document.getElementById('panel-fights'),
   players: document.getElementById('panel-players'),
   timeline: document.getElementById('panel-timeline'),
+  breakdown: document.getElementById('panel-breakdown'),
+  deaths: document.getElementById('panel-deaths'),
+  auras: document.getElementById('panel-auras'),
   raw: document.getElementById('panel-raw')
 };
 
@@ -1003,10 +1489,6 @@ const bossHpEl = document.getElementById('boss-hp');
 const phaseLabelsEl = document.getElementById('phase-labels');
 const timelineTracksEl = document.getElementById('timeline-tracks');
 const rawLogContent = document.getElementById('raw-log-content');
-
-// ============================================
-// TAB SWITCHING
-// ============================================
 
 function switchTab(panelName) {
   Object.entries(panels).forEach(([name, el]) => {
@@ -1029,10 +1511,6 @@ tabs.forEach(tab => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tab.click(); }
   });
 });
-
-// ============================================
-// FILE UPLOAD
-// ============================================
 
 uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-active'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-active'));
@@ -1068,31 +1546,101 @@ function parseLogFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const text = e.target.result;
-    state.rawLines = text.split('\n');
-    parseRawLines();
-    renderFightList();
-    renderPlayerGrid();
-    renderTimeline();
-    renderRawLog();
+    persistCurrentLog(text);
+    loadLogText(text);
   };
+  reader.onerror = (err) => console.error('File read error:', err);
   reader.readAsText(file);
 }
 
+function loadLogText(text) {
+  state = {
+    fights: [],
+    players: new Map(),
+    events: [],
+    currentFight: null,
+    selectedSourceGuid: null,
+    selectedSpellKey: null,
+    selectedFightPanel: 'breakdown',
+    petOwners: new Map(),
+    rawLines: text.split('\n')
+  };
+  parseRawLines();
+  renderFightList();
+  renderPlayerGrid();
+  renderTimeline();
+  renderRawLog();
+  renderBreakdownView();
+  renderDeathsView();
+  renderAurasView();
+}
+
+function persistCurrentLog(text) {
+  openLogDatabase()
+    .then(db => putStoredLog(db, text))
+    .catch(err => console.warn('Could not persist combat log.', err));
+}
+
+function restorePersistedLog() {
+  openLogDatabase()
+    .then(db => getStoredLog(db))
+    .then(text => {
+      if (!text) return;
+      uploadZone.classList.add('hidden');
+      fightList.classList.remove('hidden');
+      switchTab('fights');
+      loadLogText(text);
+    })
+    .catch(err => console.warn('Could not restore persisted combat log.', err));
+}
+
+function openLogDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(LOG_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(LOG_STORE_NAME);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function putStoredLog(db, text) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOG_STORE_NAME, 'readwrite');
+    tx.objectStore(LOG_STORE_NAME).put(text, STORED_LOG_KEY);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function getStoredLog(db) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOG_STORE_NAME, 'readonly');
+    const request = tx.objectStore(LOG_STORE_NAME).get(STORED_LOG_KEY);
+    request.onsuccess = () => resolve(request.result || '');
+    request.onerror = () => reject(request.error);
+  });
+}
+
 function parseRawLines() {
+  const COMBAT_GAP_THRESHOLD = 12000;
+  const MIN_FIGHT_DURATION = 5000;
+  const MAX_FIGHT_DURATION = 30 * 60 * 1000;
   const fights = [];
   let currentFightStart = null;
 
+  const encounterFights = [];
+  const combatEvents = [];
+
   state.rawLines.forEach((line, lineNo) => {
     if (!line.trim()) return;
-
     const timeEndIndex = line.indexOf('  ');
     if (timeEndIndex === -1) return;
-
     const rawDateTime = line.substr(0, timeEndIndex);
     const event = line.substr(timeEndIndex + 2);
     const eventNameEndIndex = event.indexOf(',');
     if (eventNameEndIndex === -1) return;
-
     const eventName = event.substr(0, eventNameEndIndex);
     const rawEventParams = event.substr(eventNameEndIndex + 1);
 
@@ -1117,8 +1665,7 @@ function parseRawLines() {
       if (isSameFight) {
         const endDateTime = parseDateTime(rawDateTime);
         const duration = endDateTime - currentFightStart.dateTime;
-
-        fights.push({
+        encounterFights.push({
           startLineNo: currentFightStart.lineNo,
           endLineNo: lineNo,
           startDateTime: currentFightStart.dateTime,
@@ -1132,34 +1679,124 @@ function parseRawLines() {
       }
       currentFightStart = null;
     }
+
+    if (isCombatBoundaryEvent(eventName)) {
+      const parts = splitLine(rawEventParams);
+      combatEvents.push({
+        lineNo,
+        dateTime: parseDateTime(rawDateTime),
+        eventName,
+        sourceId: parts[0] || '',
+        destId: parts[4] || ''
+      });
+    }
   });
 
+  if (encounterFights.length > 0) {
+    fights.push(...encounterFights);
+  }
+
+  const timeGapFights = buildTimeGapFights(combatEvents, fights.length + 1, COMBAT_GAP_THRESHOLD, MIN_FIGHT_DURATION, MAX_FIGHT_DURATION);
+
+  for (const gf of timeGapFights) {
+    const overlapsEncounter = fights.some(f => gf.startLineNo <= f.endLineNo && gf.endLineNo >= f.startLineNo);
+    if (!overlapsEncounter) fights.push(gf);
+  }
+
+  fights.sort((a, b) => a.startLineNo - b.startLineNo);
   state.fights = fights;
   parseAllEvents();
+}
+
+function isCombatBoundaryEvent(eventName) {
+  if (eventName === 'COMBAT_LOG_VERSION' || eventName === 'COMBATANT_INFO') return false;
+  if (eventName === 'SPELL_CAST_SUCCESS' || eventName === 'SPELL_AURA_APPLIED' || eventName === 'SPELL_AURA_REMOVED') return false;
+  return eventName.includes('_DAMAGE') ||
+    eventName.includes('_HEAL') ||
+    eventName.includes('_MISSED') ||
+    eventName === 'SWING_DAMAGE' ||
+    eventName === 'SWING_MISSED' ||
+    eventName === 'RANGE_DAMAGE' ||
+    eventName === 'RANGE_MISSED' ||
+    eventName === 'UNIT_DIED' ||
+    eventName === 'PARTY_KILL';
+}
+
+function buildTimeGapFights(combatEvents, startIndex, gapThreshold, minDuration, maxDuration) {
+  const fights = [];
+  if (combatEvents.length < 2) return fights;
+
+  let segStart = combatEvents[0];
+  let previous = combatEvents[0];
+
+  for (let i = 1; i < combatEvents.length; i++) {
+    const current = combatEvents[i];
+    const gap = current.dateTime - previous.dateTime;
+    if (gap > gapThreshold) {
+      addTimeGapFight(fights, segStart, previous, startIndex, minDuration, maxDuration);
+      segStart = current;
+    }
+    previous = current;
+  }
+
+  addTimeGapFight(fights, segStart, previous, startIndex, minDuration, maxDuration);
+  return fights;
+}
+
+function addTimeGapFight(fights, startEvent, endEvent, startIndex, minDuration, maxDuration) {
+  const duration = endEvent.dateTime - startEvent.dateTime;
+  if (duration < minDuration || duration > maxDuration) return;
+
+  fights.push({
+    startLineNo: startEvent.lineNo,
+    endLineNo: endEvent.lineNo,
+    startDateTime: startEvent.dateTime,
+    endDateTime: endEvent.dateTime,
+    bossId: 0,
+    bossName: `Fight ${startIndex + fights.length}`,
+    difficulty: 0,
+    kill: false,
+    duration
+  });
 }
 
 function parseAllEvents() {
   const players = new Map();
   const events = [];
+  const playerGUIDs = new Set();
+  const petOwners = new Map();
 
   state.rawLines.forEach((line, lineNo) => {
     if (!line.trim()) return;
-
     const timeEndIndex = line.indexOf('  ');
     if (timeEndIndex === -1) return;
-
     const rawDateTime = line.substr(0, timeEndIndex);
     const event = line.substr(timeEndIndex + 2);
     const eventNameEndIndex = event.indexOf(',');
     if (eventNameEndIndex === -1) return;
-
     const eventName = event.substr(0, eventNameEndIndex);
     const rawEventParams = event.substr(eventNameEndIndex + 1);
 
     if (eventName === 'COMBATANT_INFO') {
       const parts = splitLine(rawEventParams);
-      const player = parseCombatantInfo(parts);
-      players.set(player.playerId, player);
+      try {
+        const player = parseCombatantInfo(parts);
+        players.set(player.playerId, player);
+      } catch (e) {
+        console.error('COMBATANT_INFO parse error at line', lineNo, e);
+      }
+    }
+
+    // Collect GUIDs from all events where source/dest fields exist and start with 'Player-'
+    const parts = splitLine(rawEventParams);
+    if (parts.length >= 5) {
+      const sourceId = parts[0];
+      const destId = parts[4];
+      if (sourceId && sourceId.startsWith('Player-')) playerGUIDs.add(sourceId);
+      if (destId && destId.startsWith('Player-')) playerGUIDs.add(destId);
+      if (eventName === 'SPELL_SUMMON' && sourceId && sourceId.startsWith('Player-') && destId && !destId.startsWith('Player-')) {
+        petOwners.set(destId, sourceId);
+      }
     }
 
     events.push({
@@ -1170,8 +1807,27 @@ function parseAllEvents() {
     });
   });
 
+  for (const guid of playerGUIDs) {
+    if (!players.has(guid)) {
+      players.set(guid, {
+        playerId: guid,
+        specId: 0,
+        specName: getDisplayName('', guid),
+        strength: 0, agility: 0, stamina: 0, intellect: 0,
+        dodge: 0, parry: 0, block: 0,
+        critMelee: 0, critRanged: 0, critSpell: 0,
+        speed: 0, leech: 0,
+        hasteMelee: 0, hasteRanged: 0, hasteSpell: 0,
+        avoidance: 0, mastery: 0,
+        versatilityDamageDone: 0, versatilityHealingDone: 0, versatilityDamageReduction: 0,
+        armor: 0
+      });
+    }
+  }
+
   state.players = players;
   state.events = events;
+  state.petOwners = petOwners;
 }
 
 // ============================================
@@ -1179,25 +1835,30 @@ function parseAllEvents() {
 // ============================================
 
 function renderFightList() {
-  if (state.fights.length === 0) {
+  const fightsWithPlayers = state.fights
+    .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
+    .filter(item => item.players.length > 0);
+
+  if (fightsWithPlayers.length === 0) {
     fightList.innerHTML = `
       <div class="empty-state">
         <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        <h3 class="empty-state__title">No Encounters Found</h3>
-        <p class="empty-state__desc">This log doesn't contain any ENCOUNTER_START/END events.</p>
-      </div>
+        <h3 class="empty-state__title">No Player Fights Found</h3>
+        <p class="empty-state__desc">No detected fight windows contain player combat activity.</p>
+      </div >
     `;
     return;
   }
 
-  fightList.innerHTML = state.fights.map((fight, idx) => `
-    <article class="fight-card" tabindex="0" data-fight-index="${idx}" role="button" aria-label="View ${escapeHtml(fight.bossName)} fight details">
+  fightList.innerHTML = fightsWithPlayers.map(({ fight, index, players }) => `
+    <article class="fight-card" tabindex="0" data-fight-index="${index}" role="button" aria-label="View ${escapeHtml(fight.bossName)} fight details">
       <span class="fight-card__boss">${escapeHtml(fight.bossName)}</span>
       <div class="fight-card__meta">
-        <span class="fight-card__meta-item fight-card__meta-item--difficulty">${DIFFICULTY_LABELS[fight.difficulty] || `Diff ${fight.difficulty}`}</span>
+        <span class="fight-card__meta-item ${fight.difficulty === 0 ? 'fight-card__meta-item--difficulty' : ''}">${DIFFICULTY_LABELS[fight.difficulty] || (fight.difficulty ? `Diff ${fight.difficulty}` : 'PvP')}</span>
         <span class="fight-card__meta-item fight-card__meta-item--duration">${formatDuration(fight.duration)}</span>
-        <span class="fight-card__meta-item ${fight.kill ? 'fight-card__meta-item--kill' : 'fight-card__meta-item--wipe'}">${fight.kill ? 'Kill' : 'Wipe'}</span>
+        <span class="fight-card__meta-item ${fight.kill ? 'fight-card__meta-item--kill' : ''}">${fight.kill ? 'Kill' : ''}</span>
       </div>
+      <div class="fight-card__players">${renderFightPlayerChips(players)}</div>
       <svg class="fight-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </article>
   `).join('');
@@ -1208,124 +1869,39 @@ function renderFightList() {
   });
 }
 
-function selectFight(index) {
-  state.currentFight = state.fights[index];
-  renderFightDetail();
-  renderPlayerGrid();
-  renderTimeline();
-  renderRawLog();
+function getFightPlayerRows(fight) {
+  return buildDamageDoneRows(fight)
+    .filter(row => row.guid && row.guid.startsWith('Player-'))
+    .sort((a, b) => b.amount - a.amount);
 }
 
-function renderFightDetail() {
-  if (!state.currentFight) return;
-  const f = state.currentFight;
-  fightList.innerHTML = `
-    <div class="fight-detail">
-      <div class="fight-detail__header">
-        <h2 class="fight-detail__boss">${escapeHtml(f.bossName)}</h2>
-        <div class="fight-detail__meta">
-          <span class="fight-detail__meta-item"><strong>${DIFFICULTY_LABELS[f.difficulty] || `Diff ${f.difficulty}`}</strong></span>
-          <span class="fight-detail__meta-item"><strong>${formatDuration(f.duration)}</strong> duration</span>
-          <span class="fight-detail__meta-item ${f.kill ? 'fight-card__meta-item--kill' : 'fight-card__meta-item--wipe'}"><strong>${f.kill ? 'Kill' : 'Wipe'}</strong></span>
-          <span class="fight-detail__meta-item">Lines <strong>${f.startLineNo}–${f.endLineNo}</strong></span>
-        </div>
-      </div>
-      <button class="btn" id="back-to-fights" style="margin-bottom: var(--space-6);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        Back to Fight List
-      </button>
-    </div>
-    <div class="fight-list" id="panel-fights-list"></div>
-  `;
-  document.getElementById('back-to-fights').addEventListener('click', renderFightList);
+function renderFightPlayerChips(players) {
+  const friendly = players.filter(player => player.faction === 'friendly');
+  const hostile = players.filter(player => player.faction === 'hostile');
+  const unknown = players.filter(player => player.faction !== 'friendly' && player.faction !== 'hostile');
+  return `${renderFightTeamRow('Friendly', friendly.concat(unknown))}${renderFightTeamRow('Hostile', hostile)}`;
 }
 
-// ============================================
-// RENDER: PLAYER GRID
-// ============================================
-
-function renderPlayerGrid() {
-  const players = Array.from(state.players.values());
-  if (players.length === 0) {
-    playerGrid.innerHTML = `
-      <div class="empty-state" style="grid-column: 1 / -1;">
-        <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <h3 class="empty-state__title">No Player Data</h3>
-        <p class="empty-state__desc">Load a log with COMBATANT_INFO events to see player stats.</p>
-      </div>
-    `;
-    return;
-  }
-
-  const playerStats = computePlayerStats();
-
-  playerGrid.innerHTML = players.map(p => {
-    const stats = playerStats.get(p.playerId) || { dps: 0, hps: 0, damage: 0, healing: 0 };
-    const classKey = getClassKey(p.playerId);
-    const classColor = CLASS_COLORS[classKey] || '#888';
-    return `
-      <article class="player-card" style="--class-color: ${classColor};">
-        <div class="player-card__header">
-          <span class="player-card__class-dot" style="background: ${classColor};"></span>
-          <span class="player-card__name">${escapeHtml(p.playerId.split('-').pop())}</span>
-          <span class="player-card__spec">${p.specName}</span>
-        </div>
-        <div class="player-card__stats">
-          <div class="stat"><span class="stat__label">DPS</span><span class="stat__value">${formatNumber(stats.dps)}</span></div>
-          <div class="stat"><span class="stat__label">HPS</span><span class="stat__value">${formatNumber(stats.hps)}</span></div>
-          <div class="stat"><span class="stat__label">Damage</span><span class="stat__value">${formatNumber(stats.damage)}</span></div>
-          <div class="stat"><span class="stat__label">Healing</span><span class="stat__value">${formatNumber(stats.healing)}</span></div>
-        </div>
-      </article>
-    `;
-  }).join('');
-}
-
-function computePlayerStats() {
-  const stats = new Map();
-  if (!state.currentFight) return stats;
-
-  const fightStart = state.currentFight.startDateTime.getTime();
-  const fightEnd = state.currentFight.endDateTime.getTime();
-  const durationSec = (fightEnd - fightStart) / 1000;
-
-  state.events.forEach(e => {
-    if (e.lineNo < state.currentFight.startLineNo || e.lineNo > state.currentFight.endLineNo) return;
-
-    const parts = splitLine(e.params);
-    if (parts.length < 4) return;
-
-    const sourceGUID = parts[0];
-    const isPlayer = state.players.has(sourceGUID);
-    if (!isPlayer) return;
-
-    if (!stats.has(sourceGUID)) stats.set(sourceGUID, { damage: 0, healing: 0, events: 0 });
-
-    const s = stats.get(sourceGUID);
-    s.events++;
-
-    if (e.type.startsWith('SPELL_') || e.type.startsWith('SWING_') || e.type.startsWith('RANGE_')) {
-      if (e.type.includes('DAMAGE')) {
-        const amount = parseInt(parts[parts.length - 2], 10) || 0;
-        s.damage += amount;
-      } else if (e.type.includes('HEAL')) {
-        const amount = parseInt(parts[parts.length - 2], 10) || 0;
-        s.healing += amount;
-      }
-    }
+function renderFightTeamRow(label, players) {
+  const visiblePlayers = players.slice(0, 10);
+  const hiddenCount = Math.max(0, players.length - visiblePlayers.length);
+  const chips = visiblePlayers.map(player => {
+    const color = getPlayerClassColor(player.guid);
+    return `<span class="fight-card__player" style="--player-color: ${color};" title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</span>`;
   });
-
-  stats.forEach((s, guid) => {
-    s.dps = durationSec > 0 ? Math.round(s.damage / durationSec) : 0;
-    s.hps = durationSec > 0 ? Math.round(s.healing / durationSec) : 0;
-  });
-
-  return stats;
+  if (hiddenCount > 0) chips.push(`<span class="fight-card__player fight-card__player--more">+${hiddenCount}</span>`);
+  if (chips.length === 0) chips.push(`<span class="fight-card__player fight-card__player--more">none</span>`);
+  return `<div class="fight-card__team"><span class="fight-card__team-label">${label}</span><span class="fight-card__team-list">${chips.join('')}</span></div>`;
 }
 
-function getClassKey(playerId) {
-  const player = state.players.get(playerId);
-  if (!player) return 'warrior';
+function getPlayerClassColor(guid) {
+  const classKey = getPlayerClassKey(guid);
+  return CLASS_COLORS[classKey] || 'var(--ink-muted)';
+}
+
+function getPlayerClassKey(guid) {
+  const player = state.players.get(guid);
+  if (!player) return null;
   const specToClass = {
     250: 'dk', 251: 'dk', 252: 'dk',
     577: 'dh', 581: 'dh',
@@ -1341,7 +1917,267 @@ function getClassKey(playerId) {
     265: 'warlock', 266: 'warlock', 267: 'warlock',
     71: 'warrior', 72: 'warrior', 73: 'warrior'
   };
-  return specToClass[player.specId] || 'warrior';
+  return specToClass[player.specId] || null;
+}
+
+function getReactionGroup(flags) {
+  if ((flags & COMBATLOG_REACTION_FRIENDLY) === COMBATLOG_REACTION_FRIENDLY) return 'friendly';
+  if ((flags & COMBATLOG_REACTION_HOSTILE) === COMBATLOG_REACTION_HOSTILE) return 'hostile';
+  return 'unknown';
+}
+
+function selectFight(index) {
+  state.currentFight = state.fights[index];
+  state.selectedSourceGuid = null;
+  state.selectedSpellKey = null;
+  state.selectedFightPanel = 'breakdown';
+  renderFightDetail();
+  renderPlayerGrid();
+  renderTimeline();
+  renderRawLog();
+  renderBreakdownView();
+  renderDeathsView();
+  renderAurasView();
+}
+
+function renderFightDetail() {
+  if (!state.currentFight) return;
+  const f = state.currentFight;
+  fightList.innerHTML = `
+    <div class="fight-detail">
+      <button class="btn" id="back-to-fights" style="margin-bottom: var(--space-6);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to fights
+      </button>
+      <div class="fight-detail__header">
+        <div>
+          <span class="breakdown-row__sub">Fight analysis</span>
+          <h2 class="fight-detail__boss">${escapeHtml(f.bossName)}</h2>
+        </div>
+        <div class="fight-detail__meta">
+          <span class="fight-detail__meta-item"><strong>${DIFFICULTY_LABELS[f.difficulty] || (f.difficulty ? `Diff ${f.difficulty}` : 'PvP')}</strong></span>
+          <span class="fight-detail__meta-item"><strong>${formatDuration(f.duration)}</strong> duration</span>
+          <span class="fight-detail__meta-item ${f.kill ? 'fight-card__meta-item--kill' : ''}"><strong>${f.kill ? 'Kill' : ''}</strong></span>
+          <span class="fight-detail__meta-item">Lines <strong>${f.startLineNo}–${f.endLineNo}</strong></span>
+        </div >
+      </div>
+      ${renderFightSubnav()}
+      <div class="fight-subpanel" id="fight-subpanel">${renderFightSubpanelContent()}</div>
+    </div >
+  `;
+  attachFightSubnavHandlers();
+  attachBreakdownHandlers(fightList);
+  document.getElementById('back-to-fights').addEventListener('click', () => {
+    state.currentFight = null;
+    state.selectedSourceGuid = null;
+    state.selectedSpellKey = null;
+    state.selectedFightPanel = 'breakdown';
+    renderFightList();
+    switchTab('fights');
+  });
+}
+
+function renderFightSubnav() {
+  const panels = [
+    ['breakdown', 'Damage'],
+    ['players', 'Players'],
+    ['timeline', 'Timeline'],
+    ['deaths', 'Deaths'],
+    ['auras', 'Auras'],
+    ['raw', 'Raw log']
+  ];
+
+  return `<div class="fight-subnav" role="tablist" aria-label="Fight detail sections">
+    ${panels.map(([key, label]) => `<button class="fight-subnav__item" type="button" data-fight-panel="${key}" aria-selected="${state.selectedFightPanel === key}">${label}</button>`).join('')}
+  </div>`;
+}
+
+function attachFightSubnavHandlers() {
+  fightList.querySelectorAll('[data-fight-panel]').forEach(button => {
+    button.addEventListener('click', () => {
+      state.selectedFightPanel = button.dataset.fightPanel;
+      state.selectedSourceGuid = null;
+      state.selectedSpellKey = null;
+      renderFightDetail();
+    });
+  });
+}
+
+function renderFightSubpanelContent() {
+  if (!state.currentFight) return '';
+  switch (state.selectedFightPanel) {
+    case 'players': return renderFightPlayersContent();
+    case 'timeline': return renderFightTimelineContent(state.currentFight);
+    case 'deaths': return renderFightPlaceholder('Deaths', 'Death replay will live here for the selected fight window.');
+    case 'auras': return renderFightPlaceholder('Auras', 'Buff and debuff uptime will live here for this fight.');
+    case 'raw': return renderFightRawContent(state.currentFight);
+    case 'breakdown':
+    default: return renderBreakdownContent(state.currentFight);
+  }
+}
+
+function renderFightPlayersContent() {
+  const rows = buildDamageDoneRows(state.currentFight);
+  if (rows.length === 0) return renderFightPlaceholder('Players', 'No player damage was found in this fight window.');
+  return `<div class="breakdown-controls"><button class="filter-btn filter-btn--active">Players in this fight</button><span class="breakdown-row__sub">Sorted by damage done</span></div>
+    <div class="player-grid">
+      ${rows.map(row => `<div class="player-card">
+        <div class="player-card__header">
+          <div class="player-card__class-dot" style="background-color: var(--gold-vein);"></div>
+          <span class="player-card__name">${escapeHtml(row.name)}</span>
+        </div>
+        <div class="player-card__stats">
+          <div class="stat"><span class="stat__label">Damage</span><span class="stat__value">${formatNumber(row.amount)}</span></div>
+          <div class="stat"><span class="stat__label">Spells</span><span class="stat__value">${row.spells.length}</span></div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+
+function renderFightTimelineContent(fight) {
+  const events = state.events
+    .filter(e => e.lineNo >= fight.startLineNo && e.lineNo <= fight.endLineNo && isCombatBoundaryEvent(e.type))
+    .slice(0, 120);
+
+  if (events.length === 0) return renderFightPlaceholder('Timeline', 'No combat events were found in this fight window.');
+
+  return `<div class="breakdown-controls"><button class="filter-btn filter-btn--active">Combat pulse</button><span class="breakdown-row__sub">Showing first ${events.length} dense combat events</span></div>
+    <div class="breakdown-list">
+      ${events.map(event => {
+        const pct = fight.duration > 0 ? Math.max(0, Math.min(100, ((parseDateTime(event.rawDateTime) - fight.startDateTime) / fight.duration) * 100)) : 0;
+        return `<div class="breakdown-row">
+          <div class="breakdown-row__header">
+            <div class="breakdown-row__info"><strong>${escapeHtml(event.type)}</strong><span class="breakdown-row__sub">${escapeHtml(event.rawDateTime)}</span></div>
+            <div class="metric-bar"><div class="metric-bar__fill" style="width: ${pct}%;"></div></div>
+            <div class="breakdown-row__metrics"><span class="breakdown-row__sub">${pct.toFixed(1)}%</span></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderFightRawContent(fight) {
+  const lines = state.rawLines.slice(fight.startLineNo, fight.endLineNo + 1).slice(0, 1000);
+  return `<div class="raw-log"><div class="raw-log__header"><span>Raw lines for this fight</span><span>${lines.length.toLocaleString()} shown</span></div><div class="raw-log__content">
+    ${lines.map(line => `<div class="raw-log__line">${escapeHtml(line)}</div>`).join('')}
+  </div></div>`;
+}
+
+function renderFightPlaceholder(title, description) {
+  return `<div class="empty-state"><h3 class="empty-state__title">${escapeHtml(title)}</h3><p class="empty-state__desc">${escapeHtml(description)}</p></div>`;
+}
+
+// ============================================
+// RENDER: PLAYER GRID
+// ============================================
+
+function renderPlayerGrid() {
+  const players = Array.from(state.players.values());
+  if (players.length === 0) {
+    playerGrid.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <h3 class="empty-state__title">No Players Detected</h3>
+        <p class="empty-state__desc">Players are detected when COMBATANT_INFO is present or when their GUID is found in event source/destination fields.</p>
+      </div >
+    `;
+    return;
+  }
+
+  playerGrid.innerHTML = players.map(player => `
+    <div class="player-card">
+      <div class="player-card__header">
+        <div class="player-card__class-dot" style="background-color: ${CLASS_COLORS[player.specName] || 'var(--gold-glint)'};"></div>
+        <span class="player-card__name">${player.playerId}</span>
+      </div>
+      <div class="player-card__stats">
+        <div class="stat">
+          <span class="stat__label">Strength</span>
+          <span class="stat__value">${player.strength}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Agility</span>
+          <span class="stat__value">${player.agility}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Stamina</span>
+          <span class="stat__value">${player.stamina}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Intellect</span>
+          <span class="stat__value">${player.intellect}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Dodge</span>
+          <span class="stat__value">${player.dodge}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Parry</span>
+          <span class="stat__value">${player.parry}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Block</span>
+          <span class="stat__value">${player.block}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Crit Melee</span>
+          <span class="stat__value">${player.critMelee}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Crit Ranged</span>
+          <span class="stat__value">${player.critRanged}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Crit Spell</span>
+          <span class="stat__value">${player.critSpell}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Speed</span>
+          <span class="stat__value">${player.speed}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Leech</span>
+          <span class="stat__value">${player.leech}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Haste Melee</span>
+          <span class="stat__value">${player.hasteMelee}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Haste Ranged</span>
+          <span class="stat__value">${player.hasteRanged}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Haste Spell</span>
+          <span class="stat__value">${player.hasteSpell}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Avoidance</span>
+          <span class="stat__value">${player.avoidance}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Mastery</span>
+          <span class="stat__value">${player.mastery}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Versatility Damage Done</span>
+          <span class="stat__value">${player.versatilityDamageDone}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Versatility Healing Done</span>
+          <span class="stat__value">${player.versatilityHealingDone}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Versatility Damage Reduction</span>
+          <span class="stat__value">${player.versatilityDamageReduction}</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Armor</span>
+          <span class="stat__value">${player.armor}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
 // ============================================
@@ -1349,111 +2185,64 @@ function getClassKey(playerId) {
 // ============================================
 
 function renderTimeline() {
-  if (!state.currentFight || state.players.size === 0) {
-    timelineEl.innerHTML = `
-      <div class="empty-state">
-        <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <h3 class="empty-state__title">Select a Fight</h3>
-        <p class="empty-state__desc">Choose an encounter from the Fights panel to see the timeline.</p>
-      </div>
-    `;
-    return;
-  }
+  timelineTracksEl.innerHTML = '';
+  bossHpEl.innerHTML = '';
+  phaseLabelsEl.innerHTML = '';
 
-  const players = Array.from(state.players.values());
-  const fightStart = state.currentFight.startDateTime.getTime();
-  const fightEnd = state.currentFight.endDateTime.getTime();
-  const duration = fightEnd - fightStart;
+  if (state.fights.length === 0) return;
 
-  const phases = buildPhases();
+  const fight = state.currentFight || state.fights[0];
+  if (!fight) return;
 
-  bossHpEl.innerHTML = `
-    <div class="timeline__hp-bar" style="width: 100%;"></div>
-    ${phases.map((p, i) => `<div class="timeline__hp-phase" style="left: ${p.pct}%;" title="${escapeHtml(p.name)}"></div>`).join('')}
-  `;
-  phaseLabelsEl.innerHTML = phases.map(p => `<span>${escapeHtml(p.name)}</span>`).join('');
+  // Boss HP Bar
+  const bossHpRatio = 100; // Assuming full health for simplification here
+  bossHpEl.innerHTML = `<div class="timeline__hp-bar" style="width: ${bossHpRatio}%"></div>`;
 
-  timelineTracksEl.innerHTML = players.map((p, idx) => {
-    const classKey = getClassKey(p.playerId);
-    const classColor = CLASS_COLORS[classKey] || '#888';
-    const events = getPlayerTimelineEvents(p.playerId, fightStart, duration);
-    return `
-      <div class="track" data-player="${escapeHtml(p.playerId)}">
-        <div class="track__label">
-          <span class="track__class-color" style="background: ${classColor};"></span>
-          <span class="track__name">${escapeHtml(p.playerId.split('-').pop())}</span>
-          <span class="track__spec">${p.specName}</span>
-        </div>
-        <div class="track__events">
-          ${events.map(ev => `
-            <div class="event event--${ev.type}" style="left: ${ev.pct}%;" title="">
-              <div class="event__tooltip">
-                <div>${ev.time} — ${escapeHtml(ev.spell)}</div>
-                <div>${ev.target ? '→ ' + escapeHtml(ev.target) : ''}</div>
-                <div>${ev.amount ? formatNumber(ev.amount) : ''}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function buildPhases() {
-  const duration = state.currentFight.duration;
-  const phaseCount = Math.min(4, Math.max(2, Math.floor(duration / 90000)));
-  return Array.from({ length: phaseCount }, (_, i) => ({
-    name: i === 0 ? 'Pull' : i === phaseCount - 1 ? 'Execute' : `Phase ${i + 1}`,
-    pct: (i / (phaseCount - 1)) * 100
-  }));
-}
-
-function getPlayerTimelineEvents(playerId, fightStart, duration) {
-  const events = [];
-  if (!state.currentFight) return events;
-
-  state.events.forEach(e => {
-    if (e.lineNo < state.currentFight.startLineNo || e.lineNo > state.currentFight.endLineNo) return;
-
-    const parts = splitLine(e.params);
-    if (parts.length < 4) return;
-
-    const sourceGUID = parts[0];
-    const destGUID = parts[3] || parts[4];
-
-    if (sourceGUID !== playerId && destGUID !== playerId) return;
-
-    const eventTime = parseDateTime(e.rawDateTime).getTime();
-    const pct = ((eventTime - fightStart) / duration) * 100;
-    if (pct < 0 || pct > 100) return;
-
-    let type = 'damage';
-    if (e.type.includes('HEAL')) type = 'heal';
-    else if (e.type.includes('CAST_SUCCESS') || e.type.includes('CAST_START')) type = 'cd';
-    else if (e.type.includes('AURA_APPLIED') || e.type.includes('INTERRUPT') || e.type.includes('DISPEL')) type = 'mechanic';
-    else if (e.type === 'UNIT_DIED' && destGUID === playerId) type = 'death';
-
-    if (events.length > 50) return;
-
-    const mins = Math.floor((eventTime - fightStart) / 60000);
-    const secs = ((eventTime - fightStart) % 60000 / 1000).toFixed(3).padStart(6, '0');
-    const timeStr = `${mins}:${secs}`;
-
-    const spellId = parts[11] || parts[12] || '?';
-    const spellName = `Spell ${spellId}`;
-
-    events.push({
-      time: timeStr,
-      spell: spellName,
-      target: destGUID !== playerId ? destGUID.split('-').pop() : null,
-      amount: parseInt(parts[parts.length - 2], 10) || 0,
-      pct: Math.max(0.5, Math.min(99.5, pct)),
-      type
-    });
+  // Phases
+  const phases = ['Phase 1', 'Phase 2', 'Phase 3']; // Example phases
+  phases.forEach((phase, index) => {
+    phaseLabelsEl.innerHTML += `<span class="timeline__phase-labels__label">${phase}</span>`;
+    bossHpEl.innerHTML += `<div class="timeline__hp-phase" style="left: ${Math.floor(index / (phases.length - 1) * 100)}%; animation-delay: ${index * 0.3}s;"></div>`;
   });
 
-  return events.sort((a, b) => a.pct - b.pct);
+  const fightEvents = state.events
+    .filter(e => e.lineNo >= fight.startLineNo && e.lineNo <= fight.endLineNo && isCombatBoundaryEvent(e.type))
+    .slice(0, 250);
+
+  const fragment = document.createDocumentFragment();
+  fightEvents.forEach(event => {
+    const { lineNo, rawDateTime, type, params } = event;
+    const dt = parseDateTime(rawDateTime);
+    
+    // Simplified timeline positioning based on time relative to fight start
+    const fightStart = fight.startDateTime;
+    const totalDurationMs = fight.duration;
+    const timeOffsetMs = dt - fightStart;
+    const positionPercent = totalDurationMs > 0 ? Math.max(0, Math.min(100, (timeOffsetMs / totalDurationMs) * 100)) : 0;
+
+    const trackDiv = document.createElement('div');
+    trackDiv.className = 'track';
+    
+    let trackName = type;
+    let trackSpec = '';
+    let classColor = 'var(--ink-muted)';
+    
+    if (type.includes('DAMAGE')) { classColor = CLASS_COLORS['warrior']; trackName = 'Damage'; }
+    if (type.includes('HEAL')) { classColor = CLASS_COLORS['priest']; trackName = 'Heal'; }
+    if (type.includes('SPELL')) { classColor = '#fbbf24'; trackName = 'Spell'; }
+
+    trackDiv.innerHTML = `
+      <div class="track__label">${trackName}</div>
+      <div class="track__events" style="left: ${positionPercent}%;">
+        <div class="event event--${type.toLowerCase().includes('damage') ? 'damage' : type.toLowerCase().includes('heal') ? 'heal' : 'mechanic'}" 
+             style="left: 0%; top: 50%; transform: translateY(-50%) scale(1); z-index: 5;" 
+             title="${rawDateTime}">
+        </div>
+      </div>
+    `;
+    fragment.appendChild(trackDiv);
+  });
+  timelineTracksEl.appendChild(fragment);
 }
 
 // ============================================
@@ -1461,57 +2250,509 @@ function getPlayerTimelineEvents(playerId, fightStart, duration) {
 // ============================================
 
 function renderRawLog() {
-  if (!state.currentFight) {
-    rawLogContent.innerHTML = '<div class="empty-state" style="padding: var(--space-8);"><p>Select a fight to view raw log lines.</p></div>';
+  if (state.rawLines.length === 0) {
+    rawLogContent.innerHTML = '<p class="empty-state__desc">No log lines found.</p>';
+    document.getElementById('raw-line-count').textContent = '0 lines';
     return;
   }
 
-  const lines = state.events
-    .filter(e => e.lineNo >= state.currentFight.startLineNo && e.lineNo <= state.currentFight.endLineNo)
-    .slice(0, 500)
-    .map(e => {
-      const parts = splitLine(e.params);
-      return `<div class="raw-log__line" data-line="${e.lineNo}">
-  <span class="raw-log__timestamp">${e.rawDateTime}</span>
-  <span class="raw-log__event">${escapeHtml(e.type)}</span>
-  ${parts.map((p, i) => `<span class="raw-log__part raw-log__part--${i}">${escapeHtml(p)}</span>`).join('')}
-</div>`;
-    }).join('');
+  const fight = state.currentFight;
+  const fightLines = fight ? state.rawLines.slice(fight.startLineNo, fight.endLineNo + 1) : [];
+  const visibleLines = fight
+    ? fightLines.slice(0, 3000)
+    : state.rawLines.slice(0, 1000);
+  const hiddenCount = fight ? Math.max(0, fightLines.length - visibleLines.length) : Math.max(0, state.rawLines.length - visibleLines.length);
+  let html = '';
+  visibleLines.forEach((line, index) => {
+    const lineNo = fight ? fight.startLineNo + index : index;
+    if (!line.trim()) return;
+    const timeEndIndex = line.indexOf('  ');
+    if (timeEndIndex === -1) return;
+    const rawDateTime = line.substr(0, timeEndIndex);
+    const event = line.substr(timeEndIndex + 2);
+    const eventNameEndIndex = event.indexOf(',');
+    if (eventNameEndIndex === -1) return;
+    const eventName = event.substr(0, eventNameEndIndex);
+    const rawEventParams = event.substr(eventNameEndIndex + 1);
 
-  rawLogContent.innerHTML = lines || '<div class="empty-state" style="padding: var(--space-8);"><p>No events in this range.</p></div>';
+    let lineClass = '';
+    if (eventName === 'ENCOUNTER_START' || eventName === 'ENCOUNTER_END') lineClass = 'raw-log__event';
+    if (eventName === 'COMBATANT_INFO') lineClass = 'raw-log__event';
+
+    html += `<div class="raw-log__line ${lineClass}">
+      <span class="raw-log__timestamp">${rawDateTime}</span>
+      <span class="raw-log__event">${eventName}:</span>
+      <span class="raw-log__params">${rawEventParams}</span>
+    </div>`;
+  });
+
+  if (hiddenCount > 0) {
+    html += `<div class="raw-log__line raw-log__line--highlight">Showing ${visibleLines.length.toLocaleString()} lines. ${hiddenCount.toLocaleString()} more hidden to keep the page responsive.</div>`;
+  }
+
+  rawLogContent.innerHTML = html;
+  document.getElementById('raw-line-count').textContent = `${state.rawLines.length} lines`;
 }
+
+// ============================================
+// RENDER: BREAKDOWN VIEW
+// ============================================
+
+function renderBreakdownView() {
+  const viewEl = document.getElementById('breakdown-view');
+  if (state.fights.length === 0) {
+    viewEl.innerHTML = `<div class="empty-state">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <h3 class="empty-state__title">No Fight Data</h3>
+      <p class="empty-state__desc">Load a combat log to generate a breakdown.</p>
+    </div >`;
+    return;
+  }
+
+  const fight = state.currentFight || state.fights[0];
+  if (!fight) return;
+
+  viewEl.innerHTML = renderBreakdownContent(fight);
+  attachBreakdownHandlers(viewEl);
+}
+
+function renderBreakdownContent(fight) {
+  const sourceRows = buildDamageDoneRows(fight);
+  const totalDamage = sourceRows.reduce((sum, row) => sum + row.amount, 0);
+  const selectedRow = state.selectedSourceGuid ? sourceRows.find(row => row.guid === state.selectedSourceGuid) : null;
+  const selectedSpell = selectedRow && state.selectedSpellKey ? selectedRow.spells.find(spell => spell.key === state.selectedSpellKey) : null;
+
+  return `
+    <div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">Damage Done</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)} · ${formatNumber(totalDamage)} total</span>
+    </div>
+    ${selectedSpell && selectedRow ? renderSpellDamageDrilldown(selectedRow, selectedSpell, fight) : renderDamageDoneTable(sourceRows, totalDamage, fight)}
+  `;
+}
+
+function attachBreakdownHandlers(rootEl) {
+  rootEl.querySelectorAll('[data-source-guid]').forEach(row => {
+    const selectSource = () => {
+      state.selectedSourceGuid = row.dataset.sourceGuid;
+      state.selectedSpellKey = null;
+      rerenderBreakdowns();
+    };
+    row.addEventListener('click', selectSource);
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSource(); } });
+  });
+
+  rootEl.querySelectorAll('[data-spell-key]').forEach(row => {
+    const selectSpell = (event) => {
+      event.stopPropagation();
+      state.selectedSpellKey = row.dataset.spellKey;
+      rerenderBreakdowns();
+    };
+    row.addEventListener('click', selectSpell);
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSpell(e); } });
+  });
+
+  const backButton = rootEl.querySelector('[data-breakdown-back]');
+  if (backButton) {
+    backButton.addEventListener('click', () => {
+      state.selectedSourceGuid = null;
+      state.selectedSpellKey = null;
+      rerenderBreakdowns();
+    });
+  }
+
+  const spellBackButton = rootEl.querySelector('[data-spell-back]');
+  if (spellBackButton) {
+    spellBackButton.addEventListener('click', () => {
+      state.selectedSpellKey = null;
+      rerenderBreakdowns();
+    });
+  }
+}
+
+function rerenderBreakdowns() {
+  if (state.currentFight) renderFightDetail();
+  const breakdownPanelVisible = panels.breakdown && !panels.breakdown.classList.contains('hidden');
+  if (breakdownPanelVisible) renderBreakdownView();
+}
+
+function renderDamageDoneTable(rows, totalDamage, fight) {
+  if (rows.length === 0) {
+    return `<div class="empty-state"><h3 class="empty-state__title">No Damage Events</h3><p class="empty-state__desc">No damage events were found inside this fight window.</p></div>`;
+  }
+
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const hierarchy = buildDamageHierarchy(rows);
+  const maxAmount = Math.max(...rows.map(row => row.amount), 1);
+  return `<div class="breakdown-list">
+    ${hierarchy.map((group, index) => `${renderDamageRow(group.player, index + 1, totalDamage, fightSeconds, maxAmount, false)}${group.minions.map(minion => renderDamageRow(minion, '', totalDamage, fightSeconds, maxAmount, true)).join('')}`).join('')}
+  </div>`;
+}
+
+function buildDamageHierarchy(rows) {
+  const players = rows.filter(row => row.guid.startsWith('Player-'));
+  const minionsByOwner = new Map();
+  const orphanMinions = [];
+
+  rows.filter(row => !row.guid.startsWith('Player-')).forEach(row => {
+    if (row.ownerGuid) {
+      if (!minionsByOwner.has(row.ownerGuid)) minionsByOwner.set(row.ownerGuid, []);
+      minionsByOwner.get(row.ownerGuid).push(row);
+    } else {
+      orphanMinions.push(row);
+    }
+  });
+
+  const groups = players.map(player => ({
+    player,
+    total: player.amount + (minionsByOwner.get(player.guid) || []).reduce((sum, minion) => sum + minion.amount, 0),
+    minions: (minionsByOwner.get(player.guid) || []).sort((a, b) => b.amount - a.amount)
+  }));
+
+  orphanMinions.forEach(minion => groups.push({ player: minion, total: minion.amount, minions: [] }));
+  return groups.sort((a, b) => b.total - a.total);
+}
+
+function renderDamageRow(row, rank, totalDamage, fightSeconds, maxAmount, isMinion) {
+  const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
+  const pctOfTotal = totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0;
+  const isSelected = state.selectedSourceGuid === row.guid;
+  return `<div class="breakdown-row ${isMinion ? 'breakdown-row--minion' : ''}" data-source-guid="${escapeHtml(row.guid)}" role="button" tabindex="0">
+    <div class="breakdown-row__header">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--gold-vein);"></div>
+      <div class="breakdown-row__info">
+        <span class="breakdown-row__sub">${rank || 'pet'}</span>
+        <strong>${escapeHtml(row.name)}</strong>
+      </div>
+      <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
+      <div class="breakdown-row__metrics">
+        <span class="breakdown-row__val">${formatNumber(row.amount)}</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${formatNumber(Math.round(row.amount / fightSeconds))}/s</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
+      </div>
+    </div>
+    ${isSelected ? renderInlineSpellRows(row) : ''}
+  </div>`;
+}
+
+function renderInlineSpellRows(row) {
+  const maxSpellAmount = row.spells[0]?.amount || 1;
+  return `<div class="breakdown-row__spells">
+    ${row.spells.map(spell => {
+      const pctOfMax = Math.max(2, (spell.amount / maxSpellAmount) * 100);
+      const pctOfSource = row.amount > 0 ? (spell.amount / row.amount) * 100 : 0;
+      return `<div class="spell-row" data-spell-key="${escapeHtml(spell.key)}" role="button" tabindex="0">
+        <span><strong>${escapeHtml(spell.name)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span></span>
+        <span class="spell-bar-container"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
+        <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(spell.amount)}</span><span class="breakdown-row__sub">${pctOfSource.toFixed(1)}%</span></span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderSourceDamageDrilldown(row, totalDamage, fight) {
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const maxSpellAmount = row.spells[0]?.amount || 1;
+  return `<div class="breakdown-list">
+    <button class="btn" data-breakdown-back type="button">Back to Damage Done</button>
+    <div class="breakdown-row">
+      <div class="breakdown-row__header">
+        <div class="breakdown-row__info">
+          <strong>${escapeHtml(row.name)}</strong>
+          <span class="breakdown-row__sub">${formatNumber(row.amount)} · ${formatNumber(Math.round(row.amount / fightSeconds))}/s · ${(totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0).toFixed(1)}%</span>
+        </div>
+      </div>
+      <div class="breakdown-row__spells">
+        ${row.spells.map(spell => {
+          const pctOfMax = Math.max(2, (spell.amount / maxSpellAmount) * 100);
+          const pctOfSource = row.amount > 0 ? (spell.amount / row.amount) * 100 : 0;
+          return `<div class="spell-row" data-spell-key="${escapeHtml(spell.key)}" role="button" tabindex="0">
+            <span><strong>${escapeHtml(spell.name)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span></span>
+            <span class="spell-bar-container"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
+            <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(spell.amount)}</span><span class="breakdown-row__sub">${pctOfSource.toFixed(1)}%</span></span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSpellDamageDrilldown(row, spell, fight) {
+  const average = spell.hits > 0 ? Math.round(spell.amount / spell.hits) : 0;
+  const critRate = spell.hits > 0 ? (spell.crits / spell.hits) * 100 : 0;
+  const missRate = (spell.hits + spell.misses) > 0 ? (spell.misses / (spell.hits + spell.misses)) * 100 : 0;
+  return `<div class="breakdown-list">
+    <button class="btn" data-spell-back type="button">Back to ${escapeHtml(row.name)}</button>
+    <div class="breakdown-row">
+      <div class="breakdown-row__header">
+        <div class="breakdown-row__info">
+          <strong>${escapeHtml(spell.name)}</strong>
+          <span class="breakdown-row__sub">${escapeHtml(row.name)} · ${formatNumber(spell.amount)} damage</span>
+        </div>
+        <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: 100%;"></div></div>
+        <div class="breakdown-row__metrics">
+          <span class="breakdown-row__val">${formatNumber(spell.amount)}</span>
+          <span class="breakdown-row__sub">${escapeHtml(formatSpellActivity(spell))}</span>
+        </div>
+      </div>
+      <div class="breakdown-row__spells">
+        <div class="metric-grid">
+          ${renderMetricCard(spell.applications > 0 ? 'applications' : 'casts', spell.applications > 0 ? spell.applications : spell.casts)}
+          ${renderMetricCard('events', spell.events)}
+          ${renderMetricCard('hits', spell.hits)}
+          ${renderMetricCard('normal', spell.normals)}
+          ${renderMetricCard('crits', spell.crits)}
+          ${renderMetricCard('crit rate', `${critRate.toFixed(1)}%`)}
+          ${renderMetricCard('misses', spell.misses)}
+          ${renderMetricCard('miss rate', `${missRate.toFixed(1)}%`)}
+          ${renderMetricCard('min', formatNumber(spell.min || 0))}
+          ${renderMetricCard('max', formatNumber(spell.max || 0))}
+          ${renderMetricCard('average', formatNumber(average))}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderMetricCard(label, value) {
+  return `<div class="metric-card"><span class="metric-card__label">${escapeHtml(label)}</span><span class="metric-card__value">${escapeHtml(String(value))}</span></div>`;
+}
+
+function formatSpellActivity(spell) {
+  const parts = [];
+  if (spell.applications > 0) parts.push(`${spell.applications} applications`);
+  else if (spell.casts > 0) parts.push(`${spell.casts} casts`);
+  if (spell.hits > 0) parts.push(`${spell.hits} hits`);
+  if (spell.misses > 0) parts.push(`${spell.misses} misses`);
+  if (parts.length === 0) parts.push(`${spell.events} events`);
+  return parts.join(' · ');
+}
+
+function buildDamageDoneRows(fight) {
+  const sources = new Map();
+  for (const event of state.events) {
+    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+    const damage = parseDamageEvent(event.type, event.params);
+    if (!damage || !damage.sourceGuid) continue;
+
+    if (!sources.has(damage.sourceGuid)) {
+      sources.set(damage.sourceGuid, {
+        guid: damage.sourceGuid,
+        name: getDisplayName(damage.sourceName, damage.sourceGuid),
+        faction: getReactionGroup(damage.sourceFlags),
+        ownerGuid: state.petOwners.get(damage.sourceGuid) || null,
+        amount: 0,
+        spells: new Map()
+      });
+    }
+
+    const source = sources.get(damage.sourceGuid);
+    source.amount += damage.amount;
+    const spellKey = `${damage.spellId || 0}:${damage.spellName}`;
+    const currentSpell = source.spells.get(spellKey) || {
+      key: spellKey,
+      name: damage.spellName,
+      amount: 0,
+      events: 0,
+      casts: 0,
+      applications: 0,
+      hits: 0,
+      normals: 0,
+      crits: 0,
+      misses: 0,
+      min: 0,
+      max: 0
+    };
+
+    currentSpell.amount += damage.amount;
+    currentSpell.events += 1;
+    if (damage.isCast) currentSpell.casts += 1;
+    if (damage.isAura) currentSpell.applications += 1;
+    if (damage.isMiss) currentSpell.misses += 1;
+    if (damage.amount > 0) {
+      currentSpell.hits += 1;
+      if (damage.isCrit) currentSpell.crits += 1;
+      else currentSpell.normals += 1;
+      currentSpell.min = currentSpell.min === 0 ? damage.amount : Math.min(currentSpell.min, damage.amount);
+      currentSpell.max = Math.max(currentSpell.max, damage.amount);
+    }
+    source.spells.set(spellKey, currentSpell);
+  }
+
+  return Array.from(sources.values())
+    .filter(source => source.amount > 0)
+    .map(source => ({
+      ...source,
+      spells: Array.from(source.spells.values()).sort((a, b) => b.amount - a.amount)
+    }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
+function parseDamageEvent(type, rawEventParams) {
+  const isDamage = type.includes('_DAMAGE') || type === 'SWING_DAMAGE' || type === 'RANGE_DAMAGE';
+  const isMiss = type.includes('_MISSED') || type === 'SWING_MISSED' || type === 'RANGE_MISSED';
+  const isCast = type === 'SPELL_CAST_SUCCESS' || type === 'RANGE_CAST_SUCCESS';
+  const isAura = type.includes('AURA_');
+  if (!isDamage && !isMiss && !isCast && !isAura) return null;
+
+  const parts = splitLine(rawEventParams);
+  if (parts.length < 8) return null;
+
+  const result = {
+    sourceGuid: parts[0] || '',
+    sourceName: parts[1] || '',
+    sourceFlags: parseInt(parts[2], 10) || 0,
+    spellId: 0,
+    spellName: type === 'SWING_DAMAGE' ? 'Melee' : type,
+    amount: 0,
+    isCrit: false,
+    isMiss,
+    isCast,
+    isAura
+  };
+
+  if (type === 'SWING_DAMAGE' || type === 'SWING_MISSED') {
+    result.spellName = 'Melee';
+    result.amount = readPositiveNumber(parts[14]) || readFirstLikelyAmount(parts, 8);
+    result.isCrit = readHitFlags(parts[18]).crit;
+    return result;
+  }
+
+  if (type === 'ENVIRONMENTAL_DAMAGE') {
+    result.spellName = parts[8] || 'Environmental';
+    result.amount = readPositiveNumber(parts[28]) || readFirstLikelyAmount(parts, 9);
+    result.isCrit = readHitFlags(parts[31]).crit;
+    return result;
+  }
+
+  result.spellId = parseInt(parts[8], 10) || 0;
+  result.spellName = parts[9] || type;
+  if (isDamage) {
+    result.amount = readPositiveNumber(parts[15]) || readFirstLikelyAmount(parts, 11);
+    result.isCrit = readHitFlags(parts[21]).crit || parts[21] === '1';
+  }
+  return result;
+}
+
+function readHitFlags(value) {
+  const flags = parseInt(value, 10) || 0;
+  return { crit: (flags & 1) === 1 };
+}
+
+function readPositiveNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) && num > 0 ? num : 0;
+}
+
+function readFirstLikelyAmount(parts, startIndex) {
+  for (let i = startIndex; i < parts.length; i++) {
+    const num = readPositiveNumber(parts[i]);
+    if (num >= 100) return num;
+  }
+  return 0;
+}
+
+function getDisplayName(name, guid) {
+  const cleaned = typeof name === 'string' ? name.trim() : '';
+  if (cleaned && cleaned.toLowerCase() !== 'nil' && cleaned !== '0x0000000000000000') return cleaned;
+  if (guid && guid.startsWith('Player-')) return guid;
+  return guid ? guid.split('-').pop() : 'Unknown';
+}
+
+// ============================================
+// RENDER: DEATHS VIEW
+// ============================================
+
+function renderDeathsView() {
+  const viewEl = document.getElementById('deaths-view');
+  if (state.fights.length === 0) {
+    viewEl.innerHTML = `<div class="empty-state">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <h3 class="empty-state__title">No Deaths Recorded</h3>
+      <p class="empty-state__desc">Load a combat log to analyze deaths.</p>
+    </div >`;
+    return;
+  }
+
+  const fight = state.currentFight || state.fights[0];
+  if (!fight) return;
+
+  let deathsHTML = `
+    <div class="empty-state" style="text-align: center;">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <h3 class="empty-state__title">No Deaths Detected</h3>
+      <p class="empty-state__desc">No DEATH events found in this log.</p>
+    </div >`;
+  viewEl.innerHTML = deathsHTML;
+}
+
+// ============================================
+// RENDER: AURAS VIEW
+// ============================================
+
+function renderAurasView() {
+  const viewEl = document.getElementById('auras-view');
+  if (state.fights.length === 0) {
+    viewEl.innerHTML = `<div class="empty-state">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <h3 class="empty-state__title">No Auras Detected</h3>
+      <p class="empty-state__desc">No AURA_ events found in this log.</p>
+    </div >`;
+    return;
+  }
+
+  const fight = state.currentFight || state.fights[0];
+  if (!fight) return;
+
+  // Placeholder for aura data generation
+  let aurasHTML = `
+    <div class="aura-grid">
+      <div class="aura-card">
+        <div class="aura-card__title">
+          <span>Aura Type</span>
+          <span class="aura-count">Count</span>
+        </div>
+        <div class="aura-item">
+          <span>Aura Name</span>
+          <span class="aura-count">5</span>
+        </div>
+      </div>
+    </div>
+  `;
+  viewEl.innerHTML = aurasHTML;
+}
+
 
 // ============================================
 // UTILITIES
 // ============================================
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, c => ({ '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' })[c]);
+function escapeHtml(unsafe) {
+  if (typeof unsafe !== 'string') return unsafe;
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function formatDuration(ms) {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${sec.toString().padStart(2, '0')}`;
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${seconds}s`;
 }
 
-function formatNumber(n) {
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-  return n.toString();
+function formatNumber(num) {
+  if (!Number.isFinite(num)) return '0';
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(2)}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return Math.round(num).toLocaleString();
 }
 
-// ============================================
-// INIT
-// ============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-  const savedLog = localStorage.getItem('combatLog');
-  if (savedLog) {
-    // Could auto-load, but let user choose
-  }
-});
+restorePersistedLog();
 </script>
 </body>
 </html>
