@@ -3,6 +3,7 @@
 
 # production
 /build
+/dist
 
 # During dev it may be nice to have one in the repo directory, but we never want to commit it.
 WoWCombatLog.txt

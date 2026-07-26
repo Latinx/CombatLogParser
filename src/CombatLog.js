@@ -1,6 +1,6 @@
-import CombatLogFileReader from './CombatLogFileReader';
-import FightScanner from './FightScanner';
-import FightParser from './FightParser';
+import CombatLogFileReader from './CombatLogFileReader.js';
+import FightScanner from './FightScanner.js';
+import FightParser from './FightParser.js';
 
 class CombatLog {
   path = null;
@@ -18,7 +18,7 @@ class CombatLog {
    * @returns {Promise<void>}
    */
   getFights(eventListener) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       // TODO: Read index
       // TODO: Validate index
       // TODO: Determine last scanned line
@@ -35,7 +35,7 @@ class CombatLog {
     });
   }
   getEventsForFight(fight, eventListener) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       const parser = new FightParser(this.reader);
       parser.on('event', eventListener);
       parser.on('finish', resolve);

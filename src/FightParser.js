@@ -1,5 +1,5 @@
-import EventEmitter from 'events';
-import parseDateTime from './parseDateTime';
+import EventEmitter from 'node:events';
+import parseDateTime from './parseDateTime.js';
 
 class FightParser extends EventEmitter {
   /** @var {CombatLogFileReader} */

@@ -2,60 +2,31 @@
   "name": "combatlogparser",
   "version": "0.0.1",
   "description": "A WoW combatlog parser by WoWAnalyzer.",
+  "type": "module",
   "main": "src/index.js",
+  "bin": "server.cjs",
   "scripts": {
-    "start": "nodemon src/index.js --exec babel-node",
-    "test": "node scripts/test.js",
-    "build": "babel -d build src --ignore **/*.test.js,__mocks__",
-    "prod": "node --harmony build/index.js"
+    "start": "nodemon src/index.js",
+    "start:app": "node server.cjs",
+    "test": "node --test \"src/**/*.test.js\"",
+    "lint": "eslint .",
+    "build": "node --check src/index.js && node --check server.cjs",
+    "prod": "node src/index.js",
+    "build:win": "pkg . --targets node20-win-x64 --output dist/CombatLogParser.exe"
+  },
+  "pkg": {
+    "assets": [
+      "index.html"
+    ]
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "6.25.0",
-    "babel-eslint": "7.2.3",
-    "babel-jest": "20.0.3",
-    "babel-plugin-module-resolver": "^3.1.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-stage-2": "^6.24.1",
-    "dotenv": "4.0.0",
-    "eslint": "4.10.0",
-    "eslint-config-airbnb": "^15.1.0",
-    "eslint-config-react-app": "^2.0.1",
-    "eslint-loader": "1.9.0",
-    "eslint-plugin-flowtype": "2.39.1",
-    "eslint-plugin-import": "2.8.0",
-    "eslint-plugin-jsx-a11y": "5.1.1",
-    "eslint-plugin-react": "7.4.0",
-    "jest": "20.0.4",
-    "nodemon": "^1.11.0"
-  },
-  "jest": {
-    "testMatch": [
-      "<rootDir>/src/**/__tests__/**/*.js?(x)",
-      "<rootDir>/src/**/?(*.)(spec|test).js?(x)"
-    ],
-    "testEnvironment": "node",
-    "transform": {
-      "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
-    },
-    "transformIgnorePatterns": [
-      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx)$"
-    ]
-  },
-  "babel": {
-    "presets": [
-      "es2015",
-      "stage-2"
-    ],
-    "plugins": [
-      "transform-runtime",
-      ["module-resolver", {
-        "root": ["./src"]
-      }]
-    ]
+    "@eslint/js": "^9.17.0",
+    "@yao-pkg/pkg": "^5.16.1",
+    "dotenv": "^16.4.7",
+    "eslint": "^10.8.0",
+    "globals": "^15.14.0",
+    "nodemon": "^3.1.9"
   }
 }

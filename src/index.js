@@ -1,9 +1,9 @@
-import path from 'path';
+import path from 'node:path';
 
-import { difficultyLabel } from 'common/DIFFICULTIES';
+import { difficultyLabel } from './common/DIFFICULTIES.js';
 
-import CombatLog from './CombatLog';
-import splitLine from './splitLine';
+import CombatLog from './CombatLog.js';
+import splitLine from './splitLine.js';
 
 const filePath = path.resolve('WoWCombatLog.txt'); // TODO: Feed `filePath` through a file function argument
 

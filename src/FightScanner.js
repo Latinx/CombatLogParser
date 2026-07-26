@@ -1,7 +1,7 @@
-import EventEmitter from 'events';
+import EventEmitter from 'node:events';
 
-import splitLine from './splitLine';
-import parseDateTime from './parseDateTime';
+import splitLine from './splitLine.js';
+import parseDateTime from './parseDateTime.js';
 
 class FightScanner extends EventEmitter {
   _reader = null;
@@ -36,7 +36,7 @@ class FightScanner extends EventEmitter {
           // const size = Number(event[3]);
           // Since this is the result of a file split this is a string-type, but it might change at a later point. Because of the non-strict equals check this will continue to work if it turns into a number or bool.
           // noinspection EqualityComparisonWithCoercionJS
-          const kill = event[4] == '1'; // eslint-disable-line eqeqeq
+          const kill = event[4] == '1';
 
           const fight = {
             startLineNo,

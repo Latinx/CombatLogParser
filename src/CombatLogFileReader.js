@@ -1,6 +1,6 @@
-import fs from 'fs';
-import readline from 'readline';
-import EventEmitter from 'events';
+import EventEmitter from 'node:events';
+import fs from 'node:fs';
+import readline from 'node:readline';
 
 /**
  * This *reads* the combatlog file, only doing minimal parsing such as separating the time from the event and splitting the event into parts. Triggers the following events:

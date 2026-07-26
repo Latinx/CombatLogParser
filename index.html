@@ -311,7 +311,13 @@ body {
   border: 1px solid var(--gridline);
 }
 
-.upload-zone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.upload-zone__status {
+  display: block;
+  margin-top: var(--space-4);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
 
 .fight-list { display: flex; flex-direction: column; gap: var(--space-4); }
 
@@ -750,7 +756,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 .player-card__name {
   font-weight: 600;
   font-size: var(--text-base);
-  color: var(--ink);
+  color: var(--player-color, var(--ink));
   flex: 1;
 }
 
@@ -890,29 +896,129 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 .breakdown-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   font-size: 12px;
 }
 
-.breakdown-row {
-  background: rgba(9, 14, 27, 0.88);
-  border: 0;
-  border-bottom: 1px solid rgba(137, 171, 255, 0.09);
-  border-radius: 0;
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.report-panel {
+  min-width: 0;
+  border: 1px solid rgba(137, 171, 255, 0.18);
+  border-radius: 16px;
   overflow: hidden;
-  transition: background var(--transition-fast);
+  background:
+    linear-gradient(180deg, rgba(137, 171, 255, 0.07), transparent 44px),
+    rgba(6, 9, 20, 0.62);
+  box-shadow: inset 0 1px 0 rgba(244, 217, 128, 0.06), 0 14px 36px rgba(0, 0, 0, 0.20);
+}
+
+.report-panel__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background:
+    linear-gradient(90deg, rgba(244, 217, 128, 0.10), transparent 42%),
+    rgba(9, 14, 27, 0.82);
+  border-bottom: 1px solid rgba(244, 217, 128, 0.13);
+}
+
+.report-panel__title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.report-panel__meta {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.report-panel .breakdown-list {
+  max-height: 420px;
+  overflow: auto;
+}
+
+.report-panel--expanded {
+  grid-column: auto;
+}
+
+.report-panel--expanded .breakdown-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.breakdown-row {
+  position: relative;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 38%),
+    rgba(9, 14, 27, 0.90);
+  border: 1px solid rgba(137, 171, 255, 0.09);
+  border-radius: 7px;
+  overflow: hidden;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .breakdown-row:hover {
-  background: rgba(18, 28, 50, 0.92);
+  background:
+    linear-gradient(90deg, rgba(244, 217, 128, 0.08), transparent 42%),
+    rgba(18, 28, 50, 0.94);
+  border-color: rgba(244, 217, 128, 0.20);
+}
+
+.breakdown-row--total {
+  border-color: rgba(244, 217, 128, 0.16);
+  background:
+    linear-gradient(90deg, rgba(244, 217, 128, 0.08), transparent 34%),
+    rgba(10, 16, 31, 0.96);
+}
+
+.breakdown-row[aria-expanded="true"] {
+  border-color: rgba(244, 217, 128, 0.34);
+  box-shadow: inset 3px 0 0 var(--gold-vein), 0 0 0 1px rgba(244, 217, 128, 0.06);
 }
 
 .breakdown-row--minion .breakdown-row__header {
-  padding-left: 28px;
+  padding-left: 38px;
 }
 
 .breakdown-row--minion .breakdown-row__info strong {
   color: var(--ink-muted);
+}
+
+.breakdown-row--minion {
+  margin-left: 18px;
+  border-color: rgba(98, 242, 194, 0.13);
+  background:
+    linear-gradient(90deg, rgba(98, 242, 194, 0.055), transparent 38%),
+    rgba(7, 15, 24, 0.88);
+}
+
+.breakdown-row--minion::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: -6px;
+  bottom: -6px;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(98, 242, 194, 0.50), transparent);
+}
+
+.breakdown-row--minion .breakdown-row__header::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 14px;
+  border-top: 1px solid rgba(98, 242, 194, 0.55);
 }
 
 .breakdown-row__header {
@@ -921,8 +1027,8 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   grid-template-columns: minmax(260px, 1fr) minmax(260px, 36vw) 190px;
   align-items: center;
   gap: 10px;
-  min-height: 28px;
-  padding: 3px 8px;
+  min-height: 30px;
+  padding: 4px 9px;
   cursor: pointer;
   user-select: none;
 }
@@ -932,9 +1038,10 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   top: 0;
   left: 0;
   bottom: 0;
-  opacity: 0.10;
+  opacity: 0.13;
   pointer-events: none;
   transition: width var(--transition-base);
+  box-shadow: inset -18px 0 24px rgba(255, 255, 255, 0.08);
 }
 
 .breakdown-row__info {
@@ -943,12 +1050,13 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   align-items: center;
   gap: var(--space-2);
   z-index: 1;
+  min-width: 0;
 }
 
 .breakdown-row__info strong,
 .spell-row strong {
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
@@ -967,67 +1075,197 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 
 .breakdown-row__val {
   color: var(--gold-glint);
-  font-weight: 500;
+  font-weight: 650;
   text-align: right;
+  text-shadow: 0 0 12px rgba(244, 217, 128, 0.18);
 }
 
 .breakdown-row__sub {
   color: var(--ink-muted);
   font-size: 0.7rem;
+  letter-spacing: 0.02em;
 }
 
 .breakdown-row__spells {
-  padding: 2px 0 6px 24px;
-  background: rgba(6, 9, 20, 0.42);
-  border-top: 1px solid var(--gridline);
+  position: relative;
+  margin: 0 7px 7px 28px;
+  padding: 6px 0 7px 18px;
+  background:
+    linear-gradient(90deg, rgba(98, 242, 194, 0.06), transparent 34%),
+    rgba(6, 9, 20, 0.54);
+  border: 1px solid rgba(98, 242, 194, 0.12);
+  border-radius: 9px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+}
+
+.breakdown-row__spells::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(98, 242, 194, 0.12), rgba(98, 242, 194, 0.62), rgba(98, 242, 194, 0.12));
 }
 
 .spell-row {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(260px, 1fr) minmax(260px, 36vw) 160px;
   align-items: center;
   gap: 10px;
   font-size: var(--text-xs);
-  min-height: 24px;
-  padding: 2px 8px;
-  border-radius: 0;
+  min-height: 26px;
+  padding: 3px 8px 3px 16px;
+  border: 1px solid rgba(137, 171, 255, 0.08);
+  border-radius: 7px;
+  background: rgba(10, 16, 31, 0.62);
   cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.spell-row::before {
+  content: '';
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  width: 11px;
+  border-top: 1px solid rgba(98, 242, 194, 0.48);
 }
 
 .spell-row:hover {
-  background: rgba(98, 242, 194, 0.08);
+  background: rgba(98, 242, 194, 0.09);
+  border-color: rgba(98, 242, 194, 0.22);
+}
+
+.spell-row__link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(244, 217, 128, 0.55);
+}
+
+.spell-row__link:hover,
+.spell-row__link:focus {
+  color: var(--gold-glint);
+  outline: none;
+  text-shadow: 0 0 10px rgba(244, 217, 128, 0.35);
+}
+
+.spell-row > .breakdown-row__spells {
+  grid-column: 1 / -1;
+  margin: 3px -2px 1px 14px;
+  padding-left: 18px;
+  background:
+    linear-gradient(90deg, rgba(125, 92, 255, 0.08), transparent 40%),
+    rgba(4, 7, 14, 0.58);
+}
+
+.spell-row--target {
+  cursor: default;
+  margin-left: 12px;
+  border-color: rgba(125, 92, 255, 0.16);
+  background: rgba(13, 11, 28, 0.72);
+}
+
+.spell-row--target::before {
+  border-top-color: rgba(125, 92, 255, 0.55);
+}
+
+.combat-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  max-width: min(340px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 1px solid rgba(244, 217, 128, 0.72);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(244, 217, 128, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(5, 7, 14, 0.97));
+  box-shadow: 0 0 0 1px rgba(111, 69, 255, 0.32), 0 16px 42px rgba(0, 0, 0, 0.72), 0 0 24px rgba(111, 69, 255, 0.28);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  white-space: pre-line;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-999px, -999px, 0) scale(0.98);
+  transition: opacity 80ms ease-out, transform 80ms ease-out;
+}
+
+.combat-tooltip--visible {
+  opacity: 1;
+  transform: translate3d(var(--tooltip-x), var(--tooltip-y), 0) scale(1);
+}
+
+.combat-tooltip::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(98, 242, 194, 0.13);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.combat-tooltip__title {
+  display: block;
+  color: var(--gold-glint);
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 5px;
+  text-shadow: 0 0 12px rgba(244, 217, 128, 0.35);
+}
+
+.combat-tooltip__body {
+  color: var(--ink-muted);
 }
 
 .spell-bar-container {
+  position: relative;
   height: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 999px;
   margin: 0 var(--space-4);
   overflow: hidden;
 }
 
+.spell-bar-container::after,
+.metric-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 48%, rgba(0, 0, 0, 0.12));
+  pointer-events: none;
+}
+
 .spell-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--rune-violet), var(--gold-vein));
-  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(98, 242, 194, 0.70), var(--rune-violet), var(--gold-vein));
+  border-radius: inherit;
+  box-shadow: 0 0 16px rgba(125, 92, 255, 0.22);
 }
 
 .metric-bar {
   position: relative;
-  height: 16px;
+  height: 17px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16);
 }
 
 .metric-bar__fill {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--rune-violet), var(--gold-vein), var(--healer-mint));
+  box-shadow: 0 0 18px rgba(244, 217, 128, 0.18);
 }
 
 .metric-grid {
@@ -1179,6 +1417,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   .track__events { left: 100px; }
   .track__spec { display: none; }
   .player-grid { grid-template-columns: 1fr; }
+  .report-grid { grid-template-columns: 1fr; }
   .breakdown-row__header,
   .spell-row { grid-template-columns: 1fr; }
   .breakdown-row__metrics { justify-content: flex-start; flex-wrap: wrap; gap: var(--space-3); }
@@ -1211,7 +1450,12 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>Load Log</span>
     </label>
+    <label class="btn" for="directory-input">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h5l2 2h11v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h4l2 2h4"/></svg>
+      <span>Load Directory</span>
+    </label>
     <input type="file" id="file-input" class="hidden" accept=".txt" aria-label="Load WoW combat log file">
+    <input type="file" id="directory-input" class="hidden" webkitdirectory directory multiple aria-label="Load combat log directory">
   </div>
 </header>
 
@@ -1263,7 +1507,13 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <h2 class="upload-zone__title">Replay the fight from the wreckage</h2>
     <p class="upload-zone__desc">Drop a WoWCombatLog file to split combat windows, rank damage, and drill into the player who bent the pull.</p>
     <span class="upload-zone__hint">Local parse · no upload · built for arena nights and raid review</span>
-    <input type="file" id="upload-input" accept=".txt" aria-label="Choose combat log file">
+    <div class="header__actions">
+      <label class="btn btn--primary" for="upload-input">Choose File</label>
+      <label class="btn" for="upload-directory-input">Choose Directory</label>
+    </div>
+    <span class="upload-zone__status" id="upload-status" aria-live="polite"></span>
+    <input type="file" id="upload-input" class="hidden" accept=".txt" aria-label="Choose combat log file">
+    <input type="file" id="upload-directory-input" class="hidden" webkitdirectory directory multiple aria-label="Choose combat log directory">
   </section>
 
   <section class="fight-list hidden" id="panel-fights" role="tabpanel" aria-labelledby="tab-fights" tabindex="0"></section>
@@ -1311,11 +1561,20 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   </section>
 </main>
 
+<div class="combat-tooltip" id="combat-tooltip" role="tooltip" aria-hidden="true"></div>
+
+<script>
+window.whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false };
+</script>
+<script async src="https://wow.zamimg.com/widgets/power.js"></script>
 <script>
 const CLASS_COLORS = {
-  warrior: '#c69b6d', paladin: '#f48cba', hunter: '#aad372', rogue: '#fff468',
-  priest: '#ffffff', dk: '#c41e3a', deathknight: '#c41e3a', shaman: '#0070dd', mage: '#3fc7eb', druid: '#ff7c0a',
-  warlock: '#8788ee', monk: '#00ff98', dh: '#a330c9', demonhunter: '#a330c9', evoker: '#33937f'
+  WARRIOR: '#C69B6D', PALADIN: '#F48CBA', HUNTER: '#AAD372', ROGUE: '#FFF468',
+  PRIEST: '#FFFFFF', DEATHKNIGHT: '#C41E3A', SHAMAN: '#0070DD', MAGE: '#3FC7EB', DRUID: '#FF7C0A',
+  WARLOCK: '#8788EE', MONK: '#00FF98', DEMONHUNTER: '#A330C9', EVOKER: '#33937F',
+  warrior: '#C69B6D', paladin: '#F48CBA', hunter: '#AAD372', rogue: '#FFF468',
+  priest: '#FFFFFF', dk: '#C41E3A', deathknight: '#C41E3A', 'death knight': '#C41E3A', shaman: '#0070DD', mage: '#3FC7EB', druid: '#FF7C0A',
+  warlock: '#8788EE', monk: '#00FF98', dh: '#A330C9', demonhunter: '#A330C9', 'demon hunter': '#A330C9', evoker: '#33937F'
 };
 
 const COMBATLOG_REACTION_FRIENDLY = 0x10;
@@ -1335,6 +1594,34 @@ const SPEC_NAMES = {
   262: 'Elemental', 263: 'Enhancement', 264: 'Restoration',
   265: 'Affliction', 266: 'Demonology', 267: 'Destruction',
   71: 'Arms', 72: 'Fury', 73: 'Protection'
+};
+
+const SPEC_TO_CLASS = {
+  250: 'DEATHKNIGHT', 251: 'DEATHKNIGHT', 252: 'DEATHKNIGHT',
+  577: 'DEMONHUNTER', 581: 'DEMONHUNTER',
+  102: 'DRUID', 103: 'DRUID', 104: 'DRUID', 105: 'DRUID',
+  1467: 'EVOKER', 1468: 'EVOKER', 1473: 'EVOKER',
+  253: 'HUNTER', 254: 'HUNTER', 255: 'HUNTER',
+  62: 'MAGE', 63: 'MAGE', 64: 'MAGE',
+  268: 'MONK', 269: 'MONK', 270: 'MONK',
+  65: 'PALADIN', 66: 'PALADIN', 70: 'PALADIN',
+  256: 'PRIEST', 257: 'PRIEST', 258: 'PRIEST',
+  259: 'ROGUE', 260: 'ROGUE', 261: 'ROGUE',
+  262: 'SHAMAN', 263: 'SHAMAN', 264: 'SHAMAN',
+  265: 'WARLOCK', 266: 'WARLOCK', 267: 'WARLOCK',
+  71: 'WARRIOR', 72: 'WARRIOR', 73: 'WARRIOR'
+};
+
+const SPELL_CLASS_HINTS = {
+  382266: 'EVOKER', 357209: 'EVOKER', 382411: 'EVOKER', 355941: 'EVOKER', 367364: 'EVOKER', 366155: 'EVOKER', 364343: 'EVOKER', 364342: 'EVOKER', 381748: 'EVOKER', 381732: 'EVOKER', 381749: 'EVOKER', 381751: 'EVOKER',
+  75: 'HUNTER', 193455: 'HUNTER', 19434: 'HUNTER', 217200: 'HUNTER', 257620: 'HUNTER', 34026: 'HUNTER', 53351: 'HUNTER', 56641: 'HUNTER', 120360: 'HUNTER', 131894: 'HUNTER', 185358: 'HUNTER',
+  191037: 'DRUID', 164812: 'DRUID', 164815: 'DRUID', 93402: 'DRUID', 24858: 'DRUID', 205636: 'DRUID', 22842: 'DRUID', 81269: 'DRUID', 8936: 'DRUID', 774: 'DRUID', 155777: 'DRUID', 48438: 'DRUID',
+  201427: 'DEMONHUNTER', 201428: 'DEMONHUNTER', 203796: 'DEMONHUNTER', 217832: 'DEMONHUNTER', 227518: 'DEMONHUNTER', 337819: 'DEMONHUNTER',
+  399491: 'MONK', 399497: 'MONK', 399510: 'MONK', 119381: 'MONK', 414143: 'MONK',
+  115191: 'ROGUE', 279043: 'ROGUE',
+  184707: 'WARRIOR',
+  465: 'PALADIN',
+  22888: 'WARRIOR'
 };
 
 const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
@@ -1420,6 +1707,8 @@ function splitLine(line) {
 }
 
 function parseCombatantInfo(parts) {
+  const firstComplexFieldIndex = parts.findIndex(part => part && (part.startsWith('[') || part.startsWith('(')));
+  const specIdIndex = findCombatantSpecIdIndex(parts, firstComplexFieldIndex);
   let i = 0;
   const player = {
     playerId: parts[i++],
@@ -1444,15 +1733,57 @@ function parseCombatantInfo(parts) {
     versatilityHealingDone: parseInt(parts[i++], 10),
     versatilityDamageReduction: parseInt(parts[i++], 10),
     armor: parseInt(parts[i++], 10),
-    specId: parseInt(parts[i++], 10),
+    specId: parseInt(parts[specIdIndex], 10) || 0,
     talents: parts[i++],
     pvpTalents: parts[i++],
     traits: parts[i++],
     gear: parts[i++],
     buffs: parts[i++]
   };
+  i = specIdIndex + 1;
+  player.talents = parts[i++];
+  player.pvpTalents = parts[i++];
+  player.traits = parts[i++];
+  player.gear = parts[i++];
+  player.buffs = parts[i++];
+  player.classKey = SPEC_TO_CLASS[player.specId] || null;
   player.specName = SPEC_NAMES[player.specId] || `Spec ${player.specId}`;
   return player;
+}
+
+function findCombatantSpecIdIndex(parts, firstComplexFieldIndex) {
+  const fallbackIndex = firstComplexFieldIndex > 0 ? firstComplexFieldIndex - 1 : 25;
+  const start = firstComplexFieldIndex > 0 ? Math.max(1, firstComplexFieldIndex - 6) : 1;
+  const end = firstComplexFieldIndex > 0 ? firstComplexFieldIndex : Math.min(parts.length, 32);
+  for (let index = end - 1; index >= start; index--) {
+    const specId = parseInt(parts[index], 10) || 0;
+    if (SPEC_TO_CLASS[specId]) return index;
+  }
+  return fallbackIndex;
+}
+
+function parseCombatLogFields(rawEventParams) {
+  const parts = Array.isArray(rawEventParams) ? rawEventParams : splitLine(rawEventParams);
+  const hasHideCaster = !isGuidLike(parts[0]) && isGuidLike(parts[1]);
+  const offset = hasHideCaster ? 1 : 0;
+  return {
+    parts,
+    hideCaster: hasHideCaster ? parts[0] : null,
+    sourceGuid: parts[offset] || '',
+    sourceName: parts[offset + 1] || '',
+    sourceFlags: Number(parts[offset + 2]) || 0,
+    sourceRaidFlags: Number(parts[offset + 3]) || 0,
+    destGuid: parts[offset + 4] || '',
+    destName: parts[offset + 5] || '',
+    destFlags: Number(parts[offset + 6]) || 0,
+    destRaidFlags: Number(parts[offset + 7]) || 0,
+    payload: parts.slice(offset + 8)
+  };
+}
+
+function isGuidLike(value) {
+  if (!value) return false;
+  return value === '0000000000000000' || value === '0x0000000000000000' || /^[A-Za-z]+-[\w-]+$/.test(value);
 }
 
 let state = {
@@ -1462,8 +1793,12 @@ let state = {
   currentFight: null,
   selectedSourceGuid: null,
   selectedSpellKey: null,
-  selectedFightPanel: 'breakdown',
+  selectedDamageTakenGuid: null,
+  selectedDamageTakenSourceGuid: null,
+  expandedActorGroups: new Set(),
+  selectedFightPanel: 'summary',
   petOwners: new Map(),
+  playerNames: new Map(),
   rawLines: []
 };
 
@@ -1481,7 +1816,10 @@ const panels = {
 const tabs = document.querySelectorAll('.nav__item');
 const uploadZone = document.getElementById('panel-upload');
 const headerFileInput = document.getElementById('file-input');
+const headerDirectoryInput = document.getElementById('directory-input');
 const uploadInput = document.getElementById('upload-input');
+const uploadDirectoryInput = document.getElementById('upload-directory-input');
+const uploadStatus = document.getElementById('upload-status');
 const fightList = document.getElementById('panel-fights');
 const playerGrid = document.getElementById('player-grid');
 const timelineEl = document.getElementById('timeline');
@@ -1489,6 +1827,8 @@ const bossHpEl = document.getElementById('boss-hp');
 const phaseLabelsEl = document.getElementById('phase-labels');
 const timelineTracksEl = document.getElementById('timeline-tracks');
 const rawLogContent = document.getElementById('raw-log-content');
+const combatTooltip = document.getElementById('combat-tooltip');
+const mainEl = document.querySelector('.main');
 
 function switchTab(panelName) {
   Object.entries(panels).forEach(([name, el]) => {
@@ -1523,13 +1863,28 @@ uploadZone.addEventListener('drop', (e) => {
 
 uploadInput.addEventListener('change', (e) => {
   if (e.target.files[0]) handleFile(e.target.files[0]);
+  e.target.value = '';
 });
 
 headerFileInput.addEventListener('change', (e) => {
   if (e.target.files[0]) handleFile(e.target.files[0]);
+  e.target.value = '';
 });
 
-uploadZone.addEventListener('click', () => uploadInput.click());
+uploadDirectoryInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) handleDirectoryFiles(e.target.files);
+  e.target.value = '';
+});
+
+headerDirectoryInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) handleDirectoryFiles(e.target.files);
+  e.target.value = '';
+});
+
+uploadZone.addEventListener('click', (e) => {
+  if (e.target.closest('label, input, button')) return;
+  uploadInput.click();
+});
 
 function handleFile(file) {
   uploadZone.classList.add('hidden');
@@ -1538,19 +1893,58 @@ function handleFile(file) {
   parseLogFile(file);
 }
 
+function handleDirectoryFiles(fileList) {
+  const selectedFiles = Array.from(fileList);
+  const files = selectedFiles
+    .filter(file => /^WoWCombatLog(?:-.+)?\.txt$/i.test(file.name))
+    .sort((a, b) => getFileSortPath(a).localeCompare(getFileSortPath(b), undefined, { numeric: true }));
+  const ignoredCount = selectedFiles.length - files.length;
+  setUploadStatus(`Using ${files.length.toLocaleString()} WoW combat log files; ignored ${ignoredCount.toLocaleString()} other files.`);
+  if (files.length === 0) return;
+  uploadZone.classList.add('hidden');
+  fightList.classList.remove('hidden');
+  switchTab('fights');
+  parseLogFiles(files);
+}
+
+function getFileSortPath(file) {
+  return file.webkitRelativePath || file.name;
+}
+
+function setUploadStatus(message) {
+  if (uploadStatus) uploadStatus.textContent = message;
+}
+
 // ============================================
 // LOG PARSING
 // ============================================
 
 function parseLogFile(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const text = e.target.result;
-    persistCurrentLog(text);
-    loadLogText(text);
-  };
-  reader.onerror = (err) => console.error('File read error:', err);
-  reader.readAsText(file);
+  readFileText(file)
+    .then(text => {
+      persistCurrentLog(text);
+      loadLogText(text);
+    })
+    .catch(err => console.error('File read error:', err));
+}
+
+function parseLogFiles(files) {
+  Promise.all(files.map(readFileText))
+    .then(parts => {
+      const text = parts.join('\n');
+      persistCurrentLog(text);
+      loadLogText(text);
+    })
+    .catch(err => console.error('Directory read error:', err));
+}
+
+function readFileText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result || '');
+    reader.onerror = () => reject(reader.error || new Error(`Could not read ${file.name}`));
+    reader.readAsText(file);
+  });
 }
 
 function loadLogText(text) {
@@ -1561,8 +1955,12 @@ function loadLogText(text) {
     currentFight: null,
     selectedSourceGuid: null,
     selectedSpellKey: null,
-    selectedFightPanel: 'breakdown',
+    selectedDamageTakenGuid: null,
+    selectedDamageTakenSourceGuid: null,
+    expandedActorGroups: new Set(),
+    selectedFightPanel: 'summary',
     petOwners: new Map(),
+    playerNames: new Map(),
     rawLines: text.split('\n')
   };
   parseRawLines();
@@ -1626,7 +2024,7 @@ function getStoredLog(db) {
 function parseRawLines() {
   const COMBAT_GAP_THRESHOLD = 12000;
   const MIN_FIGHT_DURATION = 5000;
-  const MAX_FIGHT_DURATION = 30 * 60 * 1000;
+  const MAX_FIGHT_DURATION = 5 * 60 * 1000;
   const fights = [];
   let currentFightStart = null;
 
@@ -1681,13 +2079,13 @@ function parseRawLines() {
     }
 
     if (isCombatBoundaryEvent(eventName)) {
-      const parts = splitLine(rawEventParams);
+      const fields = parseCombatLogFields(rawEventParams);
       combatEvents.push({
         lineNo,
         dateTime: parseDateTime(rawDateTime),
         eventName,
-        sourceId: parts[0] || '',
-        destId: parts[4] || ''
+        sourceId: fields.sourceGuid,
+        destId: fields.destGuid
       });
     }
   });
@@ -1745,7 +2143,12 @@ function buildTimeGapFights(combatEvents, startIndex, gapThreshold, minDuration,
 
 function addTimeGapFight(fights, startEvent, endEvent, startIndex, minDuration, maxDuration) {
   const duration = endEvent.dateTime - startEvent.dateTime;
-  if (duration < minDuration || duration > maxDuration) return;
+  if (duration < minDuration) return;
+
+  if (duration > maxDuration) {
+    addChunkedTimeGapFights(fights, startEvent, endEvent, startIndex, minDuration, maxDuration);
+    return;
+  }
 
   fights.push({
     startLineNo: startEvent.lineNo,
@@ -1760,11 +2163,44 @@ function addTimeGapFight(fights, startEvent, endEvent, startIndex, minDuration, 
   });
 }
 
+function addChunkedTimeGapFights(fights, startEvent, endEvent, startIndex, minDuration, maxDuration) {
+  let chunkStart = startEvent;
+  while (chunkStart.dateTime < endEvent.dateTime) {
+    const chunkEndTime = new Date(Math.min(chunkStart.dateTime.getTime() + maxDuration, endEvent.dateTime.getTime()));
+    const chunkEnd = {
+      ...endEvent,
+      lineNo: findLastCombatEventLineAtOrBefore(chunkEndTime, chunkStart.lineNo, endEvent.lineNo),
+      dateTime: chunkEndTime
+    };
+    if (chunkEnd.lineNo <= chunkStart.lineNo) break;
+    addTimeGapFight(fights, chunkStart, chunkEnd, startIndex, minDuration, maxDuration);
+    chunkStart = {
+      ...chunkEnd,
+      lineNo: chunkEnd.lineNo + 1,
+      dateTime: chunkEndTime
+    };
+  }
+}
+
+function findLastCombatEventLineAtOrBefore(dateTime, startLineNo, endLineNo) {
+  let bestLineNo = startLineNo;
+  for (let lineNo = startLineNo; lineNo <= endLineNo && lineNo < state.rawLines.length; lineNo++) {
+    const line = state.rawLines[lineNo];
+    const timeEndIndex = line.indexOf('  ');
+    if (timeEndIndex === -1) continue;
+    if (parseDateTime(line.substr(0, timeEndIndex)) <= dateTime) bestLineNo = lineNo;
+    else break;
+  }
+  return bestLineNo;
+}
+
 function parseAllEvents() {
   const players = new Map();
   const events = [];
   const playerGUIDs = new Set();
+  const inferredPlayerClassVotes = new Map();
   const petOwners = new Map();
+  const playerNames = new Map();
 
   state.rawLines.forEach((line, lineNo) => {
     if (!line.trim()) return;
@@ -1788,15 +2224,27 @@ function parseAllEvents() {
     }
 
     // Collect GUIDs from all events where source/dest fields exist and start with 'Player-'
-    const parts = splitLine(rawEventParams);
+    const fields = parseCombatLogFields(rawEventParams);
+    const parts = fields.parts;
     if (parts.length >= 5) {
-      const sourceId = parts[0];
-      const destId = parts[4];
-      if (sourceId && sourceId.startsWith('Player-')) playerGUIDs.add(sourceId);
-      if (destId && destId.startsWith('Player-')) playerGUIDs.add(destId);
+      const sourceId = fields.sourceGuid;
+      const destId = fields.destGuid;
+      if (sourceId && sourceId.startsWith('Player-')) {
+        playerGUIDs.add(sourceId);
+        rememberPlayerName(playerNames, sourceId, fields.sourceName);
+      }
+      if (destId && destId.startsWith('Player-')) {
+        playerGUIDs.add(destId);
+        rememberPlayerName(playerNames, destId, fields.destName);
+      }
+      const spellId = eventHasSpellIdPayload(eventName) ? parseInt(fields.payload[0], 10) || 0 : 0;
+      if (sourceId && sourceId.startsWith('Player-') && spellId && SPELL_CLASS_HINTS[spellId]) {
+        addPlayerClassVote(inferredPlayerClassVotes, sourceId, SPELL_CLASS_HINTS[spellId], spellId);
+      }
       if (eventName === 'SPELL_SUMMON' && sourceId && sourceId.startsWith('Player-') && destId && !destId.startsWith('Player-')) {
         petOwners.set(destId, sourceId);
       }
+      rememberAdvancedUnitOwners(petOwners, fields.payload);
     }
 
     events.push({
@@ -1809,10 +2257,12 @@ function parseAllEvents() {
 
   for (const guid of playerGUIDs) {
     if (!players.has(guid)) {
+      const inferredClass = getBestInferredPlayerClass(inferredPlayerClassVotes, guid);
       players.set(guid, {
         playerId: guid,
         specId: 0,
-        specName: getDisplayName('', guid),
+        classKey: inferredClass,
+        specName: getDisplayName(playerNames.get(guid), guid),
         strength: 0, agility: 0, stamina: 0, intellect: 0,
         dodge: 0, parry: 0, block: 0,
         critMelee: 0, critRanged: 0, critSpell: 0,
@@ -1822,12 +2272,25 @@ function parseAllEvents() {
         versatilityDamageDone: 0, versatilityHealingDone: 0, versatilityDamageReduction: 0,
         armor: 0
       });
+    } else if (!players.get(guid).classKey) {
+      players.get(guid).classKey = getBestInferredPlayerClass(inferredPlayerClassVotes, guid);
     }
   }
 
   state.players = players;
   state.events = events;
   state.petOwners = petOwners;
+  state.playerNames = playerNames;
+}
+
+function rememberAdvancedUnitOwners(petOwners, payload) {
+  for (let index = 0; index < payload.length - 1; index += 1) {
+    const unitGuid = payload[index];
+    const ownerGuid = payload[index + 1];
+    if (isPlayerGuid(ownerGuid) && isValidActorGuid(unitGuid) && !isPlayerGuid(unitGuid)) {
+      petOwners.set(unitGuid, ownerGuid);
+    }
+  }
 }
 
 // ============================================
@@ -1837,7 +2300,8 @@ function parseAllEvents() {
 function renderFightList() {
   const fightsWithPlayers = state.fights
     .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
-    .filter(item => item.players.length > 0);
+    .filter(item => item.players.length > 0)
+    .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
 
   if (fightsWithPlayers.length === 0) {
     fightList.innerHTML = `
@@ -1855,6 +2319,8 @@ function renderFightList() {
       <span class="fight-card__boss">${escapeHtml(fight.bossName)}</span>
       <div class="fight-card__meta">
         <span class="fight-card__meta-item ${fight.difficulty === 0 ? 'fight-card__meta-item--difficulty' : ''}">${DIFFICULTY_LABELS[fight.difficulty] || (fight.difficulty ? `Diff ${fight.difficulty}` : 'PvP')}</span>
+        <span class="fight-card__meta-item">${escapeHtml(formatFightDate(fight.startDateTime))}</span>
+        <span class="fight-card__meta-item fight-card__meta-item--duration">${escapeHtml(formatFightTime(fight.startDateTime))} → ${escapeHtml(formatFightTime(fight.endDateTime))}</span>
         <span class="fight-card__meta-item fight-card__meta-item--duration">${formatDuration(fight.duration)}</span>
         <span class="fight-card__meta-item ${fight.kill ? 'fight-card__meta-item--kill' : ''}">${fight.kill ? 'Kill' : ''}</span>
       </div>
@@ -1894,30 +2360,24 @@ function renderFightTeamRow(label, players) {
   return `<div class="fight-card__team"><span class="fight-card__team-label">${label}</span><span class="fight-card__team-list">${chips.join('')}</span></div>`;
 }
 
+function renderActorName(name, guid, className = '', ownerGuid = null) {
+  ownerGuid = ownerGuid || state.petOwners.get(guid) || null;
+  const classGuid = isPlayerGuid(guid) ? guid : ownerGuid;
+  const color = classGuid ? getPlayerClassColor(classGuid) : 'var(--ink-muted)';
+  const classKey = classGuid ? getPlayerClassKey(classGuid) : null;
+  const title = classKey ? `${classKey} · ${guid}` : `Unknown class · ${guid}`;
+  return `<strong class="${className}" style="color: ${color}; --player-color: ${color};" title="${escapeHtml(title)}">${escapeHtml(name)}</strong>`;
+}
+
 function getPlayerClassColor(guid) {
   const classKey = getPlayerClassKey(guid);
-  return CLASS_COLORS[classKey] || 'var(--ink-muted)';
+  return CLASS_COLORS[classKey] || '#94A3B8';
 }
 
 function getPlayerClassKey(guid) {
   const player = state.players.get(guid);
   if (!player) return null;
-  const specToClass = {
-    250: 'dk', 251: 'dk', 252: 'dk',
-    577: 'dh', 581: 'dh',
-    102: 'druid', 103: 'druid', 104: 'druid', 105: 'druid',
-    1467: 'evoker', 1468: 'evoker', 1473: 'evoker',
-    253: 'hunter', 254: 'hunter', 255: 'hunter',
-    62: 'mage', 63: 'mage', 64: 'mage',
-    268: 'monk', 269: 'monk', 270: 'monk',
-    65: 'paladin', 66: 'paladin', 70: 'paladin',
-    256: 'priest', 257: 'priest', 258: 'priest',
-    259: 'rogue', 260: 'rogue', 261: 'rogue',
-    262: 'shaman', 263: 'shaman', 264: 'shaman',
-    265: 'warlock', 266: 'warlock', 267: 'warlock',
-    71: 'warrior', 72: 'warrior', 73: 'warrior'
-  };
-  return specToClass[player.specId] || null;
+  return player.classKey || SPEC_TO_CLASS[player.specId] || null;
 }
 
 function getReactionGroup(flags) {
@@ -1926,11 +2386,42 @@ function getReactionGroup(flags) {
   return 'unknown';
 }
 
+function rememberPlayerName(playerNames, guid, name) {
+  const cleaned = cleanActorName(name);
+  if (guid && guid.startsWith('Player-') && cleaned) playerNames.set(guid, cleaned);
+}
+
+function eventHasSpellIdPayload(eventName) {
+  return eventName.startsWith('SPELL_') || eventName.startsWith('RANGE_');
+}
+
+function addPlayerClassVote(votesByGuid, guid, classKey, spellId) {
+  if (!classKey) return;
+  if (!votesByGuid.has(guid)) votesByGuid.set(guid, new Map());
+  const votes = votesByGuid.get(guid);
+  if (!votes.has(classKey)) votes.set(classKey, new Set());
+  votes.get(classKey).add(spellId);
+}
+
+function getBestInferredPlayerClass(votesByGuid, guid) {
+  const votes = votesByGuid.get(guid);
+  if (!votes) return null;
+  const ranked = Array.from(votes.entries()).map(([classKey, spellIds]) => [classKey, spellIds.size]).sort((a, b) => b[1] - a[1]);
+  if (ranked.length === 0) return null;
+  const [classKey, score] = ranked[0];
+  const nextScore = ranked[1]?.[1] || 0;
+  if (score < 2 || score === nextScore) return null;
+  return classKey;
+}
+
 function selectFight(index) {
   state.currentFight = state.fights[index];
   state.selectedSourceGuid = null;
   state.selectedSpellKey = null;
-  state.selectedFightPanel = 'breakdown';
+  state.selectedDamageTakenGuid = null;
+  state.selectedDamageTakenSourceGuid = null;
+  state.expandedActorGroups = new Set();
+  state.selectedFightPanel = 'summary';
   renderFightDetail();
   renderPlayerGrid();
   renderTimeline();
@@ -1938,6 +2429,12 @@ function selectFight(index) {
   renderBreakdownView();
   renderDeathsView();
   renderAurasView();
+  resetMainScroll();
+}
+
+function resetMainScroll() {
+  if (mainEl) mainEl.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
 
 function renderFightDetail() {
@@ -1956,6 +2453,9 @@ function renderFightDetail() {
         </div>
         <div class="fight-detail__meta">
           <span class="fight-detail__meta-item"><strong>${DIFFICULTY_LABELS[f.difficulty] || (f.difficulty ? `Diff ${f.difficulty}` : 'PvP')}</strong></span>
+          <span class="fight-detail__meta-item"><strong>${escapeHtml(formatFightDate(f.startDateTime))}</strong></span>
+          <span class="fight-detail__meta-item"><strong>${escapeHtml(formatFightTime(f.startDateTime))}</strong> start</span>
+          <span class="fight-detail__meta-item"><strong>${escapeHtml(formatFightTime(f.endDateTime))}</strong> end</span>
           <span class="fight-detail__meta-item"><strong>${formatDuration(f.duration)}</strong> duration</span>
           <span class="fight-detail__meta-item ${f.kill ? 'fight-card__meta-item--kill' : ''}"><strong>${f.kill ? 'Kill' : ''}</strong></span>
           <span class="fight-detail__meta-item">Lines <strong>${f.startLineNo}–${f.endLineNo}</strong></span>
@@ -1971,7 +2471,10 @@ function renderFightDetail() {
     state.currentFight = null;
     state.selectedSourceGuid = null;
     state.selectedSpellKey = null;
-    state.selectedFightPanel = 'breakdown';
+    state.selectedDamageTakenGuid = null;
+    state.selectedDamageTakenSourceGuid = null;
+    state.expandedActorGroups = new Set();
+    state.selectedFightPanel = 'summary';
     renderFightList();
     switchTab('fights');
   });
@@ -1979,11 +2482,19 @@ function renderFightDetail() {
 
 function renderFightSubnav() {
   const panels = [
-    ['breakdown', 'Damage'],
-    ['players', 'Players'],
-    ['timeline', 'Timeline'],
+    ['summary', 'Summary'],
+    ['damageDone', 'Damage Done'],
+    ['damageTaken', 'Damage Taken'],
+    ['healingDone', 'Healing Done'],
+    ['healingTaken', 'Healing Taken'],
+    ['threat', 'Threat'],
+    ['buffs', 'Buffs'],
+    ['debuffs', 'Debuffs'],
     ['deaths', 'Deaths'],
-    ['auras', 'Auras'],
+    ['interrupts', 'Interrupts'],
+    ['dispels', 'Dispels'],
+    ['resources', 'Resources'],
+    ['casts', 'Casts'],
     ['raw', 'Raw log']
   ];
 
@@ -1998,6 +2509,9 @@ function attachFightSubnavHandlers() {
       state.selectedFightPanel = button.dataset.fightPanel;
       state.selectedSourceGuid = null;
       state.selectedSpellKey = null;
+      state.selectedDamageTakenGuid = null;
+      state.selectedDamageTakenSourceGuid = null;
+      state.expandedActorGroups = new Set();
       renderFightDetail();
     });
   });
@@ -2006,25 +2520,33 @@ function attachFightSubnavHandlers() {
 function renderFightSubpanelContent() {
   if (!state.currentFight) return '';
   switch (state.selectedFightPanel) {
-    case 'players': return renderFightPlayersContent();
-    case 'timeline': return renderFightTimelineContent(state.currentFight);
-    case 'deaths': return renderFightPlaceholder('Deaths', 'Death replay will live here for the selected fight window.');
-    case 'auras': return renderFightPlaceholder('Auras', 'Buff and debuff uptime will live here for this fight.');
+    case 'damageDone': return renderBreakdownContent(state.currentFight);
+    case 'damageTaken': return renderSingleReportContent('Damage Taken', buildDamageTakenRows(state.currentFight), state.currentFight);
+    case 'healingDone': return renderSingleReportContent('Healing Done', buildHealingRows(state.currentFight, 'source'), state.currentFight);
+    case 'healingTaken': return renderSingleReportContent('Healing Taken', buildHealingRows(state.currentFight, 'dest'), state.currentFight);
+    case 'threat': return renderEventCountReport('Threat', state.currentFight, ['THREAT']);
+    case 'buffs': return renderAuraReport('Buffs', state.currentFight, 'buff');
+    case 'debuffs': return renderAuraReport('Debuffs', state.currentFight, 'debuff');
+    case 'deaths': return renderEventCountReport('Deaths', state.currentFight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']);
+    case 'interrupts': return renderEventCountReport('Interrupts', state.currentFight, ['SPELL_INTERRUPT']);
+    case 'dispels': return renderEventCountReport('Dispels', state.currentFight, ['SPELL_DISPEL', 'SPELL_STOLEN', 'SPELL_DISPEL_FAILED']);
+    case 'resources': return renderEventCountReport('Resources', state.currentFight, ['ENERGIZE', 'DRAIN', 'LEECH']);
+    case 'casts': return renderEventCountReport('Casts', state.currentFight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
     case 'raw': return renderFightRawContent(state.currentFight);
-    case 'breakdown':
-    default: return renderBreakdownContent(state.currentFight);
+    case 'summary':
+    default: return renderSummaryContent(state.currentFight);
   }
 }
 
 function renderFightPlayersContent() {
-  const rows = buildDamageDoneRows(state.currentFight);
+  const rows = buildDamageDoneRows(state.currentFight).filter(row => isPlayerGuid(row.guid));
   if (rows.length === 0) return renderFightPlaceholder('Players', 'No player damage was found in this fight window.');
   return `<div class="breakdown-controls"><button class="filter-btn filter-btn--active">Players in this fight</button><span class="breakdown-row__sub">Sorted by damage done</span></div>
     <div class="player-grid">
       ${rows.map(row => `<div class="player-card">
         <div class="player-card__header">
-          <div class="player-card__class-dot" style="background-color: var(--gold-vein);"></div>
-          <span class="player-card__name">${escapeHtml(row.name)}</span>
+          <div class="player-card__class-dot" style="background-color: ${getPlayerClassColor(row.guid)}; color: ${getPlayerClassColor(row.guid)};"></div>
+          ${renderActorName(row.name, row.guid, 'player-card__name')}
         </div>
         <div class="player-card__stats">
           <div class="stat"><span class="stat__label">Damage</span><span class="stat__value">${formatNumber(row.amount)}</span></div>
@@ -2087,8 +2609,8 @@ function renderPlayerGrid() {
   playerGrid.innerHTML = players.map(player => `
     <div class="player-card">
       <div class="player-card__header">
-        <div class="player-card__class-dot" style="background-color: ${CLASS_COLORS[player.specName] || 'var(--gold-glint)'};"></div>
-        <span class="player-card__name">${player.playerId}</span>
+        <div class="player-card__class-dot" style="background-color: ${getPlayerClassColor(player.playerId)}; color: ${getPlayerClassColor(player.playerId)};"></div>
+        ${renderActorName(player.playerId, player.playerId, 'player-card__name')}
       </div>
       <div class="player-card__stats">
         <div class="stat">
@@ -2316,114 +2838,119 @@ function renderBreakdownView() {
   attachBreakdownHandlers(viewEl);
 }
 
-function renderBreakdownContent(fight) {
-  const sourceRows = buildDamageDoneRows(fight);
-  const totalDamage = sourceRows.reduce((sum, row) => sum + row.amount, 0);
-  const selectedRow = state.selectedSourceGuid ? sourceRows.find(row => row.guid === state.selectedSourceGuid) : null;
-  const selectedSpell = selectedRow && state.selectedSpellKey ? selectedRow.spells.find(spell => spell.key === state.selectedSpellKey) : null;
+function renderSummaryContent(fight) {
+  const damageDoneRows = buildDamageDoneRows(fight);
+  const damageTakenRows = buildDamageTakenRows(fight);
+  const healingDoneRows = buildHealingRows(fight, 'source');
+  const healingTakenRows = buildHealingRows(fight, 'dest');
+  const threatRows = buildEventCountRows(fight, ['THREAT']);
+  const buffRows = buildAuraRows(fight, 'buff');
+  const debuffRows = buildAuraRows(fight, 'debuff');
+  const deathRows = buildEventCountRows(fight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']);
+  const interruptRows = buildEventCountRows(fight, ['SPELL_INTERRUPT']);
+  const dispelRows = buildEventCountRows(fight, ['SPELL_DISPEL', 'SPELL_STOLEN', 'SPELL_DISPEL_FAILED']);
+  const resourceRows = buildEventCountRows(fight, ['ENERGIZE', 'DRAIN', 'LEECH']);
+  const castRows = buildEventCountRows(fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
 
-  return `
-    <div class="breakdown-controls">
-      <button class="filter-btn filter-btn--active">Damage Done</button>
+  return `<div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">Summary</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)} · paired report tables</span>
+    </div>
+    <div class="report-grid">
+      ${renderReportPanel('Damage Done', damageDoneRows, fight, true)}
+      ${renderReportPanel('Damage Taken', damageTakenRows, fight, true)}
+      ${renderReportPanel('Healing Done', healingDoneRows, fight, true)}
+      ${renderReportPanel('Healing Taken', healingTakenRows, fight, true)}
+      ${renderReportPanel('Threat', threatRows, fight, false, 'events')}
+      ${renderReportPanel('Casts', castRows, fight, false, 'casts')}
+      ${renderReportPanel('Buffs', buffRows, fight, false, 'applications')}
+      ${renderReportPanel('Debuffs', debuffRows, fight, false, 'applications')}
+      ${renderReportPanel('Deaths', deathRows, fight, false, 'events')}
+      ${renderReportPanel('Interrupts', interruptRows, fight, false, 'casts')}
+      ${renderReportPanel('Dispels', dispelRows, fight, false, 'casts')}
+      ${renderReportPanel('Resources', resourceRows, fight, false, 'events')}
+    </div>`;
+}
+
+function renderSingleReportContent(title, rows, fight) {
+  const interactive = ['Damage Done', 'Damage Taken', 'Healing Done', 'Healing Taken'].includes(title);
+  return `<div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">${escapeHtml(title)}</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)}</span>
+    </div>
+    ${renderReportPanel(title, rows, fight, interactive)}`;
+}
+
+function renderDamageTakenContent(fight) {
+  const targetRows = buildDamageTakenRows(fight);
+  const totalDamage = targetRows.reduce((sum, row) => sum + row.amount, 0);
+  const selectedTarget = state.selectedDamageTakenGuid
+    ? targetRows.find(row => row.guid === state.selectedDamageTakenGuid) || buildActorHierarchy(targetRows).find(group => group.player.guid === state.selectedDamageTakenGuid)?.player
+    : null;
+  const sourceRows = selectedTarget ? buildDamageTakenSourceRows(fight, selectedTarget.guid) : [];
+
+  return `<div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">Damage Taken</button>
       <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)} · ${formatNumber(totalDamage)} total</span>
     </div>
-    ${selectedSpell && selectedRow ? renderSpellDamageDrilldown(selectedRow, selectedSpell, fight) : renderDamageDoneTable(sourceRows, totalDamage, fight)}
-  `;
+    ${selectedTarget ? renderDamageTakenSourceTable(selectedTarget, sourceRows, fight) : renderDamageTakenTargetTable(targetRows, totalDamage, fight, 'damage-taken')}`;
 }
 
-function attachBreakdownHandlers(rootEl) {
-  rootEl.querySelectorAll('[data-source-guid]').forEach(row => {
-    const selectSource = () => {
-      state.selectedSourceGuid = row.dataset.sourceGuid;
-      state.selectedSpellKey = null;
-      rerenderBreakdowns();
-    };
-    row.addEventListener('click', selectSource);
-    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSource(); } });
-  });
-
-  rootEl.querySelectorAll('[data-spell-key]').forEach(row => {
-    const selectSpell = (event) => {
-      event.stopPropagation();
-      state.selectedSpellKey = row.dataset.spellKey;
-      rerenderBreakdowns();
-    };
-    row.addEventListener('click', selectSpell);
-    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSpell(e); } });
-  });
-
-  const backButton = rootEl.querySelector('[data-breakdown-back]');
-  if (backButton) {
-    backButton.addEventListener('click', () => {
-      state.selectedSourceGuid = null;
-      state.selectedSpellKey = null;
-      rerenderBreakdowns();
-    });
-  }
-
-  const spellBackButton = rootEl.querySelector('[data-spell-back]');
-  if (spellBackButton) {
-    spellBackButton.addEventListener('click', () => {
-      state.selectedSpellKey = null;
-      rerenderBreakdowns();
-    });
-  }
-}
-
-function rerenderBreakdowns() {
-  if (state.currentFight) renderFightDetail();
-  const breakdownPanelVisible = panels.breakdown && !panels.breakdown.classList.contains('hidden');
-  if (breakdownPanelVisible) renderBreakdownView();
-}
-
-function renderDamageDoneTable(rows, totalDamage, fight) {
+function renderDamageTakenTargetTable(rows, totalDamage, fight, reportKey = 'damage-taken') {
   if (rows.length === 0) {
-    return `<div class="empty-state"><h3 class="empty-state__title">No Damage Events</h3><p class="empty-state__desc">No damage events were found inside this fight window.</p></div>`;
+    return `<div class="empty-state"><h3 class="empty-state__title">No Player Damage Taken</h3><p class="empty-state__desc">No player targets took damage in this fight window.</p></div>`;
   }
-
+  const hierarchy = buildActorHierarchy(rows);
   const fightSeconds = Math.max(1, fight.duration / 1000);
-  const hierarchy = buildDamageHierarchy(rows);
-  const maxAmount = Math.max(...rows.map(row => row.amount), 1);
+  const maxAmount = Math.max(...hierarchy.flatMap(group => [group.player, ...group.children]).map(row => row.amount), 1);
   return `<div class="breakdown-list">
-    ${hierarchy.map((group, index) => `${renderDamageRow(group.player, index + 1, totalDamage, fightSeconds, maxAmount, false)}${group.minions.map(minion => renderDamageRow(minion, '', totalDamage, fightSeconds, maxAmount, true)).join('')}`).join('')}
+    ${hierarchy.map((group, index) => `${renderDamageTakenTargetRow(group.player, index + 1, totalDamage, fightSeconds, maxAmount, true, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? group.children.map(child => renderDamageTakenTargetRow(child, '', totalDamage, fightSeconds, maxAmount, false, reportKey)).join('') : ''}`).join('')}
   </div>`;
 }
 
-function buildDamageHierarchy(rows) {
-  const players = rows.filter(row => row.guid.startsWith('Player-'));
-  const minionsByOwner = new Map();
-  const orphanMinions = [];
-
-  rows.filter(row => !row.guid.startsWith('Player-')).forEach(row => {
-    if (row.ownerGuid) {
-      if (!minionsByOwner.has(row.ownerGuid)) minionsByOwner.set(row.ownerGuid, []);
-      minionsByOwner.get(row.ownerGuid).push(row);
-    } else {
-      orphanMinions.push(row);
-    }
-  });
-
-  const groups = players.map(player => ({
-    player,
-    total: player.amount + (minionsByOwner.get(player.guid) || []).reduce((sum, minion) => sum + minion.amount, 0),
-    minions: (minionsByOwner.get(player.guid) || []).sort((a, b) => b.amount - a.amount)
-  }));
-
-  orphanMinions.forEach(minion => groups.push({ player: minion, total: minion.amount, minions: [] }));
-  return groups.sort((a, b) => b.total - a.total);
-}
-
-function renderDamageRow(row, rank, totalDamage, fightSeconds, maxAmount, isMinion) {
+function renderDamageTakenTargetRow(row, rank, totalDamage, fightSeconds, maxAmount, isTotal, reportKey = 'damage-taken') {
   const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
   const pctOfTotal = totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0;
-  const isSelected = state.selectedSourceGuid === row.guid;
-  return `<div class="breakdown-row ${isMinion ? 'breakdown-row--minion' : ''}" data-source-guid="${escapeHtml(row.guid)}" role="button" tabindex="0">
+  const expanded = isActorGroupExpanded(row.guid, reportKey);
+  return `<div class="breakdown-row ${isTotal ? 'breakdown-row--total' : 'breakdown-row--minion'}" ${isTotal ? `data-actor-group-guid="${escapeHtml(row.guid)}" data-report-key="${escapeHtml(reportKey)}" aria-expanded="${expanded}"` : `data-taken-target-guid="${escapeHtml(row.guid)}"`} role="button" tabindex="0">
     <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--gold-vein);"></div>
-      <div class="breakdown-row__info">
-        <span class="breakdown-row__sub">${rank || 'pet'}</span>
-        <strong>${escapeHtml(row.name)}</strong>
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--wipe-red);"></div>
+      <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank ? `${expanded ? '−' : '+'} ${rank}` : (row.isPlayerActual ? 'player' : 'pet')}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}${isTotal ? '<span class="breakdown-row__sub">total</span>' : ''}</div>
+      <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
+      <div class="breakdown-row__metrics">
+        <span class="breakdown-row__val">${formatNumber(row.amount)}</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${formatNumber(Math.round(row.amount / fightSeconds))}/s</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
       </div>
+    </div>
+  </div>`;
+}
+
+function renderDamageTakenSourceTable(target, rows, fight) {
+  const totalDamage = rows.reduce((sum, row) => sum + row.amount, 0);
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const maxAmount = Math.max(...rows.map(row => row.amount), 1);
+  return `<div class="breakdown-list">
+    <button class="btn" data-damage-taken-back type="button">Back to Damage Taken</button>
+    <div class="breakdown-row">
+      <div class="breakdown-row__header">
+        <div class="breakdown-row__info">${renderActorName(target.name, target.guid)}<span class="breakdown-row__sub">damage taken by source</span></div>
+        <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: 100%;"></div></div>
+        <div class="breakdown-row__metrics"><span class="breakdown-row__val">${formatNumber(totalDamage)}</span></div>
+      </div>
+    </div>
+    ${rows.length > 0 ? rows.map((row, index) => renderDamageTakenSourceRow(row, index + 1, totalDamage, fightSeconds, maxAmount)).join('') : renderCompactEmptyRow('damage sources')}
+  </div>`;
+}
+
+function renderDamageTakenSourceRow(row, rank, totalDamage, fightSeconds, maxAmount) {
+  const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
+  const pctOfTotal = totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0;
+  const isSelected = state.selectedDamageTakenSourceGuid === row.guid;
+  return `<div class="breakdown-row" data-taken-source-guid="${escapeHtml(row.guid)}" role="button" tabindex="0">
+    <div class="breakdown-row__header">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--wipe-red);"></div>
+      <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}</div>
       <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
         <span class="breakdown-row__val">${formatNumber(row.amount)}</span>
@@ -2435,16 +2962,514 @@ function renderDamageRow(row, rank, totalDamage, fightSeconds, maxAmount, isMini
   </div>`;
 }
 
+function renderEventCountReport(title, fight, typeTokens) {
+  const rows = buildEventCountRows(fight, typeTokens);
+  return `<div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">${escapeHtml(title)}</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)}</span>
+    </div>
+    ${renderReportPanel(title, rows, fight, false, title === 'Casts' || title === 'Interrupts' || title === 'Dispels' ? 'casts' : 'events')}`;
+}
+
+function renderAuraReport(title, fight, auraType) {
+  return `<div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">${escapeHtml(title)}</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)}</span>
+    </div>
+    ${renderReportPanel(title, buildAuraRows(fight, auraType), fight, false, 'applications')}`;
+}
+
+function renderReportPanel(title, rows, fight, interactive = false, unit = 'total') {
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  const topRows = rows.slice(0, 18);
+  const reportKey = getReportKey(title);
+  const expanded = hasExpandedActorGroup(topRows, reportKey);
+  return `<section class="report-panel ${expanded ? 'report-panel--expanded' : ''}">
+    <div class="report-panel__header">
+      <span class="report-panel__title">${escapeHtml(title)}</span>
+      <span class="report-panel__meta">${formatNumber(total)} ${escapeHtml(unit)}</span>
+    </div>
+    ${topRows.length > 0 ? (interactive ? renderDamageDoneTable(topRows, total, fight, reportKey) : renderHierarchicalReportTable(topRows, total, fight, reportKey)) : renderCompactEmptyRow(title)}
+  </section>`;
+}
+
+function getReportKey(title) {
+  return String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
+function hasExpandedActorGroup(rows, reportKey) {
+  return buildActorHierarchy(rows).some(group => isActorGroupExpanded(group.player.guid, reportKey));
+}
+
+function renderHierarchicalReportTable(rows, total, fight, reportKey) {
+  const hierarchy = buildActorHierarchy(rows);
+  if (hierarchy.length === 0) return renderCompactEmptyRow('player rows');
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const maxAmount = Math.max(...hierarchy.map(group => group.total), 1);
+  return `<div class="breakdown-list">
+    ${hierarchy.map((group, index) => `${renderActorTotalRow(group.player, group.total, index + 1, total, fightSeconds, maxAmount, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? group.children.map(child => renderActorChildRow(child, total, fightSeconds, maxAmount)).join('') : ''}`).join('')}
+  </div>`;
+}
+
+function renderActorTotalRow(player, amount, rank, total, fightSeconds, maxAmount, reportKey = 'default') {
+  const pctOfMax = Math.max(2, (amount / maxAmount) * 100);
+  const pctOfTotal = total > 0 ? (amount / total) * 100 : 0;
+  const expanded = isActorGroupExpanded(player.guid, reportKey);
+  return `<div class="breakdown-row breakdown-row--total" data-actor-group-guid="${escapeHtml(player.guid)}" data-report-key="${escapeHtml(reportKey)}" role="button" tabindex="0" aria-expanded="${expanded}">
+    <div class="breakdown-row__header">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--gold-vein);"></div>
+      <div class="breakdown-row__info"><span class="breakdown-row__sub">${expanded ? '−' : '+'} ${rank}</span>${renderActorName(player.name, player.guid)}<span class="breakdown-row__sub">total</span></div>
+      <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
+      <div class="breakdown-row__metrics">
+        <span class="breakdown-row__val">${formatNumber(amount)}</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${formatNumber(Math.round(amount / fightSeconds))}/s</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderActorChildRow(row, total, fightSeconds, maxAmount) {
+  const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
+  const pctOfTotal = total > 0 ? (row.amount / total) * 100 : 0;
+  return `<div class="breakdown-row breakdown-row--minion">
+    <div class="breakdown-row__header">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--rune-violet);"></div>
+      <div class="breakdown-row__info"><span class="breakdown-row__sub">${row.isPlayerActual ? 'player' : 'pet'}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}</div>
+      <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
+      <div class="breakdown-row__metrics">
+        <span class="breakdown-row__val">${formatNumber(row.amount)}</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${formatNumber(Math.round(row.amount / fightSeconds))}/s</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCompactRows(rows, total, fight, interactive) {
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const maxAmount = Math.max(...rows.map(row => row.amount), 1);
+  return `<div class="breakdown-list">
+    ${rows.map((row, index) => interactive
+      ? renderDamageRow(row, index + 1, total, fightSeconds, maxAmount, false)
+      : renderCompactReportRow(row, index + 1, total, fightSeconds, maxAmount)
+    ).join('')}
+  </div>`;
+}
+
+function renderCompactReportRow(row, rank, total, fightSeconds, maxAmount) {
+  const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
+  const pctOfTotal = total > 0 ? (row.amount / total) * 100 : 0;
+  return `<div class="breakdown-row">
+    <div class="breakdown-row__header">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--rune-violet);"></div>
+      <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}</div>
+      <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
+      <div class="breakdown-row__metrics">
+        <span class="breakdown-row__val">${formatNumber(row.amount)}</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${formatNumber(Math.round(row.amount / fightSeconds))}/s</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCompactEmptyRow(title) {
+  return `<div class="breakdown-list"><div class="breakdown-row"><div class="breakdown-row__header"><div class="breakdown-row__info"><strong>No ${escapeHtml(title.toLowerCase())}</strong><span class="breakdown-row__sub">not found in this fight window</span></div></div></div></div>`;
+}
+
+function renderBreakdownContent(fight) {
+  const sourceRows = buildDamageDoneRows(fight);
+  const totalDamage = sourceRows.reduce((sum, row) => sum + row.amount, 0);
+
+  return `
+    <div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">Damage Done</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)} · ${formatNumber(totalDamage)} total</span>
+    </div>
+    ${renderDamageDoneTable(sourceRows, totalDamage, fight)}
+  `;
+}
+
+function attachBreakdownHandlers(rootEl) {
+  rootEl.querySelectorAll('[data-actor-group-guid]').forEach(row => {
+    const toggleGroup = () => {
+      const previousTop = row.getBoundingClientRect().top;
+      toggleActorGroup(row.dataset.actorGroupGuid, row.dataset.reportKey || 'default');
+      rerenderBreakdowns();
+      const nextRow = document.querySelector(`[data-actor-group-guid="${cssEscape(row.dataset.actorGroupGuid)}"][data-report-key="${cssEscape(row.dataset.reportKey || 'default')}"]`);
+      if (nextRow) window.scrollBy(0, nextRow.getBoundingClientRect().top - previousTop);
+    };
+    row.addEventListener('click', toggleGroup);
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(); } });
+  });
+
+  rootEl.querySelectorAll('[data-source-guid]').forEach(row => {
+    const selectSource = (event) => {
+      event.stopPropagation();
+      state.selectedSourceGuid = state.selectedSourceGuid === row.dataset.sourceGuid ? null : row.dataset.sourceGuid;
+      state.selectedSpellKey = null;
+      rerenderBreakdowns();
+    };
+    row.addEventListener('click', selectSource);
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSource(e); } });
+  });
+
+  rootEl.querySelectorAll('[data-taken-target-guid]').forEach(row => {
+    const selectTarget = (event) => {
+      event.stopPropagation();
+      state.selectedDamageTakenGuid = state.selectedDamageTakenGuid === row.dataset.takenTargetGuid ? null : row.dataset.takenTargetGuid;
+      state.selectedDamageTakenSourceGuid = null;
+      rerenderBreakdowns();
+    };
+    row.addEventListener('click', selectTarget);
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectTarget(e); } });
+  });
+
+  rootEl.querySelectorAll('[data-taken-source-guid]').forEach(row => {
+    const selectSource = (event) => {
+      event.stopPropagation();
+      state.selectedDamageTakenSourceGuid = state.selectedDamageTakenSourceGuid === row.dataset.takenSourceGuid ? null : row.dataset.takenSourceGuid;
+      rerenderBreakdowns();
+    };
+    row.addEventListener('click', selectSource);
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSource(e); } });
+  });
+
+  rootEl.querySelectorAll('[data-spell-key]').forEach(row => {
+    const selectSpell = (event) => {
+      event.stopPropagation();
+      state.selectedSpellKey = state.selectedSpellKey === row.dataset.spellKey ? null : row.dataset.spellKey;
+      rerenderBreakdowns();
+    };
+    row.addEventListener('click', selectSpell);
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSpell(e); } });
+  });
+
+  rootEl.querySelectorAll('.spell-row--target').forEach(row => {
+    row.addEventListener('click', event => event.stopPropagation());
+  });
+
+  rootEl.querySelectorAll('.spell-row__link').forEach(link => {
+    link.addEventListener('click', event => event.stopPropagation());
+    link.addEventListener('keydown', event => event.stopPropagation());
+  });
+
+  const backButton = rootEl.querySelector('[data-breakdown-back]');
+  if (backButton) {
+    backButton.addEventListener('click', () => {
+      state.selectedSourceGuid = null;
+      state.selectedSpellKey = null;
+      rerenderBreakdowns();
+    });
+  }
+
+  const damageTakenBackButton = rootEl.querySelector('[data-damage-taken-back]');
+  if (damageTakenBackButton) {
+    damageTakenBackButton.addEventListener('click', () => {
+      state.selectedDamageTakenGuid = null;
+      state.selectedDamageTakenSourceGuid = null;
+      rerenderBreakdowns();
+    });
+  }
+
+  const spellBackButton = rootEl.querySelector('[data-spell-back]');
+  if (spellBackButton) {
+    spellBackButton.addEventListener('click', () => {
+      state.selectedSpellKey = null;
+      rerenderBreakdowns();
+    });
+  }
+
+  attachCombatTooltips(rootEl);
+  refreshWowheadTooltips();
+}
+
+function attachCombatTooltips(rootEl) {
+  if (!combatTooltip) return;
+  rootEl.querySelectorAll('[data-tooltip]').forEach(el => {
+    const showTooltip = (event) => {
+      const text = el.dataset.tooltip || '';
+      if (!text) return;
+      combatTooltip.innerHTML = formatCombatTooltipHtml(text);
+      combatTooltip.setAttribute('aria-hidden', 'false');
+      combatTooltip.classList.add('combat-tooltip--visible');
+      positionCombatTooltip(event);
+    };
+    const moveTooltip = (event) => positionCombatTooltip(event);
+    const hideTooltip = () => {
+      combatTooltip.classList.remove('combat-tooltip--visible');
+      combatTooltip.setAttribute('aria-hidden', 'true');
+    };
+    el.addEventListener('mouseenter', showTooltip);
+    el.addEventListener('mousemove', moveTooltip);
+    el.addEventListener('mouseleave', hideTooltip);
+    el.addEventListener('focus', showTooltip);
+    el.addEventListener('blur', hideTooltip);
+  });
+}
+
+function positionCombatTooltip(event) {
+  if (!combatTooltip) return;
+  const padding = 12;
+  const offset = 18;
+  const rect = combatTooltip.getBoundingClientRect();
+  const sourceRect = event.currentTarget?.getBoundingClientRect?.();
+  const baseX = event.clientX || (sourceRect ? sourceRect.left + sourceRect.width / 2 : padding);
+  const baseY = event.clientY || (sourceRect ? sourceRect.top : padding);
+  let x = baseX + offset;
+  let y = baseY + offset;
+  if (x + rect.width + padding > window.innerWidth) x = baseX - rect.width - offset;
+  if (y + rect.height + padding > window.innerHeight) y = baseY - rect.height - offset;
+  combatTooltip.style.setProperty('--tooltip-x', `${Math.max(padding, x)}px`);
+  combatTooltip.style.setProperty('--tooltip-y', `${Math.max(padding, y)}px`);
+}
+
+function formatCombatTooltipHtml(text) {
+  const lines = String(text).split('\n');
+  const title = lines.shift() || '';
+  const body = lines.join('\n');
+  return `<span class="combat-tooltip__title">${escapeHtml(title)}</span><span class="combat-tooltip__body">${escapeHtml(body)}</span>`;
+}
+
+function refreshWowheadTooltips() {
+  if (window.$WowheadPower && typeof window.$WowheadPower.refreshLinks === 'function') {
+    window.$WowheadPower.refreshLinks();
+  }
+}
+
+function isActorGroupExpanded(guid, reportKey = 'default') {
+  return state.expandedActorGroups.has(`${state.selectedFightPanel}:${reportKey}:${guid}`);
+}
+
+function toggleActorGroup(guid, reportKey = 'default') {
+  const key = `${state.selectedFightPanel}:${reportKey}:${guid}`;
+  state.selectedSourceGuid = null;
+  state.selectedSpellKey = null;
+  state.selectedDamageTakenGuid = null;
+  state.selectedDamageTakenSourceGuid = null;
+  if (state.expandedActorGroups.has(key)) state.expandedActorGroups.delete(key);
+  else state.expandedActorGroups.add(key);
+}
+
+function cssEscape(value) {
+  if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(value);
+  return String(value).replace(/"/g, '\\"');
+}
+
+function rerenderBreakdowns() {
+  if (state.currentFight) renderFightDetail();
+  const breakdownPanelVisible = panels.breakdown && !panels.breakdown.classList.contains('hidden');
+  if (breakdownPanelVisible) renderBreakdownView();
+}
+
+function renderDamageDoneTable(rows, totalDamage, fight, reportKey = 'damage-done') {
+  if (rows.length === 0) {
+    return `<div class="empty-state"><h3 class="empty-state__title">No Damage Events</h3><p class="empty-state__desc">No damage events were found inside this fight window.</p></div>`;
+  }
+
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const hierarchy = buildDamageHierarchy(rows);
+  if (hierarchy.length === 0) {
+    return `<div class="empty-state"><h3 class="empty-state__title">No Player Damage</h3><p class="empty-state__desc">Only NPC or unowned actor damage was found in this fight window.</p></div>`;
+  }
+  const displayedRows = hierarchy.flatMap(group => [group.player, ...group.children]);
+  const maxAmount = Math.max(...displayedRows.map(row => row.amount), 1);
+  return `<div class="breakdown-list">
+    ${hierarchy.map((group, index) => `${renderActorTotalRow(group.player, group.total, index + 1, totalDamage, fightSeconds, maxAmount, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? renderExpandedActorGroup(group, totalDamage, fightSeconds, maxAmount, reportKey) : ''}`).join('')}
+  </div>`;
+}
+
+function renderExpandedActorGroup(group, totalDamage, fightSeconds, maxAmount, reportKey) {
+  const playerChild = group.children.find(child => child.isPlayerActual);
+  if (group.children.length === 1 && playerChild) return renderInlineSpellRows(playerChild);
+  return group.children.map(child => renderDamageRow(child, '', totalDamage, fightSeconds, maxAmount, true, reportKey)).join('');
+}
+
+function buildDamageHierarchy(rows) {
+  return buildActorHierarchy(rows);
+}
+
+function buildActorHierarchy(rows) {
+  const playersByGuid = new Map();
+  const childrenByOwner = new Map();
+
+  rows.forEach(row => {
+    if (isPlayerGuid(row.guid)) {
+      playersByGuid.set(row.guid, row);
+      if (!childrenByOwner.has(row.guid)) childrenByOwner.set(row.guid, []);
+      if (row.amount > 0) childrenByOwner.get(row.guid).push({ ...row, isPlayerActual: true });
+      return;
+    }
+
+    if (!isPlayerGuid(row.ownerGuid)) return;
+    if (!playersByGuid.has(row.ownerGuid)) {
+      playersByGuid.set(row.ownerGuid, {
+        guid: row.ownerGuid,
+        name: getDisplayName('', row.ownerGuid),
+        faction: row.faction,
+        ownerGuid: null,
+        amount: 0,
+        spells: []
+      });
+    }
+    if (!childrenByOwner.has(row.ownerGuid)) childrenByOwner.set(row.ownerGuid, []);
+    childrenByOwner.get(row.ownerGuid).push({ ...row, isPlayerActual: false });
+  });
+
+  return Array.from(playersByGuid.values()).map(player => {
+    const children = mergeActorChildren(childrenByOwner.get(player.guid) || []).sort((a, b) => b.amount - a.amount);
+    const total = children.reduce((sum, child) => sum + child.amount, 0);
+    return {
+      player: { ...player, amount: total },
+      total,
+      children,
+      minions: children.filter(child => !child.isPlayerActual)
+    };
+  }).filter(group => group.total > 0).sort((a, b) => b.total - a.total);
+}
+
+function mergeActorChildren(children) {
+  const merged = new Map();
+  children.forEach(child => {
+    const key = child.isPlayerActual ? `player:${child.guid}` : `pet:${normalizeActorName(child.name)}`;
+    if (!merged.has(key)) {
+      merged.set(key, { ...child, guid: child.isPlayerActual ? child.guid : key, spells: mergeSpellRows([], child.spells || []) });
+      return;
+    }
+    const existing = merged.get(key);
+    existing.amount += child.amount;
+    existing.spells = mergeSpellRows(existing.spells || [], child.spells || []);
+  });
+  return Array.from(merged.values());
+}
+
+function mergeSpellRows(existingSpells, nextSpells) {
+  const spells = new Map(existingSpells.map(spell => [spell.key, { ...spell }]));
+  nextSpells.forEach(spell => {
+    if (!spells.has(spell.key)) {
+      spells.set(spell.key, { ...spell });
+      return;
+    }
+    const current = spells.get(spell.key);
+    current.amount += spell.amount;
+    current.events += spell.events || 0;
+    current.casts += spell.casts || 0;
+    current.applications += spell.applications || 0;
+    current.hits += spell.hits || 0;
+    current.normals += spell.normals || 0;
+    current.crits += spell.crits || 0;
+    current.misses += spell.misses || 0;
+    current.min = current.min === 0 ? spell.min : Math.min(current.min, spell.min || current.min);
+    current.max = Math.max(current.max || 0, spell.max || 0);
+    current.spellId = current.spellId || spell.spellId || 0;
+    current.school = current.school || spell.school || '';
+    current.schoolName = current.schoolName || spell.schoolName || '';
+    current.targets = mergeTargetRows(current.targets || [], spell.targets || []);
+  });
+  return Array.from(spells.values()).sort((a, b) => b.amount - a.amount);
+}
+
+function mergeTargetRows(existingTargets, nextTargets) {
+  const targets = new Map(existingTargets.map(target => [target.guid, { ...target }]));
+  nextTargets.forEach(target => {
+    if (!targets.has(target.guid)) {
+      targets.set(target.guid, { ...target });
+      return;
+    }
+    const current = targets.get(target.guid);
+    current.amount += target.amount;
+    current.events += target.events || 0;
+    current.hits += target.hits || 0;
+    current.crits += target.crits || 0;
+    current.misses += target.misses || 0;
+    current.min = current.min === 0 ? target.min : Math.min(current.min, target.min || current.min);
+    current.max = Math.max(current.max || 0, target.max || 0);
+  });
+  return Array.from(targets.values()).sort((a, b) => b.amount - a.amount);
+}
+
+function normalizeActorName(name) {
+  return String(name || 'unknown').trim().toLowerCase();
+}
+
+function findSelectedSpellRow(rowGroups) {
+  if (!state.selectedSourceGuid) return null;
+  for (const groupDef of rowGroups) {
+    const rows = Array.isArray(groupDef) ? groupDef : groupDef.rows;
+    const reportKey = Array.isArray(groupDef) ? 'default' : groupDef.reportKey;
+    for (const group of buildActorHierarchy(rows)) {
+      const selected = group.children.find(child => (child.selectionGuid || `${reportKey}:${child.guid}`) === state.selectedSourceGuid);
+      if (selected) return selected;
+    }
+  }
+  return null;
+}
+
+function renderDamageRow(row, rank, totalDamage, fightSeconds, maxAmount, isMinion, reportKey = 'damage-done') {
+  const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
+  const pctOfTotal = totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0;
+  const selectionKey = row.selectionGuid || `${reportKey}:${row.guid}`;
+  const isSelected = state.selectedSourceGuid === selectionKey;
+  return `<div class="breakdown-row ${isMinion ? 'breakdown-row--minion' : ''}" data-source-guid="${escapeHtml(selectionKey)}" role="button" tabindex="0">
+    <div class="breakdown-row__header">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--gold-vein);"></div>
+      <div class="breakdown-row__info">
+        <span class="breakdown-row__sub">${rank || (row.isPlayerActual ? 'player' : 'pet')}</span>
+        ${renderActorName(row.name, row.guid, '', row.ownerGuid)}
+      </div>
+      <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
+      <div class="breakdown-row__metrics">
+        <span class="breakdown-row__val">${formatNumber(row.amount)}</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${formatNumber(Math.round(row.amount / fightSeconds))}/s</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
+      </div>
+    </div>
+    ${isSelected && row.spells?.length ? renderInlineSpellRows(row) : ''}
+  </div>`;
+}
+
 function renderInlineSpellRows(row) {
   const maxSpellAmount = row.spells[0]?.amount || 1;
   return `<div class="breakdown-row__spells">
     ${row.spells.map(spell => {
       const pctOfMax = Math.max(2, (spell.amount / maxSpellAmount) * 100);
       const pctOfSource = row.amount > 0 ? (spell.amount / row.amount) * 100 : 0;
-      return `<div class="spell-row" data-spell-key="${escapeHtml(spell.key)}" role="button" tabindex="0">
-        <span><strong>${escapeHtml(spell.name)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span></span>
-        <span class="spell-bar-container"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
+      const selectionKey = getSpellSelectionKey(row, spell);
+      const expanded = state.selectedSpellKey === selectionKey;
+      return `<div class="spell-row" data-spell-key="${escapeHtml(selectionKey)}" role="button" tabindex="0" aria-expanded="${expanded}">
+        <span><strong>${expanded ? '−' : '+'} ${renderSpellName(spell)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span></span>
+        <span class="spell-bar-container" data-tooltip="${escapeHtml(formatSpellTooltip(spell))}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
         <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(spell.amount)}</span><span class="breakdown-row__sub">${pctOfSource.toFixed(1)}%</span></span>
+        ${expanded ? renderInlineSpellTargetRows(spell) : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function getSpellSelectionKey(row, spell) {
+  return `${row.selectionGuid || row.guid}:${spell.key}`;
+}
+
+function renderSpellName(spell) {
+  if (!spell.spellId) return escapeHtml(spell.name);
+  return `<a class="spell-row__link" href="https://www.wowhead.com/spell=${encodeURIComponent(spell.spellId)}" data-wowhead="spell=${escapeHtml(String(spell.spellId))}" target="_blank" rel="noopener noreferrer">${escapeHtml(spell.name)}</a>`;
+}
+
+function renderInlineSpellTargetRows(spell) {
+  const targets = spell.targets || [];
+  if (targets.length === 0) return `<div class="breakdown-row__sub">No target detail for this spell.</div>`;
+  const maxTargetAmount = Math.max(...targets.map(target => target.amount), 1);
+  return `<div class="breakdown-row__spells">
+    ${targets.map((target, index) => {
+      const pctOfMax = Math.max(2, (target.amount / maxTargetAmount) * 100);
+      const pctOfSpell = spell.amount > 0 ? (target.amount / spell.amount) * 100 : 0;
+      const average = target.hits > 0 ? Math.round(target.amount / target.hits) : 0;
+      const tooltip = `${target.name}\nAmount: ${formatNumber(target.amount)}\nHits: ${target.hits}\nCrits: ${target.crits}\nMisses: ${target.misses}\nMin: ${formatNumber(target.min || 0)}\nMax: ${formatNumber(target.max || 0)}\nAverage: ${formatNumber(average)}`;
+      return `<div class="spell-row spell-row--target">
+        <span><span class="breakdown-row__sub">${index + 1}</span> ${renderActorName(target.name, target.guid)}</span>
+        <span class="spell-bar-container" data-tooltip="${escapeHtml(tooltip)}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
+        <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(target.amount)}</span><span class="breakdown-row__sub">${pctOfSpell.toFixed(1)}%</span></span>
       </div>`;
     }).join('')}
   </div>`;
@@ -2458,7 +3483,7 @@ function renderSourceDamageDrilldown(row, totalDamage, fight) {
     <div class="breakdown-row">
       <div class="breakdown-row__header">
         <div class="breakdown-row__info">
-          <strong>${escapeHtml(row.name)}</strong>
+          ${renderActorName(row.name, row.guid)}
           <span class="breakdown-row__sub">${formatNumber(row.amount)} · ${formatNumber(Math.round(row.amount / fightSeconds))}/s · ${(totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0).toFixed(1)}%</span>
         </div>
       </div>
@@ -2467,8 +3492,8 @@ function renderSourceDamageDrilldown(row, totalDamage, fight) {
           const pctOfMax = Math.max(2, (spell.amount / maxSpellAmount) * 100);
           const pctOfSource = row.amount > 0 ? (spell.amount / row.amount) * 100 : 0;
           return `<div class="spell-row" data-spell-key="${escapeHtml(spell.key)}" role="button" tabindex="0">
-            <span><strong>${escapeHtml(spell.name)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span></span>
-            <span class="spell-bar-container"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
+            <span><strong>${renderSpellName(spell)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span></span>
+            <span class="spell-bar-container" data-tooltip="${escapeHtml(formatSpellTooltip(spell))}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
             <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(spell.amount)}</span><span class="breakdown-row__sub">${pctOfSource.toFixed(1)}%</span></span>
           </div>`;
         }).join('')}
@@ -2481,22 +3506,29 @@ function renderSpellDamageDrilldown(row, spell, fight) {
   const average = spell.hits > 0 ? Math.round(spell.amount / spell.hits) : 0;
   const critRate = spell.hits > 0 ? (spell.crits / spell.hits) * 100 : 0;
   const missRate = (spell.hits + spell.misses) > 0 ? (spell.misses / (spell.hits + spell.misses)) * 100 : 0;
+  const actorColor = isPlayerGuid(row.guid) ? getPlayerClassColor(row.guid) : 'var(--ink-muted)';
+  const targets = spell.targets || [];
+  const maxTargetAmount = Math.max(...targets.map(target => target.amount), 1);
   return `<div class="breakdown-list">
     <button class="btn" data-spell-back type="button">Back to ${escapeHtml(row.name)}</button>
     <div class="breakdown-row">
       <div class="breakdown-row__header">
         <div class="breakdown-row__info">
-          <strong>${escapeHtml(spell.name)}</strong>
-          <span class="breakdown-row__sub">${escapeHtml(row.name)} · ${formatNumber(spell.amount)} damage</span>
+          <strong>${renderSpellName(spell)}</strong>
+          <span class="breakdown-row__sub"><span style="color: ${actorColor};">${escapeHtml(row.name)}</span> · ${escapeHtml(spell.schoolName || 'Unknown school')} · ${formatNumber(spell.amount)} damage</span>
         </div>
-        <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: 100%;"></div></div>
+        <div class="metric-bar" data-tooltip="${escapeHtml(formatSpellTooltip(spell))}" tabindex="0"><div class="metric-bar__fill" style="width: 100%;"></div></div>
         <div class="breakdown-row__metrics">
           <span class="breakdown-row__val">${formatNumber(spell.amount)}</span>
           <span class="breakdown-row__sub">${escapeHtml(formatSpellActivity(spell))}</span>
         </div>
       </div>
       <div class="breakdown-row__spells">
+        ${targets.length > 0 ? `<div class="breakdown-list">
+          ${targets.map((target, index) => renderSpellTargetRow(target, index + 1, spell.amount, maxTargetAmount, fight)).join('')}
+        </div>` : '<div class="breakdown-row__sub">No target detail for this spell.</div>'}
         <div class="metric-grid">
+          ${renderMetricCard('school', spell.schoolName || 'Unknown')}
           ${renderMetricCard(spell.applications > 0 ? 'applications' : 'casts', spell.applications > 0 ? spell.applications : spell.casts)}
           ${renderMetricCard('events', spell.events)}
           ${renderMetricCard('hits', spell.hits)}
@@ -2509,6 +3541,26 @@ function renderSpellDamageDrilldown(row, spell, fight) {
           ${renderMetricCard('max', formatNumber(spell.max || 0))}
           ${renderMetricCard('average', formatNumber(average))}
         </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSpellTargetRow(target, rank, totalAmount, maxAmount, fight) {
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const pctOfMax = Math.max(2, (target.amount / maxAmount) * 100);
+  const pctOfSpell = totalAmount > 0 ? (target.amount / totalAmount) * 100 : 0;
+  const average = target.hits > 0 ? Math.round(target.amount / target.hits) : 0;
+  const tooltip = `${target.name}\nDamage: ${formatNumber(target.amount)}\nHits: ${target.hits}\nCrits: ${target.crits}\nMisses: ${target.misses}\nMin: ${formatNumber(target.min || 0)}\nMax: ${formatNumber(target.max || 0)}\nAverage: ${formatNumber(average)}`;
+  return `<div class="breakdown-row">
+    <div class="breakdown-row__header">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--rune-violet);"></div>
+      <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank}</span>${renderActorName(target.name, target.guid)}</div>
+      <div class="metric-bar" data-tooltip="${escapeHtml(tooltip)}" tabindex="0"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
+      <div class="breakdown-row__metrics">
+        <span class="breakdown-row__val">${formatNumber(target.amount)}</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${formatNumber(Math.round(target.amount / fightSeconds))}/s</span>
+        <span class="breakdown-row__sub" style="text-align:right;">${pctOfSpell.toFixed(1)}%</span>
       </div>
     </div>
   </div>`;
@@ -2528,12 +3580,34 @@ function formatSpellActivity(spell) {
   return parts.join(' · ');
 }
 
+function formatSpellTooltip(spell) {
+  const average = spell.hits > 0 ? Math.round(spell.amount / spell.hits) : 0;
+  const critRate = spell.hits > 0 ? (spell.crits / spell.hits) * 100 : 0;
+  const missRate = (spell.hits + spell.misses) > 0 ? (spell.misses / (spell.hits + spell.misses)) * 100 : 0;
+  return `${spell.name}\nSchool: ${spell.schoolName || 'Unknown'}\nDamage: ${formatNumber(spell.amount)}\nEvents: ${spell.events}\nHits: ${spell.hits}\nCrits: ${spell.crits} (${critRate.toFixed(1)}%)\nMisses: ${spell.misses} (${missRate.toFixed(1)}%)\nMin: ${formatNumber(spell.min || 0)}\nMax: ${formatNumber(spell.max || 0)}\nAverage: ${formatNumber(average)}`;
+}
+
+function formatSpellSchool(school) {
+  const value = typeof school === 'string' && school.startsWith('0x') ? parseInt(school, 16) : Number(school);
+  if (!Number.isFinite(value) || value === 0) return '';
+  const schools = [
+    [0x1, 'Physical'],
+    [0x2, 'Holy'],
+    [0x4, 'Fire'],
+    [0x8, 'Nature'],
+    [0x10, 'Frost'],
+    [0x20, 'Shadow'],
+    [0x40, 'Arcane']
+  ];
+  return schools.filter(([bit]) => (value & bit) === bit).map(([, name]) => name).join('/') || String(school);
+}
+
 function buildDamageDoneRows(fight) {
   const sources = new Map();
   for (const event of state.events) {
     if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
     const damage = parseDamageEvent(event.type, event.params);
-    if (!damage || !damage.sourceGuid) continue;
+    if (!damage || !isValidActorGuid(damage.sourceGuid)) continue;
 
     if (!sources.has(damage.sourceGuid)) {
       sources.set(damage.sourceGuid, {
@@ -2549,33 +3623,8 @@ function buildDamageDoneRows(fight) {
     const source = sources.get(damage.sourceGuid);
     source.amount += damage.amount;
     const spellKey = `${damage.spellId || 0}:${damage.spellName}`;
-    const currentSpell = source.spells.get(spellKey) || {
-      key: spellKey,
-      name: damage.spellName,
-      amount: 0,
-      events: 0,
-      casts: 0,
-      applications: 0,
-      hits: 0,
-      normals: 0,
-      crits: 0,
-      misses: 0,
-      min: 0,
-      max: 0
-    };
-
-    currentSpell.amount += damage.amount;
-    currentSpell.events += 1;
-    if (damage.isCast) currentSpell.casts += 1;
-    if (damage.isAura) currentSpell.applications += 1;
-    if (damage.isMiss) currentSpell.misses += 1;
-    if (damage.amount > 0) {
-      currentSpell.hits += 1;
-      if (damage.isCrit) currentSpell.crits += 1;
-      else currentSpell.normals += 1;
-      currentSpell.min = currentSpell.min === 0 ? damage.amount : Math.min(currentSpell.min, damage.amount);
-      currentSpell.max = Math.max(currentSpell.max, damage.amount);
-    }
+    const currentSpell = source.spells.get(spellKey) || createSpellRow(spellKey, damage.spellName, damage.spellSchool);
+    addDamageToSpellRow(currentSpell, damage);
     source.spells.set(spellKey, currentSpell);
   }
 
@@ -2588,50 +3637,343 @@ function buildDamageDoneRows(fight) {
     .sort((a, b) => b.amount - a.amount);
 }
 
-function parseDamageEvent(type, rawEventParams) {
-  const isDamage = type.includes('_DAMAGE') || type === 'SWING_DAMAGE' || type === 'RANGE_DAMAGE';
-  const isMiss = type.includes('_MISSED') || type === 'SWING_MISSED' || type === 'RANGE_MISSED';
-  const isCast = type === 'SPELL_CAST_SUCCESS' || type === 'RANGE_CAST_SUCCESS';
-  const isAura = type.includes('AURA_');
-  if (!isDamage && !isMiss && !isCast && !isAura) return null;
+function buildDamageTakenRows(fight) {
+  const targets = new Map();
+  for (const event of state.events) {
+    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+    const damage = parseDamageEvent(event.type, event.params);
+    if (!damage || damage.amount <= 0) continue;
+    const ownerGuid = state.petOwners.get(damage.destGuid) || null;
+    if (!isPlayerGuid(damage.destGuid) && !isPlayerGuid(ownerGuid)) continue;
+    if (!targets.has(damage.destGuid)) {
+      targets.set(damage.destGuid, {
+        guid: damage.destGuid,
+        name: getDisplayName(damage.destName, damage.destGuid),
+        ownerGuid,
+        amount: 0,
+        spells: new Map()
+      });
+    }
+    const target = targets.get(damage.destGuid);
+    target.amount += damage.amount;
+    const spellKey = `${damage.spellId || 0}:${damage.spellName}`;
+    const currentSpell = target.spells.get(spellKey) || createSpellRow(spellKey, damage.spellName, damage.spellSchool);
+    addAmountToSpellRow(currentSpell, {
+      amount: damage.amount,
+      isCrit: damage.isCrit,
+      isMiss: damage.isMiss,
+      peerGuid: damage.sourceGuid,
+      peerName: damage.sourceName
+    });
+    target.spells.set(spellKey, currentSpell);
+  }
+  return mapToSortedRowsWithSpells(targets);
+}
 
-  const parts = splitLine(rawEventParams);
-  if (parts.length < 8) return null;
+function buildDamageTakenSourceRows(fight, targetGuid) {
+  const sources = new Map();
+  for (const event of state.events) {
+    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+    const damage = parseDamageEvent(event.type, event.params);
+    if (!damage) continue;
+    const targetMatches = damage.destGuid === targetGuid || (isPlayerGuid(targetGuid) && state.petOwners.get(damage.destGuid) === targetGuid);
+    if (!targetMatches || !isValidActorGuid(damage.sourceGuid) || damage.amount <= 0) continue;
+
+    if (!sources.has(damage.sourceGuid)) {
+      sources.set(damage.sourceGuid, {
+        guid: damage.sourceGuid,
+        name: getDisplayName(damage.sourceName, damage.sourceGuid),
+        amount: 0,
+        spells: new Map()
+      });
+    }
+
+    const source = sources.get(damage.sourceGuid);
+    source.amount += damage.amount;
+    const spellKey = `${damage.spellId || 0}:${damage.spellName}`;
+    const currentSpell = source.spells.get(spellKey) || createSpellRow(spellKey, damage.spellName, damage.spellSchool);
+    addDamageToSpellRow(currentSpell, damage);
+    source.spells.set(spellKey, currentSpell);
+  }
+
+  return Array.from(sources.values())
+    .map(source => ({
+      ...source,
+      spells: Array.from(source.spells.values()).sort((a, b) => b.amount - a.amount)
+    }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
+function buildHealingRows(fight, actorSide) {
+  const actors = new Map();
+  for (const event of state.events) {
+    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+    const healing = parseHealingEvent(event.type, event.params);
+    if (!healing || healing.amount <= 0) continue;
+    const guid = actorSide === 'dest' ? healing.destGuid : healing.sourceGuid;
+    const name = actorSide === 'dest' ? healing.destName : healing.sourceName;
+    const peerGuid = actorSide === 'dest' ? healing.sourceGuid : healing.destGuid;
+    const peerName = actorSide === 'dest' ? healing.sourceName : healing.destName;
+    const ownerGuid = state.petOwners.get(guid) || null;
+    if (!isPlayerGuid(guid) && !isPlayerGuid(ownerGuid)) continue;
+    if (!actors.has(guid)) {
+      actors.set(guid, {
+        guid,
+        name: getDisplayName(name, guid),
+        ownerGuid,
+        amount: 0,
+        spells: new Map()
+      });
+    }
+    const actor = actors.get(guid);
+    actor.amount += healing.amount;
+    const spellKey = `${healing.spellId || 0}:${healing.spellName}`;
+    const currentSpell = actor.spells.get(spellKey) || createSpellRow(spellKey, healing.spellName, healing.spellSchool);
+    addAmountToSpellRow(currentSpell, {
+      amount: healing.amount,
+      isCrit: healing.isCrit,
+      isMiss: false,
+      peerGuid,
+      peerName
+    });
+    actor.spells.set(spellKey, currentSpell);
+  }
+  return mapToSortedRowsWithSpells(actors);
+}
+
+function buildEventCountRows(fight, typeTokens) {
+  const actors = new Map();
+  for (const event of state.events) {
+    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+    if (!typeTokens.some(token => event.type.includes(token))) continue;
+    const fields = parseCombatLogFields(event.params);
+    const useDest = !isValidActorGuid(fields.sourceGuid) && isValidActorGuid(fields.destGuid);
+    const guid = useDest ? fields.destGuid : fields.sourceGuid;
+    const name = useDest ? fields.destName : fields.sourceName;
+    const ownerGuid = state.petOwners.get(guid) || null;
+    if (!isPlayerGuid(guid) && !isPlayerGuid(ownerGuid)) continue;
+    addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid);
+  }
+  return mapToSortedRows(actors);
+}
+
+function buildAuraRows(fight, auraKind) {
+  const actors = new Map();
+  for (const event of state.events) {
+    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+    if (!event.type.includes('AURA_')) continue;
+    const fields = parseCombatLogFields(event.params);
+    const auraType = (fields.payload[3] || fields.payload[fields.payload.length - 1] || '').toLowerCase();
+    if (auraKind === 'buff' && auraType !== 'buff') continue;
+    if (auraKind === 'debuff' && auraType !== 'debuff') continue;
+    const guid = fields.destGuid || fields.sourceGuid || '';
+    const name = fields.destName || fields.sourceName || '';
+    const ownerGuid = state.petOwners.get(guid) || null;
+    if (!isPlayerGuid(guid) && !isPlayerGuid(ownerGuid)) continue;
+    addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid);
+  }
+  return mapToSortedRows(actors);
+}
+
+function addReportAmount(map, guid, name, amount, ownerGuid = null) {
+  if (!map.has(guid)) map.set(guid, { guid, name, ownerGuid, amount: 0 });
+  if (ownerGuid && !map.get(guid).ownerGuid) map.get(guid).ownerGuid = ownerGuid;
+  map.get(guid).amount += amount;
+}
+
+function createSpellRow(key, name, school = '') {
+  return {
+    key,
+    spellId: parseInt(String(key).split(':')[0], 10) || 0,
+    name,
+    school,
+    schoolName: formatSpellSchool(school),
+    amount: 0,
+    events: 0,
+    casts: 0,
+    applications: 0,
+    hits: 0,
+    normals: 0,
+    crits: 0,
+    misses: 0,
+    min: 0,
+    max: 0,
+    targets: []
+  };
+}
+
+function addDamageToSpellRow(spell, damage) {
+  spell.amount += damage.amount;
+  spell.events += 1;
+  if (damage.isCast) spell.casts += 1;
+  if (damage.isAura) spell.applications += 1;
+  if (damage.isMiss) spell.misses += 1;
+  if (damage.amount > 0) {
+    spell.hits += 1;
+    if (damage.isCrit) spell.crits += 1;
+    else spell.normals += 1;
+    spell.min = spell.min === 0 ? damage.amount : Math.min(spell.min, damage.amount);
+    spell.max = Math.max(spell.max, damage.amount);
+  }
+  addDamageToTargetRows(spell, damage);
+}
+
+function addDamageToTargetRows(spell, damage) {
+  if (!isValidActorGuid(damage.destGuid)) return;
+  const targets = new Map((spell.targets || []).map(target => [target.guid, target]));
+  const target = targets.get(damage.destGuid) || {
+    guid: damage.destGuid,
+    name: getDisplayName(damage.destName, damage.destGuid),
+    amount: 0,
+    events: 0,
+    hits: 0,
+    crits: 0,
+    misses: 0,
+    min: 0,
+    max: 0
+  };
+  target.amount += damage.amount;
+  target.events += 1;
+  if (damage.isMiss) target.misses += 1;
+  if (damage.amount > 0) {
+    target.hits += 1;
+    if (damage.isCrit) target.crits += 1;
+    target.min = target.min === 0 ? damage.amount : Math.min(target.min, damage.amount);
+    target.max = Math.max(target.max, damage.amount);
+  }
+  targets.set(damage.destGuid, target);
+  spell.targets = Array.from(targets.values()).sort((a, b) => b.amount - a.amount);
+}
+
+function addAmountToSpellRow(spell, detail) {
+  spell.amount += detail.amount;
+  spell.events += 1;
+  if (detail.isMiss) spell.misses += 1;
+  if (detail.amount > 0) {
+    spell.hits += 1;
+    if (detail.isCrit) spell.crits += 1;
+    else spell.normals += 1;
+    spell.min = spell.min === 0 ? detail.amount : Math.min(spell.min, detail.amount);
+    spell.max = Math.max(spell.max, detail.amount);
+  }
+  if (!isValidActorGuid(detail.peerGuid)) return;
+  const targets = new Map((spell.targets || []).map(target => [target.guid, target]));
+  const target = targets.get(detail.peerGuid) || {
+    guid: detail.peerGuid,
+    name: getDisplayName(detail.peerName, detail.peerGuid),
+    amount: 0,
+    events: 0,
+    hits: 0,
+    crits: 0,
+    misses: 0,
+    min: 0,
+    max: 0
+  };
+  target.amount += detail.amount;
+  target.events += 1;
+  if (detail.isMiss) target.misses += 1;
+  if (detail.amount > 0) {
+    target.hits += 1;
+    if (detail.isCrit) target.crits += 1;
+    target.min = target.min === 0 ? detail.amount : Math.min(target.min, detail.amount);
+    target.max = Math.max(target.max, detail.amount);
+  }
+  targets.set(detail.peerGuid, target);
+  spell.targets = Array.from(targets.values()).sort((a, b) => b.amount - a.amount);
+}
+
+function mapToSortedRows(map) {
+  return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
+}
+
+function mapToSortedRowsWithSpells(map) {
+  return Array.from(map.values())
+    .filter(row => row.amount > 0)
+    .map(row => ({
+      ...row,
+      spells: Array.from(row.spells.values()).sort((a, b) => b.amount - a.amount)
+    }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
+function parseHealingEvent(type, rawEventParams) {
+  if (!type.includes('_HEAL')) return null;
+  const fields = parseCombatLogFields(rawEventParams);
+  const payload = fields.payload;
+  if (payload.length < 4) return null;
+  const amountIndex = getCombatLogAmountIndex(payload, 3);
+  return {
+    sourceGuid: fields.sourceGuid,
+    sourceName: fields.sourceName,
+    destGuid: fields.destGuid,
+    destName: fields.destName,
+    spellId: parseInt(payload[0], 10) || 0,
+    spellName: payload[1] || type,
+    spellSchool: payload[2] || '',
+    amount: readPositiveNumber(payload[amountIndex]) || readPositiveNumber(payload[3]) || readPositiveNumber(payload[7]) || readFirstLikelyAmount(payload, 3),
+    isCrit: payload[amountIndex + 5] === '1' || readHitFlags(payload[amountIndex + 5]).crit
+  };
+}
+
+function parseDamageEvent(type, rawEventParams) {
+  const isSwingDamage = type.startsWith('SWING_DAMAGE');
+  const isSwingMiss = type.startsWith('SWING_MISSED');
+  const isDamage = type.includes('_DAMAGE') || isSwingDamage || type.startsWith('RANGE_DAMAGE');
+  const isMiss = type.includes('_MISSED') || isSwingMiss || type.startsWith('RANGE_MISSED');
+  if (!isDamage && !isMiss) return null;
+
+  const fields = parseCombatLogFields(rawEventParams);
+  const payload = fields.payload;
+  if (payload.length === 0) return null;
 
   const result = {
-    sourceGuid: parts[0] || '',
-    sourceName: parts[1] || '',
-    sourceFlags: parseInt(parts[2], 10) || 0,
+    sourceGuid: fields.sourceGuid,
+    sourceName: fields.sourceName,
+    sourceFlags: fields.sourceFlags,
+    destGuid: fields.destGuid,
+    destName: fields.destName,
+    destFlags: fields.destFlags,
     spellId: 0,
     spellName: type === 'SWING_DAMAGE' ? 'Melee' : type,
+    spellSchool: '',
     amount: 0,
     isCrit: false,
     isMiss,
-    isCast,
-    isAura
+    isCast: false,
+    isAura: false
   };
 
-  if (type === 'SWING_DAMAGE' || type === 'SWING_MISSED') {
+  if (isSwingDamage || isSwingMiss) {
+    const amountIndex = getCombatLogAmountIndex(payload, 0);
     result.spellName = 'Melee';
-    result.amount = readPositiveNumber(parts[14]) || readFirstLikelyAmount(parts, 8);
-    result.isCrit = readHitFlags(parts[18]).crit;
+    result.spellSchool = '0x1';
+    result.amount = readPositiveNumber(payload[amountIndex]) || readPositiveNumber(payload[0]) || readFirstLikelyAmount(payload, amountIndex);
+    result.isCrit = readHitFlags(payload[amountIndex + 5]).crit;
     return result;
   }
 
   if (type === 'ENVIRONMENTAL_DAMAGE') {
-    result.spellName = parts[8] || 'Environmental';
-    result.amount = readPositiveNumber(parts[28]) || readFirstLikelyAmount(parts, 9);
-    result.isCrit = readHitFlags(parts[31]).crit;
+    const environmentalTypeIndex = isGuidLike(payload[0]) ? getCombatLogAmountIndex(payload, 0) : 0;
+    result.spellName = payload[environmentalTypeIndex] || 'Environmental';
+    result.spellSchool = payload[environmentalTypeIndex + 3] || '0x1';
+    result.amount = readPositiveNumber(payload[environmentalTypeIndex + 1]) || readFirstLikelyAmount(payload, environmentalTypeIndex + 1);
+    result.isCrit = readHitFlags(payload[environmentalTypeIndex + 6]).crit;
     return result;
   }
 
-  result.spellId = parseInt(parts[8], 10) || 0;
-  result.spellName = parts[9] || type;
+  result.spellId = parseInt(payload[0], 10) || 0;
+  result.spellName = payload[1] || type;
+  result.spellSchool = payload[2] || '';
   if (isDamage) {
-    result.amount = readPositiveNumber(parts[15]) || readFirstLikelyAmount(parts, 11);
-    result.isCrit = readHitFlags(parts[21]).crit || parts[21] === '1';
+    const amountIndex = getCombatLogAmountIndex(payload, 3);
+    result.amount = readPositiveNumber(payload[amountIndex]) || readPositiveNumber(payload[7]) || readFirstLikelyAmount(payload, amountIndex);
+    result.isCrit = readHitFlags(payload[amountIndex + 5]).crit || payload[amountIndex + 5] === '1';
   }
   return result;
+}
+
+function getCombatLogAmountIndex(payload, advancedFieldsStartIndex) {
+  return isGuidLike(payload[advancedFieldsStartIndex]) ? advancedFieldsStartIndex + 19 : advancedFieldsStartIndex;
 }
 
 function readHitFlags(value) {
@@ -2653,10 +3995,25 @@ function readFirstLikelyAmount(parts, startIndex) {
 }
 
 function getDisplayName(name, guid) {
-  const cleaned = typeof name === 'string' ? name.trim() : '';
-  if (cleaned && cleaned.toLowerCase() !== 'nil' && cleaned !== '0x0000000000000000') return cleaned;
+  const cleaned = cleanActorName(name);
+  if (cleaned) return cleaned;
+  if (guid && state.playerNames?.has(guid)) return state.playerNames.get(guid);
   if (guid && guid.startsWith('Player-')) return guid;
   return guid ? guid.split('-').pop() : 'Unknown';
+}
+
+function cleanActorName(name) {
+  const cleaned = typeof name === 'string' ? name.trim() : '';
+  if (!cleaned || cleaned.toLowerCase() === 'nil' || cleaned === '0x0000000000000000' || cleaned === '0000000000000000') return '';
+  return cleaned;
+}
+
+function isValidActorGuid(guid) {
+  return Boolean(guid && guid !== '0000000000000000' && guid !== '0x0000000000000000');
+}
+
+function isPlayerGuid(guid) {
+  return isValidActorGuid(guid) && guid.startsWith('Player-');
 }
 
 // ============================================
@@ -2742,6 +4099,16 @@ function formatDuration(ms) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}m ${seconds}s`;
+}
+
+function formatFightDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return 'Unknown date';
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatFightTime(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '--:--:--';
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 function formatNumber(num) {
