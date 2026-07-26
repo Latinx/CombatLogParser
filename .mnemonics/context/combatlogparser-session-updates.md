@@ -13,4 +13,4 @@ Important CombatLogParser project updates from the current session:
 - Standalone executable work: added `server.cjs`, a local static server that serves `index.html` on `127.0.0.1`, picks/falls back from `COMBAT_LOG_PARSER_PORT` default `8081`, opens browser unless `COMBAT_LOG_PARSER_NO_OPEN=1`, and is packaged into `dist/CombatLogParser.exe`.
 - Tooling modernization: `package.json` is now native Node ESM for `src` with `server.cjs` kept CommonJS; removed Babel/Jest legacy stack; tests use `node:test` and `node:assert`; ESLint uses flat config; packaging uses maintained `@yao-pkg/pkg` with `node20-win-x64` target; `npm audit` is clean.
 - Verification at end: `npm test`, `npm run build`, `npm run lint`, `npm audit --omit=optional` all passed; `node server.cjs` served `index.html`; `npm run build:win` produced `dist/CombatLogParser.exe`.
-- Pushes should use the `gitea` remote, not `origin`.
+- Pushes should use the `gitea` remote.

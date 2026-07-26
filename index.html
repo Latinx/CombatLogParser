@@ -68,7 +68,6 @@
   --transition-slow: 350ms ease;
 
   --header-h: 64px;
-  --sidebar-w: 220px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -100,7 +99,7 @@ body {
   min-height: 100vh;
   display: grid;
   grid-template-rows: var(--header-h) 1fr;
-  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-columns: 1fr;
   letter-spacing: -0.01em;
 }
 
@@ -146,75 +145,14 @@ body {
 
 .header__actions { display: flex; gap: var(--space-3); align-items: center; }
 
-.sidebar {
-  grid-column: 1;
-  grid-row: 2;
-  background: linear-gradient(180deg, rgba(13, 20, 38, 0.92), rgba(6, 9, 20, 0.92));
-  border-right: 1px solid var(--gridline);
-  padding: var(--space-6) var(--space-4);
-  overflow-y: auto;
-  animation: slideInLeft var(--transition-slow) ease-out var(--space-2) both;
+.header__tab[aria-selected="true"] {
+  border-color: rgba(255, 177, 74, 0.55);
+  color: var(--gold-glint);
+  box-shadow: 0 0 0 1px rgba(255, 177, 74, 0.18) inset;
 }
-
-@keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-.nav { display: flex; flex-direction: column; gap: var(--space-1); }
-
-.nav__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: none;
-  background: transparent;
-  color: var(--ink-muted);
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  text-align: left;
-  width: 100%;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  position: relative;
-  overflow: hidden;
-}
-
-.nav__item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 100%;
-  background: linear-gradient(90deg, rgba(255, 177, 74, 0.22), transparent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--transition-base);
-}
-
-.nav__item:hover { color: var(--ink); background: rgba(125, 92, 255, 0.12); }
-
-.nav__item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
-
-.nav__item[aria-selected="true"] {
-  color: var(--ink);
-  background: rgba(255, 177, 74, 0.12);
-}
-
-.nav__item[aria-selected="true"]::before { transform: scaleX(1); }
-
-.nav__icon { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; }
-
-.nav__item[data-panel="players"],
-.nav__item[data-panel="timeline"],
-.nav__item[data-panel="breakdown"],
-.nav__item[data-panel="deaths"],
-.nav__item[data-panel="auras"],
-.nav__item[data-panel="raw"] { display: none; }
 
 .main {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 2;
   padding: var(--space-8) var(--space-10);
   overflow-y: auto;
@@ -225,7 +163,7 @@ body {
 .main::before {
   content: '';
   position: fixed;
-  inset: var(--header-h) 0 0 var(--sidebar-w);
+  inset: var(--header-h) 0 0 0;
   pointer-events: none;
   opacity: 0.44;
   background-image:
@@ -319,21 +257,38 @@ body {
   font-size: var(--text-xs);
 }
 
-.fight-list { display: flex; flex-direction: column; gap: var(--space-4); }
+.fight-list { display: flex; flex-direction: column; gap: var(--space-3); }
 
 .fight-card {
-  background: linear-gradient(90deg, rgba(20, 31, 54, 0.92), rgba(13, 20, 38, 0.72));
+  background:
+    linear-gradient(90deg, rgba(255, 177, 74, 0.07), transparent 38%),
+    linear-gradient(90deg, rgba(20, 31, 54, 0.92), rgba(13, 20, 38, 0.76));
   border: 1px solid var(--gridline);
-  border-radius: 18px;
-  padding: var(--space-5) var(--space-6);
+  border-radius: 10px;
+  padding: 10px 14px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: var(--space-6);
+  grid-template-columns: minmax(280px, 1.15fr) minmax(210px, 0.7fr) minmax(190px, 0.62fr) minmax(300px, 0.9fr) minmax(420px, 1.25fr) 26px;
+  gap: var(--space-3);
   align-items: center;
   transition: all var(--transition-fast);
   cursor: pointer;
   animation: fadeUp var(--transition-base) ease-out both;
+  position: relative;
+  overflow: hidden;
 }
+
+.fight-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.045), transparent);
+  transform: translateX(-115%);
+}
+
+.fight-card:hover::after { animation: telemetrySweep 900ms ease-out; }
+
+@keyframes telemetrySweep { to { transform: translateX(115%); } }
 
 .fight-card:nth-child(1) { animation-delay: 50ms; }
 .fight-card:nth-child(2) { animation-delay: 100ms; }
@@ -344,7 +299,7 @@ body {
 .fight-card:hover {
   border-color: rgba(255, 177, 74, 0.54);
   background: linear-gradient(90deg, rgba(30, 42, 72, 0.98), rgba(13, 20, 38, 0.86));
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
 .fight-card:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
@@ -355,12 +310,90 @@ body {
   font-weight: 600;
   color: var(--ink);
   letter-spacing: -0.04em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.fight-card__meta { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+.fight-card__topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
 
-.fight-card__meta-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--ink-muted); }
+.fight-card__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 999px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.09);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fight-card__status--pvp {
+  border-color: rgba(125, 92, 255, 0.4);
+  color: var(--healer-mint);
+  background: rgba(125, 92, 255, 0.13);
+}
+
+.fight-card__subline {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fight-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+}
+
+.fight-card__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.fight-card__meta-label {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fight-card__meta-value {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .fight-card__meta-item--duration { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
 
@@ -377,12 +410,40 @@ body {
 
 .fight-card__meta-item--kill { color: #4ade80; font-weight: 600; }
 
-.fight-card__players {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
+.fight-card__meta-item--wide { min-width: 0; }
+
+.fight-card__spotlight { min-width: 0; }
+
+.fight-card__spotlight-label {
+  display: block;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
+
+.fight-card__spotlight-name {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--ink);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fight-card__spotlight-value {
+  display: block;
+  color: var(--gold-glint);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.fight-card__spotlight .fight-card__status { margin-top: var(--space-2); }
+
+.fight-card__players { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 
 .fight-card__team {
   display: flex;
@@ -424,12 +485,19 @@ body {
   text-overflow: ellipsis;
 }
 
+.fight-card__player--friendly { box-shadow: inset 0 -1px 0 rgba(98, 242, 194, 0.28); }
+
+.fight-card__player--hostile { box-shadow: inset 0 -1px 0 rgba(255, 91, 110, 0.32); }
+
 .fight-card__player--more {
   border-left-color: var(--gridline);
   color: var(--ink-faint);
 }
 
 .fight-card__arrow {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
   width: 24px;
   height: 24px;
   stroke: var(--ink-muted);
@@ -438,6 +506,103 @@ body {
 }
 
 .fight-card:hover .fight-card__arrow { stroke: var(--gold-vein); transform: translateX(4px); }
+
+.fight-card__spotlight,
+.fight-card__composition,
+.fight-card__signal { min-width: 0; }
+
+.fight-card__spotlight-meter::-webkit-meter-bar,
+.fight-card__intensity-meter::-webkit-meter-bar {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fight-card__spotlight-meter::-webkit-meter-optimum-value,
+.fight-card__intensity-meter::-webkit-meter-optimum-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-vein), var(--gold-glint));
+}
+
+.fight-card__spotlight-meter,
+.fight-card__intensity-meter {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: var(--space-2);
+  appearance: none;
+}
+
+.fight-card__composition {
+  display: grid;
+  grid-template-columns: auto minmax(90px, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.fight-card__composition-bar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: var(--friendly-share, 1fr) var(--hostile-share, 1fr) var(--unknown-share, 0fr);
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fight-card__composition-bar span:nth-child(1) { background: var(--healer-mint); }
+.fight-card__composition-bar span:nth-child(2) { background: var(--wipe-red); }
+.fight-card__composition-bar span:nth-child(3) { background: var(--ink-faint); }
+
+.fight-card__composition-counts {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.fight-card__players { min-width: 0; }
+
+.fight-card__signal {
+  min-width: 0;
+}
+
+.fight-card__signal-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fight-card__signal-value { color: var(--ink); font-size: var(--text-xs); letter-spacing: 0; text-transform: none; }
+
+.fight-card__bar {
+  height: 8px;
+  margin-top: var(--space-2);
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fight-card__bar-fill {
+  display: block;
+  height: 100%;
+  width: var(--bar-width, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--gold-vein), var(--gold-glint));
+  animation: barPulse 1.8s ease-in-out infinite;
+}
+
+.fight-card__bar-fill--activity { background: linear-gradient(90deg, var(--rune-violet), var(--healer-mint)); }
+
+@keyframes barPulse { 50% { filter: brightness(1.25); } }
 
 .fight-detail { animation: fadeUp var(--transition-slow) ease-out both; }
 
@@ -839,6 +1004,66 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 
 .raw-log__amount { color: #4ade80; font-variant-numeric: tabular-nums; }
 
+.class-inspector {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr) minmax(320px, 1.35fr);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.unknown-class-tools {
+  grid-column: 1 / -1;
+  position: sticky;
+  top: calc(var(--header-h) + var(--space-3));
+  z-index: 30;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+}
+
+.class-inspector__panel {
+  background: rgba(13, 19, 35, 0.78);
+  border: 1px solid var(--gridline);
+  border-radius: 12px;
+  padding: var(--space-3);
+}
+
+.class-inspector__title {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+}
+
+.class-inspector__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: var(--text-sm);
+}
+
+.class-inspector__row:last-child { border-bottom: 0; }
+
+.class-inspector__meta {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.class-inspector__event {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.class-inspector__event strong { color: var(--ink); font-family: var(--font-body); }
+
+.class-inspector__hint { color: var(--gold-glint); }
+
 .empty-state {
   text-align: center;
   padding: var(--space-16) var(--space-8);
@@ -867,6 +1092,32 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   border-radius: 14px;
   border: 1px solid var(--gridline);
 }
+
+.breakdown-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(6, 9, 20, 0.52);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.breakdown-section:first-child { margin-top: 0; }
+
+.breakdown-section--friendly { border-left: 3px solid var(--healer-mint); }
+
+.breakdown-section--hostile { border-left: 3px solid var(--wipe-red); }
+
+.breakdown-section--other { border-left: 3px solid var(--ink-faint); }
 
 .filter-btn {
   background: transparent;
@@ -1051,6 +1302,15 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   gap: var(--space-2);
   z-index: 1;
   min-width: 0;
+  overflow: hidden;
+}
+
+.actor-name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .breakdown-row__info strong,
@@ -1400,24 +1660,16 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 .hidden { display: none !important; }
 
 @media (max-width: 1024px) {
-  body { grid-template-columns: 1fr; grid-template-rows: var(--header-h) auto 1fr; }
-  .sidebar {
-    grid-column: 1; grid-row: 2;
-    border-right: none; border-bottom: 1px solid rgba(201, 168, 76, 0.15);
-    padding: var(--space-4);
-    animation: none;
-  }
-  .nav { flex-direction: row; overflow-x: auto; gap: var(--space-2); padding-bottom: var(--space-2); }
-  .nav__item { white-space: nowrap; padding: var(--space-2) var(--space-4); }
-  .nav__item::before { display: none; }
-  .nav__item[aria-selected="true"] { background: var(--parchment-raised); }
-  .main { grid-row: 3; padding: var(--space-6) var(--space-4); animation: none; }
-  .main::before { inset: calc(var(--header-h) + 60px) 0 0 0; }
+  body { grid-template-columns: 1fr; grid-template-rows: var(--header-h) 1fr; }
+  .main { grid-row: 2; padding: var(--space-6) var(--space-4); animation: none; }
+  .main::before { inset: var(--header-h) 0 0 0; }
+  .fight-card { grid-template-columns: 1fr; }
   .track__label { width: 100px; }
   .track__events { left: 100px; }
   .track__spec { display: none; }
   .player-grid { grid-template-columns: 1fr; }
   .report-grid { grid-template-columns: 1fr; }
+  .class-inspector { grid-template-columns: 1fr; }
   .breakdown-row__header,
   .spell-row { grid-template-columns: 1fr; }
   .breakdown-row__metrics { justify-content: flex-start; flex-wrap: wrap; gap: var(--space-3); }
@@ -1431,7 +1683,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   .upload-zone { padding: var(--space-10) var(--space-4); }
   .upload-zone__icon { width: 56px; height: 56px; }
   .upload-zone__title { font-size: var(--text-xl); }
-  .fight-card { grid-template-columns: 1fr; gap: var(--space-3); }
+  .fight-card { grid-template-columns: 1fr; gap: var(--space-3); min-height: 0; }
   .fight-card__arrow { display: none; }
   .timeline__boss-hp { height: 36px; }
   .track { height: 36px; }
@@ -1446,6 +1698,9 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 <header class="header" role="banner">
   <h1 class="header__title">Combat Log Parser</h1>
   <div class="header__actions">
+    <button class="btn header__tab" role="tab" aria-selected="true" aria-controls="panel-fights" id="tab-fights" data-panel="fights" type="button">
+      <span>Fights</span>
+    </button>
     <label class="btn btn--primary" for="file-input">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>Load Log</span>
@@ -1459,45 +1714,8 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   </div>
 </header>
 
-<nav class="sidebar" role="navigation" aria-label="Main navigation">
-  <ul class="nav" role="tablist">
-    <li><button class="nav__item" role="tab" aria-selected="true" aria-controls="panel-upload" id="tab-upload" data-panel="upload">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span>Upload</span>
-    </button></li>
-    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-fights" id="tab-fights" data-panel="fights">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-      <span>Fights</span>
-    </button></li>
-    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-players" id="tab-players" data-panel="players">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span>Players</span>
-    </button></li>
-    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-timeline" id="tab-timeline" data-panel="timeline">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      <span>Timeline</span>
-    </button></li>
-    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-breakdown" id="tab-breakdown" data-panel="breakdown">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-      <span>Breakdown</span>
-    </button></li>
-    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-deaths" id="tab-deaths" data-panel="deaths">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      <span>Deaths</span>
-    </button></li>
-    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-auras" id="tab-auras" data-panel="auras">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/></svg>
-      <span>Auras</span>
-    </button></li>
-    <li><button class="nav__item" role="tab" aria-selected="false" aria-controls="panel-raw" id="tab-raw" data-panel="raw">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-      <span>Raw Log</span>
-    </button></li>
-  </ul >
-</nav>
-
 <main class="main" role="main">
-  <section class="upload-zone" id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" tabindex="0">
+  <section class="upload-zone hidden" id="panel-upload" role="tabpanel" tabindex="0">
     <svg class="upload-zone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
       <circle cx="12" cy="12" r="10"/>
       <path d="M8 12h8"/>
@@ -1516,7 +1734,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <input type="file" id="upload-directory-input" class="hidden" webkitdirectory directory multiple aria-label="Choose combat log directory">
   </section>
 
-  <section class="fight-list hidden" id="panel-fights" role="tabpanel" aria-labelledby="tab-fights" tabindex="0"></section>
+  <section class="fight-list" id="panel-fights" role="tabpanel" aria-labelledby="tab-fights" tabindex="0"></section>
 
   <section class="hidden" id="panel-players" role="tabpanel" aria-labelledby="tab-players" tabindex="0">
     <div class="player-grid" id="player-grid"></div >
@@ -1577,6 +1795,11 @@ const CLASS_COLORS = {
   warlock: '#8788EE', monk: '#00FF98', dh: '#A330C9', demonhunter: '#A330C9', 'demon hunter': '#A330C9', evoker: '#33937F'
 };
 
+const PLAYER_CLASS_KEYS = [
+  'DEATHKNIGHT', 'DEMONHUNTER', 'DRUID', 'EVOKER', 'HUNTER', 'MAGE', 'MONK',
+  'PALADIN', 'PRIEST', 'ROGUE', 'SHAMAN', 'WARLOCK', 'WARRIOR'
+];
+
 const COMBATLOG_REACTION_FRIENDLY = 0x10;
 const COMBATLOG_REACTION_HOSTILE = 0x40;
 
@@ -1614,20 +1837,24 @@ const SPEC_TO_CLASS = {
 
 const SPELL_CLASS_HINTS = {
   382266: 'EVOKER', 357209: 'EVOKER', 382411: 'EVOKER', 355941: 'EVOKER', 367364: 'EVOKER', 366155: 'EVOKER', 364343: 'EVOKER', 364342: 'EVOKER', 381748: 'EVOKER', 381732: 'EVOKER', 381749: 'EVOKER', 381751: 'EVOKER',
-  75: 'HUNTER', 193455: 'HUNTER', 19434: 'HUNTER', 217200: 'HUNTER', 257620: 'HUNTER', 34026: 'HUNTER', 53351: 'HUNTER', 56641: 'HUNTER', 120360: 'HUNTER', 131894: 'HUNTER', 185358: 'HUNTER',
+  75: 'HUNTER', 193455: 'HUNTER', 19434: 'HUNTER', 217200: 'HUNTER', 257620: 'HUNTER', 34026: 'HUNTER', 53351: 'HUNTER', 56641: 'HUNTER', 120360: 'HUNTER', 131894: 'HUNTER', 185358: 'HUNTER', 265157: 'HUNTER', 1253171: 'HUNTER', 186270: 'HUNTER', 265189: 'HUNTER', 1262293: 'HUNTER',
   191037: 'DRUID', 164812: 'DRUID', 164815: 'DRUID', 93402: 'DRUID', 24858: 'DRUID', 205636: 'DRUID', 22842: 'DRUID', 81269: 'DRUID', 8936: 'DRUID', 774: 'DRUID', 155777: 'DRUID', 48438: 'DRUID',
   201427: 'DEMONHUNTER', 201428: 'DEMONHUNTER', 203796: 'DEMONHUNTER', 217832: 'DEMONHUNTER', 227518: 'DEMONHUNTER', 337819: 'DEMONHUNTER',
   399491: 'MONK', 399497: 'MONK', 399510: 'MONK', 119381: 'MONK', 414143: 'MONK',
-  115191: 'ROGUE', 279043: 'ROGUE',
-  184707: 'WARRIOR',
-  465: 'PALADIN',
-  22888: 'WARRIOR'
+  115191: 'ROGUE', 279043: 'ROGUE', 1943: 'ROGUE', 703: 'ROGUE', 381628: 'ROGUE', 8680: 'ROGUE',
+  686: 'WARLOCK', 264178: 'WARLOCK', 86040: 'WARLOCK', 449801: 'WARLOCK', 449826: 'WARLOCK', 450538: 'WARLOCK', 450591: 'WARLOCK',
+  589: 'PRIEST', 8092: 'PRIEST', 14914: 'PRIEST', 32379: 'PRIEST', 34914: 'PRIEST', 47666: 'PRIEST', 77489: 'PRIEST', 88625: 'PRIEST', 120696: 'PRIEST', 199486: 'PRIEST', 263165: 'PRIEST', 335467: 'PRIEST', 346111: 'PRIEST', 413231: 'PRIEST', 421543: 'PRIEST', 447448: 'PRIEST', 448405: 'PRIEST', 1242189: 'PRIEST', 1264176: 'PRIEST', 1264177: 'PRIEST',
+  188389: 'SHAMAN', 188443: 'SHAMAN', 285452: 'SHAMAN', 305485: 'SHAMAN', 77478: 'SHAMAN', 45297: 'SHAMAN', 452201: 'SHAMAN',
+  120: 'MAGE', 122: 'MAGE', 1459: 'MAGE', 1953: 'MAGE', 2139: 'MAGE', 11426: 'MAGE', 12472: 'MAGE', 31661: 'MAGE', 45438: 'MAGE', 84714: 'MAGE', 84721: 'MAGE', 153595: 'MAGE', 157997: 'MAGE', 190357: 'MAGE', 199786: 'MAGE', 205021: 'MAGE', 210126: 'MAGE', 228354: 'MAGE', 228597: 'MAGE', 228598: 'MAGE', 235450: 'MAGE', 257537: 'MAGE', 379029: 'MAGE', 443722: 'MAGE',
+  465: 'PALADIN', 20271: 'PALADIN', 24275: 'PALADIN', 53385: 'PALADIN', 198137: 'PALADIN', 383921: 'PALADIN', 427453: 'PALADIN', 431398: 'PALADIN',
+  184707: 'WARRIOR', 7384: 'WARRIOR', 12294: 'WARRIOR', 1464: 'WARRIOR', 50622: 'WARRIOR', 6343: 'WARRIOR', 260798: 'WARRIOR', 388539: 'WARRIOR', 445579: 'WARRIOR', 1269383: 'WARRIOR', 22888: 'WARRIOR'
 };
 
 const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
 const STORED_LOG_KEY = 'combatLogParser.currentLog';
 const LOG_DB_NAME = 'combatLogParserDB';
 const LOG_STORE_NAME = 'logs';
+const PLAYER_CLASS_STORE_NAME = 'playerClasses';
 
 function parseDateTime(dateTime) {
   const dateTimeSeparatorIndex = dateTime.indexOf(' ');
@@ -1798,7 +2025,10 @@ let state = {
   expandedActorGroups: new Set(),
   selectedFightPanel: 'summary',
   petOwners: new Map(),
+  playerClassCache: new Map(),
   playerNames: new Map(),
+  classLookupStatus: '',
+  manualClassInspectGuid: null,
   rawLines: []
 };
 
@@ -1813,7 +2043,7 @@ const panels = {
   raw: document.getElementById('panel-raw')
 };
 
-const tabs = document.querySelectorAll('.nav__item');
+const tabs = document.querySelectorAll('[data-panel]');
 const uploadZone = document.getElementById('panel-upload');
 const headerFileInput = document.getElementById('file-input');
 const headerDirectoryInput = document.getElementById('directory-input');
@@ -1960,7 +2190,10 @@ function loadLogText(text) {
     expandedActorGroups: new Set(),
     selectedFightPanel: 'summary',
     petOwners: new Map(),
+    playerClassCache: new Map(),
     playerNames: new Map(),
+    classLookupStatus: '',
+    manualClassInspectGuid: null,
     rawLines: text.split('\n')
   };
   parseRawLines();
@@ -1968,6 +2201,27 @@ function loadLogText(text) {
   renderPlayerGrid();
   renderTimeline();
   renderRawLog();
+  renderBreakdownView();
+  renderDeathsView();
+  renderAurasView();
+  hydratePlayerClassCache();
+}
+
+function hydratePlayerClassCache() {
+  openLogDatabase()
+    .then(db => getAllCachedPlayerClasses(db))
+    .then(records => {
+      records.forEach(record => rememberCachedPlayerClass(record));
+      applyCachedPlayerClasses();
+      rerenderAllViews();
+    })
+    .catch(err => console.warn('Could not load cached player classes.', err));
+}
+
+function rerenderAllViews() {
+  renderFightList();
+  renderPlayerGrid();
+  renderTimeline();
   renderBreakdownView();
   renderDeathsView();
   renderAurasView();
@@ -1994,11 +2248,31 @@ function restorePersistedLog() {
 
 function openLogDatabase() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(LOG_DB_NAME, 1);
+    const request = indexedDB.open(LOG_DB_NAME, 2);
     request.onupgradeneeded = () => {
-      request.result.createObjectStore(LOG_STORE_NAME);
+      const db = request.result;
+      if (!db.objectStoreNames.contains(LOG_STORE_NAME)) db.createObjectStore(LOG_STORE_NAME);
+      if (!db.objectStoreNames.contains(PLAYER_CLASS_STORE_NAME)) db.createObjectStore(PLAYER_CLASS_STORE_NAME, { keyPath: 'key' });
     };
     request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function putCachedPlayerClass(db, record) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PLAYER_CLASS_STORE_NAME, 'readwrite');
+    tx.objectStore(PLAYER_CLASS_STORE_NAME).put(record);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function getAllCachedPlayerClasses(db) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PLAYER_CLASS_STORE_NAME, 'readonly');
+    const request = tx.objectStore(PLAYER_CLASS_STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result || []);
     request.onerror = () => reject(request.error);
   });
 }
@@ -2314,25 +2588,191 @@ function renderFightList() {
     return;
   }
 
-  fightList.innerHTML = fightsWithPlayers.map(({ fight, index, players }) => `
+  fightList.innerHTML = fightsWithPlayers.map(({ fight, index, players }) => {
+    const topPlayer = players[0];
+    const stats = getFightCardStats(fight, players);
+    const statusLabel = fight.kill ? 'Kill' : (fight.difficulty === 0 ? 'PvP' : 'Pull');
+    return `
     <article class="fight-card" tabindex="0" data-fight-index="${index}" role="button" aria-label="View ${escapeHtml(fight.bossName)} fight details">
-      <span class="fight-card__boss">${escapeHtml(fight.bossName)}</span>
-      <div class="fight-card__meta">
-        <span class="fight-card__meta-item ${fight.difficulty === 0 ? 'fight-card__meta-item--difficulty' : ''}">${DIFFICULTY_LABELS[fight.difficulty] || (fight.difficulty ? `Diff ${fight.difficulty}` : 'PvP')}</span>
-        <span class="fight-card__meta-item">${escapeHtml(formatFightDate(fight.startDateTime))}</span>
-        <span class="fight-card__meta-item fight-card__meta-item--duration">${escapeHtml(formatFightTime(fight.startDateTime))} → ${escapeHtml(formatFightTime(fight.endDateTime))}</span>
-        <span class="fight-card__meta-item fight-card__meta-item--duration">${formatDuration(fight.duration)}</span>
-        <span class="fight-card__meta-item ${fight.kill ? 'fight-card__meta-item--kill' : ''}">${fight.kill ? 'Kill' : ''}</span>
+      <div class="fight-card__topline">
+        <span class="fight-card__boss">${escapeHtml(fight.bossName)}</span>
+        <span class="fight-card__status ${fight.difficulty === 0 ? 'fight-card__status--pvp' : ''}">${statusLabel}</span>
+        <span class="fight-card__subline"><time datetime="${escapeHtml(fight.startDateTime?.toISOString?.() || '')}">${escapeHtml(formatFightTime(fight.startDateTime))}</time><span>${escapeHtml(formatFightDate(fight.startDateTime))}</span></span>
+      </div>
+      <div class="fight-card__signal">
+        <span class="fight-card__signal-label">Duration <span class="fight-card__signal-value">${escapeHtml(formatDuration(fight.duration))}</span></span>
+        <span class="fight-card__bar"><span class="fight-card__bar-fill" style="--bar-width: ${stats.durationPct.toFixed(1)}%;"></span></span>
+        <span class="fight-card__subline"><span>${formatNumber(stats.totalDamage)} damage</span><span>${formatNumber(stats.fightDps)} DPS</span></span>
+      </div>
+      <div class="fight-card__spotlight">
+        <span class="fight-card__spotlight-label">Top Damage</span>
+        <span class="fight-card__spotlight-name" title="${escapeHtml(topPlayer?.name || 'none')}">${escapeHtml(topPlayer ? formatActorDisplayName(topPlayer.name) : 'none')}</span>
+        <span class="fight-card__spotlight-value">${topPlayer ? formatNumber(topPlayer.amount) : '0'}</span>
+        <span class="fight-card__bar"><span class="fight-card__bar-fill" style="--bar-width: ${stats.topShare.toFixed(1)}%;"></span></span>
+        <span class="breakdown-row__sub">${stats.topShare.toFixed(1)}% of player damage</span>
+      </div>
+      <div class="fight-card__composition" style="--friendly-share: ${stats.friendlyCount || 0}fr; --hostile-share: ${stats.hostileCount || 0}fr; --unknown-share: ${stats.unknownCount || 0}fr;">
+        <span class="fight-card__composition-label">Players</span>
+        <span class="fight-card__composition-bar" aria-label="${stats.friendlyCount} friendly, ${stats.hostileCount} hostile, ${stats.unknownCount} unknown players"><span></span><span></span><span></span></span>
+        <span class="fight-card__composition-counts">Friendly ${stats.friendlyCount} / Hostile ${stats.hostileCount}${stats.unknownCount ? ` / Unknown ${stats.unknownCount}` : ''}</span>
+        <span class="fight-card__signal-label">Activity <span class="fight-card__signal-value">${stats.eventsPerSecond.toFixed(1)}/s</span></span>
+        <span class="fight-card__bar"><span class="fight-card__bar-fill fight-card__bar-fill--activity" style="--bar-width: ${stats.activityPct.toFixed(1)}%;"></span></span>
       </div>
       <div class="fight-card__players">${renderFightPlayerChips(players)}</div>
       <svg class="fight-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </article>
-  `).join('');
+  `;
+  }).join('');
+
+  const unknownPlayers = getUnknownFightPlayers(fightsWithPlayers);
+  if (unknownPlayers.length > 0) {
+    if (!unknownPlayers.some(player => player.guid === state.manualClassInspectGuid)) state.manualClassInspectGuid = unknownPlayers[0].guid;
+    fightList.insertAdjacentHTML('afterbegin', `<div class="breakdown-controls unknown-class-tools" style="margin-bottom: var(--space-4);">
+      <button class="btn" id="resolve-player-classes" type="button">Resolve ${unknownPlayers.length} unknown classes online</button>
+      ${renderManualClassControls(unknownPlayers)}
+      <span class="breakdown-row__sub">Uses Raider.IO for name/realm lookup, then caches results locally. Players who block indexing stay unknown.</span>
+      <span class="breakdown-row__sub">${escapeHtml(state.classLookupStatus || '')}</span>
+      ${renderUnknownClassInspector(state.manualClassInspectGuid)}
+    </div>`);
+  }
 
   fightList.querySelectorAll('.fight-card').forEach(card => {
     card.addEventListener('click', () => selectFight(parseInt(card.dataset.fightIndex, 10)));
     card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
   });
+  const resolveButton = document.getElementById('resolve-player-classes');
+  if (resolveButton) resolveButton.addEventListener('click', resolveUnknownPlayerClassesOnline);
+  const playerSelect = document.getElementById('manual-player-class-player');
+  if (playerSelect) playerSelect.addEventListener('change', () => {
+    state.manualClassInspectGuid = playerSelect.value;
+    renderFightList();
+  });
+  const manualButton = document.getElementById('set-manual-player-class');
+  if (manualButton) manualButton.addEventListener('click', setManualPlayerClass);
+}
+
+function getUnknownFightPlayers(fightsWithPlayers) {
+  const unknownByGuid = new Map();
+  fightsWithPlayers.forEach(({ players }) => {
+    players.forEach(player => {
+      if (!getPlayerClassKey(player.guid)) unknownByGuid.set(player.guid, player);
+    });
+  });
+  return Array.from(unknownByGuid.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getFightCardStats(fight, players) {
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const totalDamage = players.reduce((sum, player) => sum + player.amount, 0);
+  const eventCount = state.events.filter(event => event.lineNo >= fight.startLineNo && event.lineNo <= fight.endLineNo).length;
+  return {
+    totalDamage,
+    fightDps: Math.round(totalDamage / fightSeconds),
+    eventCount,
+    eventsPerSecond: eventCount / fightSeconds,
+    durationPct: Math.min(100, (fight.duration / (5 * 60 * 1000)) * 100),
+    activityPct: Math.min(100, (eventCount / fightSeconds / 12) * 100),
+    topShare: totalDamage > 0 && players[0] ? (players[0].amount / totalDamage) * 100 : 0,
+    friendlyCount: players.filter(player => player.faction === 'friendly').length,
+    hostileCount: players.filter(player => player.faction === 'hostile').length,
+    unknownCount: players.filter(player => player.faction !== 'friendly' && player.faction !== 'hostile').length
+  };
+}
+
+function renderManualClassControls(players) {
+  const playerOptions = players.map(player => `<option value="${escapeHtml(player.guid)}" ${player.guid === state.manualClassInspectGuid ? 'selected' : ''}>${escapeHtml(player.name)}</option>`).join('');
+  const classOptions = PLAYER_CLASS_KEYS
+    .slice()
+    .sort((a, b) => formatClassName(a).localeCompare(formatClassName(b)))
+    .map(classKey => `<option value="${classKey}">${formatClassName(classKey)}</option>`)
+    .join('');
+  return `<select class="filter-select" id="manual-player-class-player" aria-label="Unknown player">${playerOptions}</select>
+    <select class="filter-select" id="manual-player-class-class" aria-label="Class">${classOptions}</select>
+    <button class="btn btn--secondary" id="set-manual-player-class" type="button">Set class</button>`;
+}
+
+function renderUnknownClassInspector(guid) {
+  const evidence = getUnknownClassEvidence(guid);
+  if (!evidence) return '';
+  const hints = evidence.classHints.length
+    ? evidence.classHints.map(row => `<div class="class-inspector__row"><span class="class-inspector__hint">${formatClassName(row.classKey)}</span><span class="class-inspector__meta">${escapeHtml(row.spellName)} #${row.spellId} x${row.count}</span></div>`).join('')
+    : '<div class="class-inspector__row"><span>No class-hint spells found</span></div>';
+  const spells = evidence.spells.length
+    ? evidence.spells.map(row => `<div class="class-inspector__row"><span>${escapeHtml(row.spellName)}</span><span class="class-inspector__meta">#${row.spellId} x${row.count}</span></div>`).join('')
+    : '<div class="class-inspector__row"><span>No spell casts found</span></div>';
+  const samples = evidence.samples.length
+    ? evidence.samples.map(row => `<div class="class-inspector__event"><strong>#${row.lineNo + 1}</strong> ${escapeHtml(row.summary)}</div>`).join('')
+    : '<div class="class-inspector__event">No matching log samples found.</div>';
+
+  return `<div class="class-inspector" aria-live="polite">
+    <div class="class-inspector__panel"><div class="class-inspector__title">Class Clues</div>${hints}</div>
+    <div class="class-inspector__panel"><div class="class-inspector__title">Spells Used</div>${spells}</div>
+    <div class="class-inspector__panel class-inspector__event"><div class="class-inspector__title">Readable Log Samples</div>${samples}</div>
+  </div>`;
+}
+
+function getUnknownClassEvidence(guid) {
+  if (!guid) return null;
+  const spellCounts = new Map();
+  const classHintCounts = new Map();
+  const samples = [];
+
+  for (const event of state.events) {
+    const fields = parseCombatLogFields(event.params);
+    const involvesPlayer = fields.sourceGuid === guid || fields.destGuid === guid;
+    if (!involvesPlayer) continue;
+
+    if (fields.sourceGuid === guid && eventHasSpellIdPayload(event.type)) {
+      const spellId = Number(fields.payload[0]) || 0;
+      const spellName = fields.payload[1] || `Spell ${spellId}`;
+      if (spellId > 0) {
+        incrementSpellCount(spellCounts, spellId, spellName);
+        if (SPELL_CLASS_HINTS[spellId]) incrementClassHintCount(classHintCounts, SPELL_CLASS_HINTS[spellId], spellId, spellName);
+      }
+    }
+
+    if (samples.length < 10) samples.push(summarizeClassEvidenceEvent(event, fields, guid));
+  }
+
+  return {
+    spells: rankSpellEvidence(spellCounts, 8),
+    classHints: rankClassHintEvidence(classHintCounts, 8),
+    samples
+  };
+}
+
+function incrementSpellCount(map, spellId, spellName) {
+  const key = String(spellId);
+  const row = map.get(key) || { spellId, spellName, count: 0 };
+  row.count += 1;
+  map.set(key, row);
+}
+
+function incrementClassHintCount(map, classKey, spellId, spellName) {
+  const key = `${classKey}:${spellId}`;
+  const row = map.get(key) || { classKey, spellId, spellName, count: 0 };
+  row.count += 1;
+  map.set(key, row);
+}
+
+function rankSpellEvidence(map, limit) {
+  return Array.from(map.values()).sort((a, b) => b.count - a.count || a.spellName.localeCompare(b.spellName)).slice(0, limit);
+}
+
+function rankClassHintEvidence(map, limit) {
+  return Array.from(map.values()).sort((a, b) => b.count - a.count || formatClassName(a.classKey).localeCompare(formatClassName(b.classKey))).slice(0, limit);
+}
+
+function summarizeClassEvidenceEvent(event, fields, guid) {
+  const direction = fields.sourceGuid === guid ? 'used' : 'received';
+  const otherName = cleanActorName(fields.sourceGuid === guid ? fields.destName : fields.sourceName) || 'unknown';
+  const spellText = eventHasSpellIdPayload(event.type)
+    ? ` ${fields.payload[1] || `Spell ${fields.payload[0]}`} (#${fields.payload[0]})`
+    : '';
+  return {
+    lineNo: event.lineNo,
+    summary: `${event.rawDateTime} ${event.type}: ${direction}${spellText} ${direction === 'used' ? 'on' : 'from'} ${otherName}`
+  };
 }
 
 function getFightPlayerRows(fight) {
@@ -2342,10 +2782,16 @@ function getFightPlayerRows(fight) {
 }
 
 function renderFightPlayerChips(players) {
-  const friendly = players.filter(player => player.faction === 'friendly');
-  const hostile = players.filter(player => player.faction === 'hostile');
-  const unknown = players.filter(player => player.faction !== 'friendly' && player.faction !== 'hostile');
-  return `${renderFightTeamRow('Friendly', friendly.concat(unknown))}${renderFightTeamRow('Hostile', hostile)}`;
+  const visiblePlayers = players.slice(0, 12);
+  const hiddenCount = Math.max(0, players.length - visiblePlayers.length);
+  const chips = visiblePlayers.map(player => {
+    const color = getPlayerClassColor(player.guid);
+    const factionClass = player.faction === 'hostile' ? 'fight-card__player--hostile' : (player.faction === 'friendly' ? 'fight-card__player--friendly' : '');
+    return `<span class="fight-card__player ${factionClass}" style="--player-color: ${color};" title="${escapeHtml(player.name)}">${escapeHtml(formatActorDisplayName(player.name))}</span>`;
+  });
+  if (hiddenCount > 0) chips.push(`<span class="fight-card__player fight-card__player--more">+${hiddenCount}</span>`);
+  if (chips.length === 0) chips.push(`<span class="fight-card__player fight-card__player--more">none</span>`);
+  return `<div class="fight-card__team"><span class="fight-card__team-label">Players</span><span class="fight-card__team-list">${chips.join('')}</span></div>`;
 }
 
 function renderFightTeamRow(label, players) {
@@ -2353,7 +2799,7 @@ function renderFightTeamRow(label, players) {
   const hiddenCount = Math.max(0, players.length - visiblePlayers.length);
   const chips = visiblePlayers.map(player => {
     const color = getPlayerClassColor(player.guid);
-    return `<span class="fight-card__player" style="--player-color: ${color};" title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</span>`;
+    return `<span class="fight-card__player" style="--player-color: ${color};" title="${escapeHtml(player.name)}">${escapeHtml(formatActorDisplayName(player.name))}</span>`;
   });
   if (hiddenCount > 0) chips.push(`<span class="fight-card__player fight-card__player--more">+${hiddenCount}</span>`);
   if (chips.length === 0) chips.push(`<span class="fight-card__player fight-card__player--more">none</span>`);
@@ -2365,8 +2811,12 @@ function renderActorName(name, guid, className = '', ownerGuid = null) {
   const classGuid = isPlayerGuid(guid) ? guid : ownerGuid;
   const color = classGuid ? getPlayerClassColor(classGuid) : 'var(--ink-muted)';
   const classKey = classGuid ? getPlayerClassKey(classGuid) : null;
-  const title = classKey ? `${classKey} · ${guid}` : `Unknown class · ${guid}`;
-  return `<strong class="${className}" style="color: ${color}; --player-color: ${color};" title="${escapeHtml(title)}">${escapeHtml(name)}</strong>`;
+  const title = classKey ? `${name}\n${classKey} · ${guid}` : `${name}\nUnknown class · ${guid}`;
+  return `<strong class="actor-name ${className}" style="color: ${color}; --player-color: ${color};" title="${escapeHtml(title)}">${escapeHtml(formatActorDisplayName(name))}</strong>`;
+}
+
+function formatActorDisplayName(name) {
+  return String(name || '').replace(/-([A-Z]{2})$/i, '');
 }
 
 function getPlayerClassColor(guid) {
@@ -2377,7 +2827,128 @@ function getPlayerClassColor(guid) {
 function getPlayerClassKey(guid) {
   const player = state.players.get(guid);
   if (!player) return null;
-  return player.classKey || SPEC_TO_CLASS[player.specId] || null;
+  return player.classKey || SPEC_TO_CLASS[player.specId] || getCachedPlayerClassKey(guid, player.specName) || null;
+}
+
+function getCachedPlayerClassKey(guid, name) {
+  return state.playerClassCache.get(getPlayerClassCacheKey(guid))?.classKey
+    || state.playerClassCache.get(getPlayerClassCacheKey(name))?.classKey
+    || null;
+}
+
+function rememberCachedPlayerClass(record) {
+  if (!record?.classKey) return;
+  state.playerClassCache.set(record.key, record);
+}
+
+function applyCachedPlayerClasses() {
+  state.players.forEach(player => {
+    if (player.classKey || SPEC_TO_CLASS[player.specId]) return;
+    player.classKey = getCachedPlayerClassKey(player.playerId, player.specName);
+  });
+}
+
+function getPlayerClassCacheKey(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+async function resolveUnknownPlayerClassesOnline() {
+  const unknownPlayers = Array.from(state.players.values())
+    .filter(player => !getPlayerClassKey(player.playerId))
+    .filter(player => parseCharacterNameRealm(player.specName || state.playerNames.get(player.playerId)));
+  if (unknownPlayers.length === 0) return;
+
+  state.classLookupStatus = `Looking up ${unknownPlayers.length} players...`;
+  renderFightList();
+
+  let resolved = 0;
+  let unresolved = 0;
+  for (const player of unknownPlayers) {
+    const parsed = parseCharacterNameRealm(player.specName || state.playerNames.get(player.playerId));
+    const classKey = parsed ? await lookupRaiderIoClass(parsed) : null;
+    if (classKey) {
+      player.classKey = classKey;
+      await persistPlayerClass(player, classKey, 'raiderio');
+      resolved += 1;
+    } else {
+      unresolved += 1;
+    }
+  }
+
+  state.classLookupStatus = `Resolved ${resolved}; ${unresolved} unavailable.`;
+  rerenderAllViews();
+}
+
+async function setManualPlayerClass() {
+  const playerSelect = document.getElementById('manual-player-class-player');
+  const classSelect = document.getElementById('manual-player-class-class');
+  const player = state.players.get(playerSelect?.value);
+  const classKey = normalizeClassKey(classSelect?.value);
+  if (!player || !classKey) return;
+
+  player.classKey = classKey;
+  await persistPlayerClass(player, classKey, 'manual');
+  state.classLookupStatus = `${player.specName || player.playerId} set to ${formatClassName(classKey)}.`;
+  rerenderAllViews();
+}
+
+async function persistPlayerClass(player, classKey, source) {
+  const name = player.specName || state.playerNames.get(player.playerId) || '';
+  const records = [
+    { key: getPlayerClassCacheKey(player.playerId), guid: player.playerId, name, classKey, source, updatedAt: new Date().toISOString() },
+    { key: getPlayerClassCacheKey(name), guid: player.playerId, name, classKey, source, updatedAt: new Date().toISOString() }
+  ].filter(record => record.key);
+  records.forEach(rememberCachedPlayerClass);
+  const db = await openLogDatabase();
+  await Promise.all(records.map(record => putCachedPlayerClass(db, record)));
+}
+
+function parseCharacterNameRealm(displayName) {
+  const cleaned = cleanActorName(displayName);
+  const match = cleaned.match(/^(.+)-([^-]+(?:-[^-]+)*)-([A-Z]{2})$/i);
+  if (!match) return null;
+  return {
+    name: match[1],
+    realm: match[2],
+    region: match[3].toLowerCase()
+  };
+}
+
+async function lookupRaiderIoClass(character) {
+  const realmSlug = getRaiderIoRealmSlug(character.realm);
+  const url = `https://raider.io/api/v1/characters/profile?region=${encodeURIComponent(character.region)}&realm=${encodeURIComponent(realmSlug)}&name=${encodeURIComponent(character.name)}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return normalizeClassKey(data.class);
+  } catch (err) {
+    console.warn('Raider.IO class lookup failed.', err);
+    return null;
+  }
+}
+
+function getRaiderIoRealmSlug(realm) {
+  return String(realm || '')
+    .replace(/'/g, '')
+    .replace(/([a-z])([A-Z0-9])/g, '$1-$2')
+    .replace(/([0-9])([A-Za-z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase();
+}
+
+function normalizeClassKey(className) {
+  const normalized = String(className || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (normalized === 'DEATHKNIGHT') return 'DEATHKNIGHT';
+  if (normalized === 'DEMONHUNTER') return 'DEMONHUNTER';
+  return CLASS_COLORS[normalized] ? normalized : null;
+}
+
+function formatClassName(classKey) {
+  if (classKey === 'DEATHKNIGHT') return 'Death Knight';
+  if (classKey === 'DEMONHUNTER') return 'Demon Hunter';
+  return String(classKey || '').toLowerCase().replace(/^[a-z]/, letter => letter.toUpperCase());
 }
 
 function getReactionGroup(flags) {
@@ -2904,7 +3475,7 @@ function renderDamageTakenTargetTable(rows, totalDamage, fight, reportKey = 'dam
   const fightSeconds = Math.max(1, fight.duration / 1000);
   const maxAmount = Math.max(...hierarchy.flatMap(group => [group.player, ...group.children]).map(row => row.amount), 1);
   return `<div class="breakdown-list">
-    ${hierarchy.map((group, index) => `${renderDamageTakenTargetRow(group.player, index + 1, totalDamage, fightSeconds, maxAmount, true, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? group.children.map(child => renderDamageTakenTargetRow(child, '', totalDamage, fightSeconds, maxAmount, false, reportKey)).join('') : ''}`).join('')}
+    ${renderGroupedActorSections(hierarchy, (group, index) => `${renderDamageTakenTargetRow(group.player, index + 1, totalDamage, fightSeconds, maxAmount, true, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? group.children.map(child => renderDamageTakenTargetRow(child, '', totalDamage, fightSeconds, maxAmount, false, reportKey)).join('') : ''}`)}
   </div>`;
 }
 
@@ -2939,7 +3510,7 @@ function renderDamageTakenSourceTable(target, rows, fight) {
         <div class="breakdown-row__metrics"><span class="breakdown-row__val">${formatNumber(totalDamage)}</span></div>
       </div>
     </div>
-    ${rows.length > 0 ? rows.map((row, index) => renderDamageTakenSourceRow(row, index + 1, totalDamage, fightSeconds, maxAmount)).join('') : renderCompactEmptyRow('damage sources')}
+    ${rows.length > 0 ? renderGroupedFlatSections(rows, (row, index) => renderDamageTakenSourceRow(row, index + 1, totalDamage, fightSeconds, maxAmount)) : renderCompactEmptyRow('damage sources')}
   </div>`;
 }
 
@@ -3007,8 +3578,39 @@ function renderHierarchicalReportTable(rows, total, fight, reportKey) {
   const fightSeconds = Math.max(1, fight.duration / 1000);
   const maxAmount = Math.max(...hierarchy.map(group => group.total), 1);
   return `<div class="breakdown-list">
-    ${hierarchy.map((group, index) => `${renderActorTotalRow(group.player, group.total, index + 1, total, fightSeconds, maxAmount, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? group.children.map(child => renderActorChildRow(child, total, fightSeconds, maxAmount)).join('') : ''}`).join('')}
+    ${renderGroupedActorSections(hierarchy, (group, index) => `${renderActorTotalRow(group.player, group.total, index + 1, total, fightSeconds, maxAmount, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? group.children.map(child => renderActorChildRow(child, total, fightSeconds, maxAmount)).join('') : ''}`)}
   </div>`;
+}
+
+function renderGroupedActorSections(hierarchy, renderGroup) {
+  let rank = 0;
+  return getActorSections(hierarchy).map(section => {
+    if (section.groups.length === 0) return '';
+    const rows = section.groups.map(group => {
+      rank += 1;
+      return renderGroup(group, rank);
+    }).join('');
+    return `${renderBreakdownSectionHeader(section)}${rows}`;
+  }).join('');
+}
+
+function getActorSections(hierarchy) {
+  return [
+    { key: 'friendly', label: 'Friendly Players', className: 'breakdown-section--friendly', groups: hierarchy.filter(group => getActorSectionKey(group.player) === 'friendly') },
+    { key: 'hostile', label: 'Hostile Players', className: 'breakdown-section--hostile', groups: hierarchy.filter(group => getActorSectionKey(group.player) === 'hostile') },
+    { key: 'other', label: 'NPCs / Pets', className: 'breakdown-section--other', groups: hierarchy.filter(group => getActorSectionKey(group.player) === 'other') }
+  ];
+}
+
+function getActorSectionKey(row) {
+  if (isPlayerGuid(row.guid) && row.faction === 'friendly') return 'friendly';
+  if (isPlayerGuid(row.guid) && row.faction === 'hostile') return 'hostile';
+  return 'other';
+}
+
+function renderBreakdownSectionHeader(section) {
+  const total = section.groups.reduce((sum, group) => sum + group.total, 0);
+  return `<div class="breakdown-section ${section.className}"><span>${section.label}</span><span>${section.groups.length} · ${formatNumber(total)}</span></div>`;
 }
 
 function renderActorTotalRow(player, amount, rank, total, fightSeconds, maxAmount, reportKey = 'default') {
@@ -3050,11 +3652,31 @@ function renderCompactRows(rows, total, fight, interactive) {
   const fightSeconds = Math.max(1, fight.duration / 1000);
   const maxAmount = Math.max(...rows.map(row => row.amount), 1);
   return `<div class="breakdown-list">
-    ${rows.map((row, index) => interactive
+    ${renderGroupedFlatSections(rows, (row, index) => interactive
       ? renderDamageRow(row, index + 1, total, fightSeconds, maxAmount, false)
       : renderCompactReportRow(row, index + 1, total, fightSeconds, maxAmount)
-    ).join('')}
+    )}
   </div>`;
+}
+
+function renderGroupedFlatSections(rows, renderRow) {
+  let rank = 0;
+  return getFlatActorSections(rows).map(section => {
+    if (section.rows.length === 0) return '';
+    const sectionRows = section.rows.map(row => {
+      rank += 1;
+      return renderRow(row, rank);
+    }).join('');
+    return `${renderBreakdownSectionHeader({ ...section, groups: section.rows.map(row => ({ total: row.amount })) })}${sectionRows}`;
+  }).join('');
+}
+
+function getFlatActorSections(rows) {
+  return [
+    { key: 'friendly', label: 'Friendly Players', className: 'breakdown-section--friendly', rows: rows.filter(row => getActorSectionKey(row) === 'friendly') },
+    { key: 'hostile', label: 'Hostile Players', className: 'breakdown-section--hostile', rows: rows.filter(row => getActorSectionKey(row) === 'hostile') },
+    { key: 'other', label: 'NPCs / Pets', className: 'breakdown-section--other', rows: rows.filter(row => getActorSectionKey(row) === 'other') }
+  ];
 }
 
 function renderCompactReportRow(row, rank, total, fightSeconds, maxAmount) {
@@ -3276,7 +3898,7 @@ function renderDamageDoneTable(rows, totalDamage, fight, reportKey = 'damage-don
   const displayedRows = hierarchy.flatMap(group => [group.player, ...group.children]);
   const maxAmount = Math.max(...displayedRows.map(row => row.amount), 1);
   return `<div class="breakdown-list">
-    ${hierarchy.map((group, index) => `${renderActorTotalRow(group.player, group.total, index + 1, totalDamage, fightSeconds, maxAmount, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? renderExpandedActorGroup(group, totalDamage, fightSeconds, maxAmount, reportKey) : ''}`).join('')}
+    ${renderGroupedActorSections(hierarchy, (group, index) => `${renderActorTotalRow(group.player, group.total, index + 1, totalDamage, fightSeconds, maxAmount, reportKey)}${isActorGroupExpanded(group.player.guid, reportKey) ? renderExpandedActorGroup(group, totalDamage, fightSeconds, maxAmount, reportKey) : ''}`)}
   </div>`;
 }
 
@@ -3650,6 +4272,7 @@ function buildDamageTakenRows(fight) {
         guid: damage.destGuid,
         name: getDisplayName(damage.destName, damage.destGuid),
         ownerGuid,
+        faction: getReactionGroup(damage.destFlags),
         amount: 0,
         spells: new Map()
       });
@@ -3683,6 +4306,7 @@ function buildDamageTakenSourceRows(fight, targetGuid) {
       sources.set(damage.sourceGuid, {
         guid: damage.sourceGuid,
         name: getDisplayName(damage.sourceName, damage.sourceGuid),
+        faction: getReactionGroup(damage.sourceFlags),
         amount: 0,
         spells: new Map()
       });
@@ -3712,6 +4336,7 @@ function buildHealingRows(fight, actorSide) {
     if (!healing || healing.amount <= 0) continue;
     const guid = actorSide === 'dest' ? healing.destGuid : healing.sourceGuid;
     const name = actorSide === 'dest' ? healing.destName : healing.sourceName;
+    const flags = actorSide === 'dest' ? healing.destFlags : healing.sourceFlags;
     const peerGuid = actorSide === 'dest' ? healing.sourceGuid : healing.destGuid;
     const peerName = actorSide === 'dest' ? healing.sourceName : healing.destName;
     const ownerGuid = state.petOwners.get(guid) || null;
@@ -3721,6 +4346,7 @@ function buildHealingRows(fight, actorSide) {
         guid,
         name: getDisplayName(name, guid),
         ownerGuid,
+        faction: getReactionGroup(flags),
         amount: 0,
         spells: new Map()
       });
@@ -3750,9 +4376,10 @@ function buildEventCountRows(fight, typeTokens) {
     const useDest = !isValidActorGuid(fields.sourceGuid) && isValidActorGuid(fields.destGuid);
     const guid = useDest ? fields.destGuid : fields.sourceGuid;
     const name = useDest ? fields.destName : fields.sourceName;
+    const flags = useDest ? fields.destFlags : fields.sourceFlags;
     const ownerGuid = state.petOwners.get(guid) || null;
     if (!isPlayerGuid(guid) && !isPlayerGuid(ownerGuid)) continue;
-    addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid);
+    addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid, getReactionGroup(flags));
   }
   return mapToSortedRows(actors);
 }
@@ -3768,16 +4395,18 @@ function buildAuraRows(fight, auraKind) {
     if (auraKind === 'debuff' && auraType !== 'debuff') continue;
     const guid = fields.destGuid || fields.sourceGuid || '';
     const name = fields.destName || fields.sourceName || '';
+    const flags = fields.destGuid ? fields.destFlags : fields.sourceFlags;
     const ownerGuid = state.petOwners.get(guid) || null;
     if (!isPlayerGuid(guid) && !isPlayerGuid(ownerGuid)) continue;
-    addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid);
+    addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid, getReactionGroup(flags));
   }
   return mapToSortedRows(actors);
 }
 
-function addReportAmount(map, guid, name, amount, ownerGuid = null) {
-  if (!map.has(guid)) map.set(guid, { guid, name, ownerGuid, amount: 0 });
+function addReportAmount(map, guid, name, amount, ownerGuid = null, faction = 'unknown') {
+  if (!map.has(guid)) map.set(guid, { guid, name, ownerGuid, faction, amount: 0 });
   if (ownerGuid && !map.get(guid).ownerGuid) map.get(guid).ownerGuid = ownerGuid;
+  if (faction !== 'unknown') map.get(guid).faction = faction;
   map.get(guid).amount += amount;
 }
 
@@ -3905,8 +4534,10 @@ function parseHealingEvent(type, rawEventParams) {
   return {
     sourceGuid: fields.sourceGuid,
     sourceName: fields.sourceName,
+    sourceFlags: fields.sourceFlags,
     destGuid: fields.destGuid,
     destName: fields.destName,
+    destFlags: fields.destFlags,
     spellId: parseInt(payload[0], 10) || 0,
     spellName: payload[1] || type,
     spellSchool: payload[2] || '',
@@ -4119,6 +4750,7 @@ function formatNumber(num) {
   return Math.round(num).toLocaleString();
 }
 
+renderFightList();
 restorePersistedLog();
 </script>
 </body>
