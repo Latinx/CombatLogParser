@@ -6,7 +6,7 @@
     version="0.1.0.0"
     processorArchitecture="amd64"
   />
-  <description>Combat Log Parser - Local WoW Combat Log Analyzer</description>
+  <description>Combat Log Parser</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>

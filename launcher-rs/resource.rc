@@ -16,11 +16,11 @@ BEGIN
     BEGIN
         BLOCK "040904B0"
         BEGIN
-            VALUE "CompanyName",      "WoWAnalyzer"
-            VALUE "FileDescription",  "Combat Log Parser - Local WoW Combat Log Analyzer"
+            VALUE "CompanyName",      ""
+            VALUE "FileDescription",  "Combat Log Parser"
             VALUE "FileVersion",      "0.1.0.0"
             VALUE "InternalName",     "combat-log-parser-launcher"
-            VALUE "LegalCopyright",   "Copyright (c) WoWAnalyzer"
+            VALUE "LegalCopyright",   ""
             VALUE "OriginalFilename", "CombatLogParser.exe"
             VALUE "ProductName",      "Combat Log Parser"
             VALUE "ProductVersion",   "0.1.0"
