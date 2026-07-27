@@ -259,241 +259,350 @@ body {
 
 .fight-list { display: flex; flex-direction: column; gap: var(--space-3); }
 
-.fight-ledger {
+.fight-card {
+  background:
+    linear-gradient(90deg, rgba(255, 177, 74, 0.07), transparent 38%),
+    linear-gradient(90deg, rgba(20, 31, 54, 0.92), rgba(13, 20, 38, 0.76));
   border: 1px solid var(--gridline);
-  border-radius: 16px;
-  overflow: hidden;
-  background: rgba(6, 9, 20, 0.58);
-}
-
-.fight-ledger__header,
-.fight-row {
-  display: grid;
-  grid-template-columns: minmax(280px, 1.1fr) 132px 182px 220px minmax(360px, 1.2fr) 28px;
-  gap: var(--space-4);
-  align-items: center;
-}
-
-.fight-ledger__header {
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--gridline);
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.fight-row {
-  position: relative;
-  min-height: 70px;
+  border-radius: 10px;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(137, 171, 255, 0.08);
+  display: grid;
+  grid-template-columns: minmax(280px, 1.15fr) minmax(210px, 0.7fr) minmax(190px, 0.62fr) minmax(300px, 0.9fr) minmax(420px, 1.25fr) 26px;
+  gap: var(--space-3);
+  align-items: center;
+  transition: all var(--transition-fast);
   cursor: pointer;
+  animation: fadeUp var(--transition-base) ease-out both;
+  position: relative;
   overflow: hidden;
-  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
 }
 
-.fight-row:last-child { border-bottom: 0; }
-
-.fight-row::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--gold-vein);
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.fight-row::after {
+.fight-card::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255, 208, 138, 0.08), transparent);
-  transform: translateX(-120%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.045), transparent);
+  transform: translateX(-115%);
 }
 
-.fight-row:hover,
-.fight-row:focus-visible {
-  background: rgba(20, 31, 54, 0.76);
-  transform: translateX(2px);
+.fight-card:hover::after { animation: telemetrySweep 900ms ease-out; }
+
+@keyframes telemetrySweep { to { transform: translateX(115%); } }
+
+.fight-card:nth-child(1) { animation-delay: 50ms; }
+.fight-card:nth-child(2) { animation-delay: 100ms; }
+.fight-card:nth-child(3) { animation-delay: 150ms; }
+.fight-card:nth-child(4) { animation-delay: 200ms; }
+.fight-card:nth-child(5) { animation-delay: 250ms; }
+
+.fight-card:hover {
+  border-color: rgba(255, 177, 74, 0.54);
+  background: linear-gradient(90deg, rgba(30, 42, 72, 0.98), rgba(13, 20, 38, 0.86));
+  transform: translateX(3px);
 }
 
-.fight-row:hover::before,
-.fight-row:focus-visible::before { opacity: 1; }
+.fight-card:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein); }
 
-.fight-row:hover::after { animation: telemetrySweep 760ms ease-out; }
-
-@keyframes telemetrySweep { to { transform: translateX(120%); } }
-
-.fight-row:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--gold-vein) inset; }
-
-.fight-row__identity,
-.fight-row__metric,
-.fight-row__top,
-.fight-row__sides,
-.fight-row__players { min-width: 0; }
-
-.fight-row__boss {
-  display: block;
-  overflow: hidden;
-  color: var(--ink);
+.fight-card__boss {
   font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: 600;
+  color: var(--ink);
   letter-spacing: -0.04em;
-  line-height: 1.15;
+  line-height: 1.2;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.fight-row__meta,
-.fight-row__subline {
-  display: flex;
+.fight-card__topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
-  margin-top: 3px;
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  min-width: 0;
 }
 
-.fight-row__status {
+.fight-card__status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  padding: 2px 7px;
+  min-width: 54px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid rgba(74, 222, 128, 0.35);
   border-radius: 999px;
   color: #4ade80;
   background: rgba(74, 222, 128, 0.09);
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.fight-row__status--pvp {
+.fight-card__status--pvp {
   border-color: rgba(125, 92, 255, 0.4);
   color: var(--healer-mint);
   background: rgba(125, 92, 255, 0.13);
 }
 
-.fight-row__label {
+.fight-card__subline {
+  grid-column: 1 / -1;
   display: flex;
-  justify-content: space-between;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fight-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+}
+
+.fight-card__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.fight-card__meta-label {
   color: var(--ink-faint);
   font-family: var(--font-mono);
-  font-size: 0.58rem;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fight-card__meta-value {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fight-card__meta-item--duration { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+
+.fight-card__meta-item--difficulty {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(125, 92, 255, 0.18);
+  color: var(--healer-mint);
+}
+
+.fight-card__meta-item--kill { color: #4ade80; font-weight: 600; }
+
+.fight-card__meta-item--wide { min-width: 0; }
+
+.fight-card__spotlight { min-width: 0; }
+
+.fight-card__spotlight-label {
+  display: block;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.fight-row__value {
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.fight-row__bar,
-.fight-row__sidebar {
+.fight-card__spotlight-name {
   display: block;
-  height: 6px;
-  margin-top: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.fight-row__bar-fill {
-  display: block;
-  width: var(--bar-width, 0%);
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--gold-vein), var(--gold-glint));
-  animation: ledgerPulse 1.8s ease-in-out infinite;
-}
-
-.fight-row__bar-fill--activity { background: linear-gradient(90deg, var(--rune-violet), var(--healer-mint)); }
-
-.fight-row__sidebar {
-  display: grid;
-  grid-template-columns: var(--friendly-share, 1fr) var(--hostile-share, 1fr) var(--unknown-share, 0fr);
-}
-
-.fight-row__sidebar span:nth-child(1) { background: var(--healer-mint); }
-.fight-row__sidebar span:nth-child(2) { background: var(--wipe-red); }
-.fight-row__sidebar span:nth-child(3) { background: var(--ink-faint); }
-
-@keyframes ledgerPulse { 50% { filter: brightness(1.22); } }
-
-.fight-row__top-name {
-  display: block;
-  overflow: hidden;
+  margin-top: var(--space-1);
   color: var(--ink);
   font-weight: 700;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.fight-row__top-value {
+.fight-card__spotlight-value {
   display: block;
   color: var(--gold-glint);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
 
-.fight-row__players-line {
+.fight-card__spotlight .fight-card__status { margin-top: var(--space-2); }
+
+.fight-card__players { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.fight-card__team {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  overflow: hidden;
 }
 
-.fight-row__player {
+.fight-card__team-label {
+  width: 52px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fight-card__team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fight-card__player {
   display: inline-flex;
   align-items: center;
-  max-width: 150px;
-  min-width: 0;
+  max-width: 160px;
   padding: 2px 7px;
   border-left: 3px solid currentColor;
-  border-radius: 6px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.045);
   color: var(--player-color, var(--ink-muted));
   font-family: var(--font-mono);
   font-size: 0.68rem;
   line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.fight-card__player--friendly { box-shadow: inset 0 -1px 0 rgba(98, 242, 194, 0.28); }
+
+.fight-card__player--hostile { box-shadow: inset 0 -1px 0 rgba(255, 91, 110, 0.32); }
+
+.fight-card__player--more {
+  border-left-color: var(--gridline);
+  color: var(--ink-faint);
+}
+
+.fight-card__arrow {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  width: 24px;
+  height: 24px;
+  stroke: var(--ink-muted);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.fight-card:hover .fight-card__arrow { stroke: var(--gold-vein); transform: translateX(4px); }
+
+.fight-card__spotlight,
+.fight-card__composition,
+.fight-card__signal { min-width: 0; }
+
+.fight-card__spotlight-meter::-webkit-meter-bar,
+.fight-card__intensity-meter::-webkit-meter-bar {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fight-card__spotlight-meter::-webkit-meter-optimum-value,
+.fight-card__intensity-meter::-webkit-meter-optimum-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-vein), var(--gold-glint));
+}
+
+.fight-card__spotlight-meter,
+.fight-card__intensity-meter {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: var(--space-2);
+  appearance: none;
+}
+
+.fight-card__composition {
+  display: grid;
+  grid-template-columns: auto minmax(90px, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.fight-card__composition-bar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: var(--friendly-share, 1fr) var(--hostile-share, 1fr) var(--unknown-share, 0fr);
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fight-card__composition-bar span:nth-child(1) { background: var(--healer-mint); }
+.fight-card__composition-bar span:nth-child(2) { background: var(--wipe-red); }
+.fight-card__composition-bar span:nth-child(3) { background: var(--ink-faint); }
+
+.fight-card__composition-counts {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
   white-space: nowrap;
 }
 
-.fight-row__player--friendly { box-shadow: inset 0 -1px 0 rgba(98, 242, 194, 0.28); }
+.fight-card__players { min-width: 0; }
 
-.fight-row__player--hostile { box-shadow: inset 0 -1px 0 rgba(255, 91, 110, 0.32); }
-
-.fight-row__player--more { border-left-color: var(--gridline); color: var(--ink-faint); }
-
-.fight-row__arrow {
-  width: 20px;
-  height: 20px;
-  justify-self: end;
-  stroke: var(--ink-muted);
-  transition: all var(--transition-fast);
+.fight-card__signal {
+  min-width: 0;
 }
 
-.fight-row:hover .fight-row__arrow { stroke: var(--gold-vein); transform: translateX(4px); }
+.fight-card__signal-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fight-card__signal-value { color: var(--ink); font-size: var(--text-xs); letter-spacing: 0; text-transform: none; }
+
+.fight-card__bar {
+  height: 8px;
+  margin-top: var(--space-2);
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fight-card__bar-fill {
+  display: block;
+  height: 100%;
+  width: var(--bar-width, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--gold-vein), var(--gold-glint));
+  animation: barPulse 1.8s ease-in-out infinite;
+}
+
+.fight-card__bar-fill--activity { background: linear-gradient(90deg, var(--rune-violet), var(--healer-mint)); }
+
+@keyframes barPulse { 50% { filter: brightness(1.25); } }
 
 .fight-detail { animation: fadeUp var(--transition-slow) ease-out both; }
 
@@ -1173,6 +1282,19 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   padding: 4px 9px;
   cursor: pointer;
   user-select: none;
+  overflow: hidden;
+}
+
+.breakdown-row__header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--actor-color, var(--gold-vein));
+  opacity: 0.95;
+  z-index: 2;
 }
 
 .breakdown-row__bg-bar {
@@ -1180,10 +1302,11 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   top: 0;
   left: 0;
   bottom: 0;
-  opacity: 0.13;
+  opacity: 0.20;
   pointer-events: none;
   transition: width var(--transition-base);
-  box-shadow: inset -18px 0 24px rgba(255, 255, 255, 0.08);
+  box-shadow: inset -18px 0 24px rgba(255, 255, 255, 0.10);
+  background-image: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(255,255,255,0.12) 100%);
 }
 
 .breakdown-row__info {
@@ -1415,7 +1538,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 .metric-bar__fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--rune-violet), var(--gold-vein), var(--healer-mint));
+  background: var(--actor-color, var(--gold-vein));
   box-shadow: 0 0 18px rgba(244, 217, 128, 0.18);
 }
 
@@ -1554,9 +1677,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   body { grid-template-columns: 1fr; grid-template-rows: var(--header-h) 1fr; }
   .main { grid-row: 2; padding: var(--space-6) var(--space-4); animation: none; }
   .main::before { inset: var(--header-h) 0 0 0; }
-  .fight-ledger__header { display: none; }
-  .fight-row { grid-template-columns: 1fr; gap: var(--space-3); }
-  .fight-row__arrow { display: none; }
+  .fight-card { grid-template-columns: 1fr; }
   .track__label { width: 100px; }
   .track__events { left: 100px; }
   .track__spec { display: none; }
@@ -1576,7 +1697,8 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   .upload-zone { padding: var(--space-10) var(--space-4); }
   .upload-zone__icon { width: 56px; height: 56px; }
   .upload-zone__title { font-size: var(--text-xl); }
-  .fight-row { min-height: 0; }
+  .fight-card { grid-template-columns: 1fr; gap: var(--space-3); min-height: 0; }
+  .fight-card__arrow { display: none; }
   .timeline__boss-hp { height: 36px; }
   .track { height: 36px; }
   .track__label { width: 80px; padding-left: var(--space-2); }
@@ -1681,10 +1803,12 @@ window.whTooltips = { colorLinks: false, iconizeLinks: false, renameLinks: false
 const CLASS_COLORS = {
   WARRIOR: '#C69B6D', PALADIN: '#F48CBA', HUNTER: '#AAD372', ROGUE: '#FFF468',
   PRIEST: '#FFFFFF', DEATHKNIGHT: '#C41E3A', SHAMAN: '#0070DD', MAGE: '#3FC7EB', DRUID: '#FF7C0A',
-  WARLOCK: '#8788EE', MONK: '#00FF98', DEMONHUNTER: '#A330C9', EVOKER: '#33937F',
-  warrior: '#C69B6D', paladin: '#F48CBA', hunter: '#AAD372', rogue: '#FFF468',
-  priest: '#FFFFFF', dk: '#C41E3A', deathknight: '#C41E3A', 'death knight': '#C41E3A', shaman: '#0070DD', mage: '#3FC7EB', druid: '#FF7C0A',
-  warlock: '#8788EE', monk: '#00FF98', dh: '#A330C9', demonhunter: '#A330C9', 'demon hunter': '#A330C9', evoker: '#33937F'
+  WARLOCK: '#8788EE', MONK: '#00FF98', DEMONHUNTER: '#A330C9', EVOKER: '#33937F'
+};
+
+const CLASS_ALIASES = {
+  WARRIOR: 'WARRIOR', PALADIN: 'PALADIN', HUNTER: 'HUNTER', ROGUE: 'ROGUE', PRIEST: 'PRIEST', SHAMAN: 'SHAMAN', MAGE: 'MAGE', DRUID: 'DRUID', WARLOCK: 'WARLOCK', MONK: 'MONK', EVOKER: 'EVOKER',
+  DK: 'DEATHKNIGHT', DEATHKNIGHT: 'DEATHKNIGHT', DEMONHUNTER: 'DEMONHUNTER', DH: 'DEMONHUNTER'
 };
 
 const PLAYER_CLASS_KEYS = [
@@ -2480,43 +2604,41 @@ function renderFightList() {
     return;
   }
 
-  fightList.innerHTML = `<div class="fight-ledger">
-    <div class="fight-ledger__header" aria-hidden="true">
-      <span>Fight</span><span>Duration</span><span>Top Damage</span><span>Sides</span><span>Players</span><span></span>
-    </div>
-    ${fightsWithPlayers.map(({ fight, index, players }) => {
+  fightList.innerHTML = fightsWithPlayers.map(({ fight, index, players }) => {
     const topPlayer = players[0];
     const stats = getFightCardStats(fight, players);
     const statusLabel = fight.kill ? 'Kill' : (fight.difficulty === 0 ? 'PvP' : 'Pull');
     return `
-    <article class="fight-row" tabindex="0" data-fight-index="${index}" role="button" aria-label="View ${escapeHtml(fight.bossName)} fight details">
-      <div class="fight-row__identity">
-        <span class="fight-row__boss">${escapeHtml(fight.bossName)}</span>
-        <span class="fight-row__meta"><time datetime="${escapeHtml(fight.startDateTime?.toISOString?.() || '')}">${escapeHtml(formatFightTime(fight.startDateTime))}</time><span>${escapeHtml(formatFightDate(fight.startDateTime))}</span><span class="fight-row__status ${fight.difficulty === 0 ? 'fight-row__status--pvp' : ''}">${statusLabel}</span></span>
+    <article class="fight-card" tabindex="0" data-fight-index="${index}" role="button" aria-label="View ${escapeHtml(fight.bossName)} fight details">
+      <div class="fight-card__topline">
+        <span class="fight-card__boss">${escapeHtml(fight.bossName)}</span>
+        <span class="fight-card__status ${fight.difficulty === 0 ? 'fight-card__status--pvp' : ''}">${statusLabel}</span>
+        <span class="fight-card__subline"><time datetime="${escapeHtml(fight.startDateTime?.toISOString?.() || '')}">${escapeHtml(formatFightTime(fight.startDateTime))}</time><span>${escapeHtml(formatFightDate(fight.startDateTime))}</span></span>
       </div>
-      <div class="fight-row__metric">
-        <span class="fight-row__label">Combat <span class="fight-row__value">${escapeHtml(formatDuration(fight.duration))}</span></span>
-        <span class="fight-row__bar"><span class="fight-row__bar-fill" style="--bar-width: ${stats.durationPct.toFixed(1)}%;"></span></span>
-        <span class="fight-row__subline"><span>${formatNumber(stats.totalDamage)}</span><span>${formatNumber(stats.fightDps)}/s</span></span>
+      <div class="fight-card__signal">
+        <span class="fight-card__signal-label">Duration <span class="fight-card__signal-value">${escapeHtml(formatDuration(fight.duration))}</span></span>
+        <span class="fight-card__bar"><span class="fight-card__bar-fill" style="--bar-width: ${stats.durationPct.toFixed(1)}%;"></span></span>
+        <span class="fight-card__subline"><span>${formatNumber(stats.totalDamage)} damage</span><span>${formatNumber(stats.fightDps)} DPS</span></span>
       </div>
-      <div class="fight-row__top">
-        <span class="fight-row__label">${stats.topShare.toFixed(1)}%</span>
-        <span class="fight-row__top-name" title="${escapeHtml(topPlayer?.name || 'none')}">${escapeHtml(topPlayer ? formatActorDisplayName(topPlayer.name) : 'none')}</span>
-        <span class="fight-row__top-value">${topPlayer ? formatNumber(topPlayer.amount) : '0'}</span>
-        <span class="fight-row__bar"><span class="fight-row__bar-fill" style="--bar-width: ${stats.topShare.toFixed(1)}%;"></span></span>
+      <div class="fight-card__spotlight">
+        <span class="fight-card__spotlight-label">Top Damage</span>
+        <span class="fight-card__spotlight-name" title="${escapeHtml(topPlayer?.name || 'none')}">${escapeHtml(topPlayer ? formatActorDisplayName(topPlayer.name) : 'none')}</span>
+        <span class="fight-card__spotlight-value">${topPlayer ? formatNumber(topPlayer.amount) : '0'}</span>
+        <span class="fight-card__bar"><span class="fight-card__bar-fill" style="--bar-width: ${stats.topShare.toFixed(1)}%;"></span></span>
+        <span class="breakdown-row__sub">${stats.topShare.toFixed(1)}% of player damage</span>
       </div>
-      <div class="fight-row__sides" style="--friendly-share: ${stats.friendlyCount || 0}fr; --hostile-share: ${stats.hostileCount || 0}fr; --unknown-share: ${stats.unknownCount || 0}fr;">
-        <span class="fight-row__label">Players <span class="fight-row__value">${players.length}</span></span>
-        <span class="fight-row__sidebar" aria-label="${stats.friendlyCount} friendly, ${stats.hostileCount} hostile, ${stats.unknownCount} unknown players"><span></span><span></span><span></span></span>
-        <span class="fight-row__subline"><span>Friendly ${stats.friendlyCount}</span><span>Hostile ${stats.hostileCount}</span>${stats.unknownCount ? `<span>Unknown ${stats.unknownCount}</span>` : ''}</span>
-        <span class="fight-row__bar"><span class="fight-row__bar-fill fight-row__bar-fill--activity" style="--bar-width: ${stats.activityPct.toFixed(1)}%;"></span></span>
+      <div class="fight-card__composition" style="--friendly-share: ${stats.friendlyCount || 0}fr; --hostile-share: ${stats.hostileCount || 0}fr; --unknown-share: ${stats.unknownCount || 0}fr;">
+        <span class="fight-card__composition-label">Players</span>
+        <span class="fight-card__composition-bar" aria-label="${stats.friendlyCount} friendly, ${stats.hostileCount} hostile, ${stats.unknownCount} unknown players"><span></span><span></span><span></span></span>
+        <span class="fight-card__composition-counts">Friendly ${stats.friendlyCount} / Hostile ${stats.hostileCount}${stats.unknownCount ? ` / Unknown ${stats.unknownCount}` : ''}</span>
+        <span class="fight-card__signal-label">Activity <span class="fight-card__signal-value">${stats.eventsPerSecond.toFixed(1)}/s</span></span>
+        <span class="fight-card__bar"><span class="fight-card__bar-fill fight-card__bar-fill--activity" style="--bar-width: ${stats.activityPct.toFixed(1)}%;"></span></span>
       </div>
-      <div class="fight-row__players">${renderFightPlayerChips(players)}</div>
-      <svg class="fight-row__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <div class="fight-card__players">${renderFightPlayerChips(players)}</div>
+      <svg class="fight-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </article>
   `;
-  }).join('')}
-  </div>`;
+  }).join('');
 
   const unknownPlayers = getUnknownFightPlayers(fightsWithPlayers);
   if (unknownPlayers.length > 0) {
@@ -2530,7 +2652,7 @@ function renderFightList() {
     </div>`);
   }
 
-  fightList.querySelectorAll('.fight-row').forEach(card => {
+  fightList.querySelectorAll('.fight-card').forEach(card => {
     card.addEventListener('click', () => selectFight(parseInt(card.dataset.fightIndex, 10)));
     card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
   });
@@ -2680,12 +2802,24 @@ function renderFightPlayerChips(players) {
   const hiddenCount = Math.max(0, players.length - visiblePlayers.length);
   const chips = visiblePlayers.map(player => {
     const color = getPlayerClassColor(player.guid);
-    const factionClass = player.faction === 'hostile' ? 'fight-row__player--hostile' : (player.faction === 'friendly' ? 'fight-row__player--friendly' : '');
-    return `<span class="fight-row__player ${factionClass}" style="--player-color: ${color};" title="${escapeHtml(player.name)}">${escapeHtml(formatActorDisplayName(player.name))}</span>`;
+    const factionClass = player.faction === 'hostile' ? 'fight-card__player--hostile' : (player.faction === 'friendly' ? 'fight-card__player--friendly' : '');
+    return `<span class="fight-card__player ${factionClass}" style="--player-color: ${color};" title="${escapeHtml(player.name)}">${escapeHtml(formatActorDisplayName(player.name))}</span>`;
   });
-  if (hiddenCount > 0) chips.push(`<span class="fight-row__player fight-row__player--more">+${hiddenCount}</span>`);
-  if (chips.length === 0) chips.push(`<span class="fight-row__player fight-row__player--more">none</span>`);
-  return `<div class="fight-row__players-line">${chips.join('')}</div>`;
+  if (hiddenCount > 0) chips.push(`<span class="fight-card__player fight-card__player--more">+${hiddenCount}</span>`);
+  if (chips.length === 0) chips.push(`<span class="fight-card__player fight-card__player--more">none</span>`);
+  return `<div class="fight-card__team"><span class="fight-card__team-label">Players</span><span class="fight-card__team-list">${chips.join('')}</span></div>`;
+}
+
+function renderFightTeamRow(label, players) {
+  const visiblePlayers = players.slice(0, 10);
+  const hiddenCount = Math.max(0, players.length - visiblePlayers.length);
+  const chips = visiblePlayers.map(player => {
+    const color = getPlayerClassColor(player.guid);
+    return `<span class="fight-card__player" style="--player-color: ${color};" title="${escapeHtml(player.name)}">${escapeHtml(formatActorDisplayName(player.name))}</span>`;
+  });
+  if (hiddenCount > 0) chips.push(`<span class="fight-card__player fight-card__player--more">+${hiddenCount}</span>`);
+  if (chips.length === 0) chips.push(`<span class="fight-card__player fight-card__player--more">none</span>`);
+  return `<div class="fight-card__team"><span class="fight-card__team-label">${label}</span><span class="fight-card__team-list">${chips.join('')}</span></div>`;
 }
 
 function renderActorName(name, guid, className = '', ownerGuid = null) {
@@ -2706,10 +2840,15 @@ function getPlayerClassColor(guid) {
   return CLASS_COLORS[classKey] || '#94A3B8';
 }
 
+function getActorClassColor(guid, ownerGuid = null) {
+  const classGuid = isPlayerGuid(guid) ? guid : ownerGuid || state.petOwners.get(guid) || null;
+  return classGuid ? getPlayerClassColor(classGuid) : '#94A3B8';
+}
+
 function getPlayerClassKey(guid) {
   const player = state.players.get(guid);
   if (!player) return null;
-  return player.classKey || SPEC_TO_CLASS[player.specId] || getCachedPlayerClassKey(guid, player.specName) || null;
+  return normalizeClassKey(player.classKey) || SPEC_TO_CLASS[player.specId] || normalizeClassKey(getCachedPlayerClassKey(guid, player.specName)) || null;
 }
 
 function getCachedPlayerClassKey(guid, name) {
@@ -2720,7 +2859,9 @@ function getCachedPlayerClassKey(guid, name) {
 
 function rememberCachedPlayerClass(record) {
   if (!record?.classKey) return;
-  state.playerClassCache.set(record.key, record);
+  const classKey = normalizeClassKey(record.classKey);
+  if (!classKey) return;
+  state.playerClassCache.set(record.key, { ...record, classKey });
 }
 
 function applyCachedPlayerClasses() {
@@ -2822,8 +2963,7 @@ function getRaiderIoRealmSlug(realm) {
 
 function normalizeClassKey(className) {
   const normalized = String(className || '').toUpperCase().replace(/[^A-Z]/g, '');
-  if (normalized === 'DEATHKNIGHT') return 'DEATHKNIGHT';
-  if (normalized === 'DEMONHUNTER') return 'DEMONHUNTER';
+  if (CLASS_ALIASES[normalized]) return CLASS_ALIASES[normalized];
   return CLASS_COLORS[normalized] ? normalized : null;
 }
 
@@ -3202,8 +3342,8 @@ function renderTimeline() {
     let trackSpec = '';
     let classColor = 'var(--ink-muted)';
     
-    if (type.includes('DAMAGE')) { classColor = CLASS_COLORS['warrior']; trackName = 'Damage'; }
-    if (type.includes('HEAL')) { classColor = CLASS_COLORS['priest']; trackName = 'Heal'; }
+    if (type.includes('DAMAGE')) { classColor = CLASS_COLORS.WARRIOR; trackName = 'Damage'; }
+    if (type.includes('HEAL')) { classColor = CLASS_COLORS.PRIEST; trackName = 'Heal'; }
     if (type.includes('SPELL')) { classColor = '#fbbf24'; trackName = 'Spell'; }
 
     trackDiv.innerHTML = `
@@ -3365,9 +3505,10 @@ function renderDamageTakenTargetRow(row, rank, totalDamage, fightSeconds, maxAmo
   const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
   const pctOfTotal = totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0;
   const expanded = isActorGroupExpanded(row.guid, reportKey);
+  const actorColor = getActorClassColor(row.guid, row.ownerGuid);
   return `<div class="breakdown-row ${isTotal ? 'breakdown-row--total' : 'breakdown-row--minion'}" ${isTotal ? `data-actor-group-guid="${escapeHtml(row.guid)}" data-report-key="${escapeHtml(reportKey)}" aria-expanded="${expanded}"` : `data-taken-target-guid="${escapeHtml(row.guid)}"`} role="button" tabindex="0">
-    <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--wipe-red);"></div>
+    <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
       <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank ? `${expanded ? '−' : '+'} ${rank}` : (row.isPlayerActual ? 'player' : 'pet')}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}${isTotal ? '<span class="breakdown-row__sub">total</span>' : ''}</div>
       <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
@@ -3400,9 +3541,10 @@ function renderDamageTakenSourceRow(row, rank, totalDamage, fightSeconds, maxAmo
   const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
   const pctOfTotal = totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0;
   const isSelected = state.selectedDamageTakenSourceGuid === row.guid;
+  const actorColor = getActorClassColor(row.guid, row.ownerGuid);
   return `<div class="breakdown-row" data-taken-source-guid="${escapeHtml(row.guid)}" role="button" tabindex="0">
-    <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--wipe-red);"></div>
+    <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
       <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}</div>
       <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
@@ -3499,9 +3641,10 @@ function renderActorTotalRow(player, amount, rank, total, fightSeconds, maxAmoun
   const pctOfMax = Math.max(2, (amount / maxAmount) * 100);
   const pctOfTotal = total > 0 ? (amount / total) * 100 : 0;
   const expanded = isActorGroupExpanded(player.guid, reportKey);
+  const actorColor = getActorClassColor(player.guid, player.ownerGuid);
   return `<div class="breakdown-row breakdown-row--total" data-actor-group-guid="${escapeHtml(player.guid)}" data-report-key="${escapeHtml(reportKey)}" role="button" tabindex="0" aria-expanded="${expanded}">
-    <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--gold-vein);"></div>
+    <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
       <div class="breakdown-row__info"><span class="breakdown-row__sub">${expanded ? '−' : '+'} ${rank}</span>${renderActorName(player.name, player.guid)}<span class="breakdown-row__sub">total</span></div>
       <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
@@ -3516,9 +3659,10 @@ function renderActorTotalRow(player, amount, rank, total, fightSeconds, maxAmoun
 function renderActorChildRow(row, total, fightSeconds, maxAmount) {
   const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
   const pctOfTotal = total > 0 ? (row.amount / total) * 100 : 0;
+  const actorColor = getActorClassColor(row.guid, row.ownerGuid);
   return `<div class="breakdown-row breakdown-row--minion">
-    <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--rune-violet);"></div>
+    <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
       <div class="breakdown-row__info"><span class="breakdown-row__sub">${row.isPlayerActual ? 'player' : 'pet'}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}</div>
       <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
@@ -3564,9 +3708,10 @@ function getFlatActorSections(rows) {
 function renderCompactReportRow(row, rank, total, fightSeconds, maxAmount) {
   const pctOfMax = Math.max(2, (row.amount / maxAmount) * 100);
   const pctOfTotal = total > 0 ? (row.amount / total) * 100 : 0;
+  const actorColor = getActorClassColor(row.guid, row.ownerGuid);
   return `<div class="breakdown-row">
-    <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--rune-violet);"></div>
+    <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
       <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank}</span>${renderActorName(row.name, row.guid, '', row.ownerGuid)}</div>
       <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
@@ -3915,9 +4060,10 @@ function renderDamageRow(row, rank, totalDamage, fightSeconds, maxAmount, isMini
   const pctOfTotal = totalDamage > 0 ? (row.amount / totalDamage) * 100 : 0;
   const selectionKey = row.selectionGuid || `${reportKey}:${row.guid}`;
   const isSelected = state.selectedSourceGuid === selectionKey;
+  const actorColor = getActorClassColor(row.guid, row.ownerGuid);
   return `<div class="breakdown-row ${isMinion ? 'breakdown-row--minion' : ''}" data-source-guid="${escapeHtml(selectionKey)}" role="button" tabindex="0">
-    <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--gold-vein);"></div>
+    <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
       <div class="breakdown-row__info">
         <span class="breakdown-row__sub">${rank || (row.isPlayerActual ? 'player' : 'pet')}</span>
         ${renderActorName(row.name, row.guid, '', row.ownerGuid)}
@@ -4056,9 +4202,10 @@ function renderSpellTargetRow(target, rank, totalAmount, maxAmount, fight) {
   const pctOfSpell = totalAmount > 0 ? (target.amount / totalAmount) * 100 : 0;
   const average = target.hits > 0 ? Math.round(target.amount / target.hits) : 0;
   const tooltip = `${target.name}\nDamage: ${formatNumber(target.amount)}\nHits: ${target.hits}\nCrits: ${target.crits}\nMisses: ${target.misses}\nMin: ${formatNumber(target.min || 0)}\nMax: ${formatNumber(target.max || 0)}\nAverage: ${formatNumber(average)}`;
+  const actorColor = getActorClassColor(target.guid, target.ownerGuid);
   return `<div class="breakdown-row">
-    <div class="breakdown-row__header">
-      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background: var(--rune-violet);"></div>
+    <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
+      <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
       <div class="breakdown-row__info"><span class="breakdown-row__sub">${rank}</span>${renderActorName(target.name, target.guid)}</div>
       <div class="metric-bar" data-tooltip="${escapeHtml(tooltip)}" tabindex="0"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
