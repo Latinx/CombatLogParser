@@ -1922,7 +1922,6 @@ const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' 
 const STORED_LOG_KEY = 'combatLogParser.currentLog';
 const LOG_DB_NAME = 'combatLogParserDB';
 const LOG_STORE_NAME = 'logs';
-const PLAYER_CLASS_STORE_NAME = 'playerClasses';
 
 function parseDateTime(dateTime) {
   const dateTimeSeparatorIndex = dateTime.indexOf(' ');
@@ -2094,7 +2093,6 @@ let state = {
   selectedFightPanel: 'summary',
   actorFilter: 'all',
   petOwners: new Map(),
-  playerClassCache: new Map(),
   playerNames: new Map(),
   rawLines: []
 };
@@ -2308,42 +2306,17 @@ function resetLogState(rawLines) {
     selectedFightPanel: 'summary',
     actorFilter: state.actorFilter || 'all',
     petOwners: new Map(),
-    playerClassCache: new Map(),
     playerNames: new Map(),
     rawLines
   };
 }
 
-function finishLoadedLog(shouldHydrateClasses = true) {
+function finishLoadedLog() {
   parseRawLines();
   renderFightList();
   renderPlayerGrid();
   renderTimeline();
   renderRawLog();
-  renderBreakdownView();
-  renderDeathsView();
-  renderAurasView();
-  if (shouldHydrateClasses) {
-    hydratePlayerClassCache();
-    setTimeout(() => resolveUnknownPlayerClassesOnline(), 800);
-  }
-}
-
-function hydratePlayerClassCache() {
-  openLogDatabase()
-    .then(db => getAllCachedPlayerClasses(db))
-    .then(records => {
-      records.forEach(record => rememberCachedPlayerClass(record));
-      applyCachedPlayerClasses();
-      rerenderAllViews();
-    })
-    .catch(err => console.warn('Could not load cached player classes.', err));
-}
-
-function rerenderAllViews() {
-  renderFightList();
-  renderPlayerGrid();
-  renderTimeline();
   renderBreakdownView();
   renderDeathsView();
   renderAurasView();
@@ -2374,27 +2347,8 @@ function openLogDatabase() {
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(LOG_STORE_NAME)) db.createObjectStore(LOG_STORE_NAME);
-      if (!db.objectStoreNames.contains(PLAYER_CLASS_STORE_NAME)) db.createObjectStore(PLAYER_CLASS_STORE_NAME, { keyPath: 'key' });
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function putCachedPlayerClass(db, record) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(PLAYER_CLASS_STORE_NAME, 'readwrite');
-    tx.objectStore(PLAYER_CLASS_STORE_NAME).put(record);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-function getAllCachedPlayerClasses(db) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(PLAYER_CLASS_STORE_NAME, 'readonly');
-    const request = tx.objectStore(PLAYER_CLASS_STORE_NAME).getAll();
-    request.onsuccess = () => resolve(request.result || []);
     request.onerror = () => reject(request.error);
   });
 }
@@ -2751,6 +2705,8 @@ function renderFightList() {
     card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
   });
 
+} // end renderFightList
+
 function getFightCardStats(fight, players) {
   const fightSeconds = Math.max(1, fight.duration / 1000);
   const totalDamage = players.reduce((sum, player) => sum + player.amount, 0);
@@ -2826,98 +2782,7 @@ function getActorClassColor(guid, ownerGuid = null) {
 function getPlayerClassKey(guid) {
   const player = state.players.get(guid);
   if (!player) return null;
-  return normalizeClassKey(player.classKey) || SPEC_TO_CLASS[player.specId] || normalizeClassKey(getCachedPlayerClassKey(guid, player.specName)) || null;
-}
-
-function getCachedPlayerClassKey(guid, name) {
-  return state.playerClassCache.get(getPlayerClassCacheKey(guid))?.classKey
-    || state.playerClassCache.get(getPlayerClassCacheKey(name))?.classKey
-    || null;
-}
-
-function rememberCachedPlayerClass(record) {
-  if (!record?.classKey) return;
-  const classKey = normalizeClassKey(record.classKey);
-  if (!classKey) return;
-  state.playerClassCache.set(record.key, { ...record, classKey });
-}
-
-function applyCachedPlayerClasses() {
-  state.players.forEach(player => {
-    if (player.classKey || SPEC_TO_CLASS[player.specId]) return;
-    player.classKey = getCachedPlayerClassKey(player.playerId, player.specName);
-  });
-}
-
-function getPlayerClassCacheKey(value) {
-  return String(value || '').trim().toLowerCase();
-}
-
-async function resolveUnknownPlayerClassesOnline() {
-  const unknownPlayers = Array.from(state.players.values())
-    .filter(player => !getPlayerClassKey(player.playerId))
-    .filter(player => parseCharacterNameRealm(player.specName || state.playerNames.get(player.playerId)));
-  if (unknownPlayers.length === 0) return;
-
-  let resolved = 0;
-  for (const player of unknownPlayers) {
-    const parsed = parseCharacterNameRealm(player.specName || state.playerNames.get(player.playerId));
-    const classKey = parsed ? await lookupRaiderIoClass(parsed) : null;
-    if (classKey) {
-      player.classKey = classKey;
-      await persistPlayerClass(player, classKey, 'raiderio');
-      resolved += 1;
-    }
-  }
-  if (resolved > 0) rerenderAllViews();
-}
-
-
-
-async function persistPlayerClass(player, classKey, source) {
-  const name = player.specName || state.playerNames.get(player.playerId) || '';
-  const records = [
-    { key: getPlayerClassCacheKey(player.playerId), guid: player.playerId, name, classKey, source, updatedAt: new Date().toISOString() },
-    { key: getPlayerClassCacheKey(name), guid: player.playerId, name, classKey, source, updatedAt: new Date().toISOString() }
-  ].filter(record => record.key);
-  records.forEach(rememberCachedPlayerClass);
-  const db = await openLogDatabase();
-  await Promise.all(records.map(record => putCachedPlayerClass(db, record)));
-}
-
-function parseCharacterNameRealm(displayName) {
-  const cleaned = cleanActorName(displayName);
-  const match = cleaned.match(/^(.+)-([^-]+(?:-[^-]+)*)-([A-Z]{2})$/i);
-  if (!match) return null;
-  return {
-    name: match[1],
-    realm: match[2],
-    region: match[3].toLowerCase()
-  };
-}
-
-async function lookupRaiderIoClass(character) {
-  const realmSlug = getRaiderIoRealmSlug(character.realm);
-  const url = `https://raider.io/api/v1/characters/profile?region=${encodeURIComponent(character.region)}&realm=${encodeURIComponent(realmSlug)}&name=${encodeURIComponent(character.name)}`;
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return normalizeClassKey(data.class);
-  } catch (err) {
-    console.warn('Raider.IO class lookup failed.', err);
-    return null;
-  }
-}
-
-function getRaiderIoRealmSlug(realm) {
-  return String(realm || '')
-    .replace(/'/g, '')
-    .replace(/([a-z])([A-Z0-9])/g, '$1-$2')
-    .replace(/([0-9])([A-Za-z])/g, '$1-$2')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .toLowerCase();
+  return normalizeClassKey(player.classKey) || SPEC_TO_CLASS[player.specId] || null;
 }
 
 function normalizeClassKey(className) {
