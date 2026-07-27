@@ -1,0 +1,14 @@
+[package]
+name = "combat-log-parser-launcher"
+version = "0.1.0"
+edition = "2024"
+
+[build-dependencies]
+embed-resource = "3"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "z"
+panic = "abort"
+# strip removed — it strips PE metadata which triggers AV flags; binary is small enough
