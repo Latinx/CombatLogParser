@@ -3447,7 +3447,16 @@ function filterActorRows(rows) {
 }
 
 function isPlayerOrPlayerOwned(guid, ownerGuid = null) {
-  return isPlayerGuid(guid);
+  return isPlayerGuid(guid) || isPlayerGuid(ownerGuid) || isPlayerGuid(state.petOwners.get(guid));
+}
+
+// When actorFilter == 'players', skip events that involve an NPC on either side.
+// This ensures NPC-only damage amounts, spells, and targets are fully omitted
+// from player rows — not just hidden from display.
+function filterEventByActor(sourceGuid, destGuid) {
+  if (state.actorFilter !== 'players') return true;
+  return (isPlayerOrPlayerOwned(sourceGuid) || !sourceGuid || sourceGuid === '0000000000000000')
+      && (isPlayerOrPlayerOwned(destGuid) || !destGuid || destGuid === '0000000000000000');
 }
 
 function hasExpandedActorGroup(rows, reportKey) {
@@ -4140,6 +4149,7 @@ function buildDamageDoneRows(fight) {
     if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
     const damage = parseDamageEvent(event.type, event.params);
     if (!damage || !isValidActorGuid(damage.sourceGuid)) continue;
+    if (!filterEventByActor(damage.sourceGuid, damage.destGuid)) continue;
 
     if (!sources.has(damage.sourceGuid)) {
       sources.set(damage.sourceGuid, {
@@ -4175,6 +4185,7 @@ function buildDamageTakenRows(fight) {
     if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
     const damage = parseDamageEvent(event.type, event.params);
     if (!damage || damage.amount <= 0) continue;
+    if (!filterEventByActor(damage.sourceGuid, damage.destGuid)) continue;
     if (!isValidActorGuid(damage.destGuid)) continue;
     const ownerGuid = state.petOwners.get(damage.destGuid) || null;
     if (!targets.has(damage.destGuid)) {
@@ -4209,6 +4220,7 @@ function buildDamageTakenSourceRows(fight, targetGuid) {
     if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
     const damage = parseDamageEvent(event.type, event.params);
     if (!damage) continue;
+    if (!filterEventByActor(damage.sourceGuid, damage.destGuid)) continue;
     const targetMatches = damage.destGuid === targetGuid || (isPlayerGuid(targetGuid) && state.petOwners.get(damage.destGuid) === targetGuid);
     if (!targetMatches || !isValidActorGuid(damage.sourceGuid) || damage.amount <= 0) continue;
     const sourceOwnerGuid = state.petOwners.get(damage.sourceGuid) || null;
@@ -4246,6 +4258,7 @@ function buildHealingRows(fight, actorSide) {
     if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
     const healing = parseHealingEvent(event.type, event.params);
     if (!healing || healing.amount <= 0) continue;
+    if (!filterEventByActor(healing.sourceGuid, healing.destGuid)) continue;
     const guid = actorSide === 'dest' ? healing.destGuid : healing.sourceGuid;
     const name = actorSide === 'dest' ? healing.destName : healing.sourceName;
     const flags = actorSide === 'dest' ? healing.destFlags : healing.sourceFlags;
@@ -4291,6 +4304,7 @@ function buildEventCountRows(fight, typeTokens) {
     const flags = useDest ? fields.destFlags : fields.sourceFlags;
     const ownerGuid = state.petOwners.get(guid) || null;
     if (!isValidActorGuid(guid)) continue;
+    if (!filterEventByActor(fields.sourceGuid, fields.destGuid)) continue;
     addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid, getReactionGroup(flags));
   }
   return mapToSortedRows(actors);
@@ -4310,6 +4324,7 @@ function buildAuraRows(fight, auraKind) {
     const flags = fields.destGuid ? fields.destFlags : fields.sourceFlags;
     const ownerGuid = state.petOwners.get(guid) || null;
     if (!isValidActorGuid(guid)) continue;
+    if (!filterEventByActor(fields.sourceGuid, fields.destGuid)) continue;
     addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid, getReactionGroup(flags));
   }
   return mapToSortedRows(actors);
