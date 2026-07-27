@@ -3447,7 +3447,7 @@ function filterActorRows(rows) {
 }
 
 function isPlayerOrPlayerOwned(guid, ownerGuid = null) {
-  return isPlayerGuid(guid) || isPlayerGuid(ownerGuid) || isPlayerGuid(state.petOwners.get(guid));
+  return isPlayerGuid(guid);
 }
 
 function hasExpandedActorGroup(rows, reportKey) {
@@ -3806,7 +3806,6 @@ function buildActorHierarchy(rows) {
     }
 
     if (!isPlayerGuid(row.ownerGuid)) {
-      if (state.actorFilter !== 'all') return;
       playersByGuid.set(row.guid, row);
       if (!childrenByOwner.has(row.guid)) childrenByOwner.set(row.guid, []);
       if (row.amount > 0) childrenByOwner.get(row.guid).push({ ...row, isPlayerActual: true });
