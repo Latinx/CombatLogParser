@@ -1712,7 +1712,8 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   font-size: var(--text-xs);
   min-height: 26px;
   padding: 3px 8px 3px 16px;
-  border: 1px solid rgba(137, 171, 255, 0.08);
+  border: 1px solid rgba(137, 171, 255, 0.14);
+  border-color: color-mix(in srgb, var(--spell-school-color, #89ABFF) 22%, transparent);
   border-radius: 7px;
   background: rgba(10, 16, 31, 0.62);
   cursor: pointer;
@@ -1726,11 +1727,14 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   top: 50%;
   width: 11px;
   border-top: 1px solid rgba(98, 242, 194, 0.48);
+  border-top-color: color-mix(in srgb, var(--spell-school-color, #62F2C2) 58%, transparent);
 }
 
 .spell-row:hover {
   background: rgba(98, 242, 194, 0.09);
+  background: color-mix(in srgb, var(--spell-school-color, #62F2C2) 10%, rgba(10, 16, 31, 0.62));
   border-color: rgba(98, 242, 194, 0.22);
+  border-color: color-mix(in srgb, var(--spell-school-color, #62F2C2) 42%, transparent);
 }
 
 .spell-row__link {
@@ -2187,16 +2191,15 @@ const PLAYER_CLASS_KEYS = [
 ];
 
 // Mirrors COMBATLOG_DEFAULT_COLORS.schoolColoring in Blizzard_CombatLogBase/Mainline/CombatLogColors.lua.
-const SPELL_SCHOOL_COLORS = {
-  None: '#FFFFFF',
-  Physical: '#FFFF00',
-  Holy: '#FFE680',
-  Fire: '#FF8000',
-  Nature: '#4DFF4D',
-  Frost: '#80FFFF',
-  Shadow: '#8080FF',
-  Arcane: '#FF80FF',
-  Unknown: '#FFFFFF'
+const SPELL_SCHOOLS = {
+  0x00: { name: 'None', color: '#FFFFFF' },
+  0x01: { name: 'Physical', color: '#FFFF00' },
+  0x02: { name: 'Holy', color: '#FFE680' },
+  0x04: { name: 'Fire', color: '#FF8000' },
+  0x08: { name: 'Nature', color: '#4DFF4D' },
+  0x10: { name: 'Frost', color: '#80FFFF' },
+  0x20: { name: 'Shadow', color: '#8080FF' },
+  0x40: { name: 'Arcane', color: '#FF80FF' }
 };
 
 const COMBATLOG_REACTION_FRIENDLY = 0x10;
@@ -5330,29 +5333,33 @@ function formatSpellTooltip(spell) {
 }
 
 function formatSpellSchool(school) {
-  const value = typeof school === 'string' && school.startsWith('0x') ? parseInt(school, 16) : Number(school);
-  if (!Number.isFinite(value) || value === 0) return '';
-  const schools = [
-    [0x1, 'Physical'],
-    [0x2, 'Holy'],
-    [0x4, 'Fire'],
-    [0x8, 'Nature'],
-    [0x10, 'Frost'],
-    [0x20, 'Shadow'],
-    [0x40, 'Arcane']
-  ];
-  return schools.filter(([bit]) => (value & bit) === bit).map(([, name]) => name).join('/') || String(school);
+  const definitions = getSpellSchoolDefinitions(school);
+  return definitions.map(definition => definition.name).join('/') || '';
 }
 
-function getSpellSchoolNames(school) {
-  const schoolName = formatSpellSchool(school);
-  if (!schoolName) return ['Unknown'];
-  return schoolName.split('/').filter(Boolean);
+function getSpellSchoolDefinitions(school) {
+  const mask = Number(school);
+  if (!Number.isFinite(mask)) return [SPELL_SCHOOLS[0x00]];
+  if (SPELL_SCHOOLS[mask]) return [SPELL_SCHOOLS[mask]];
+  const definitions = Object.entries(SPELL_SCHOOLS)
+    .map(([bit, definition]) => [Number(bit), definition])
+    .filter(([bit]) => bit !== 0 && (mask & bit) === bit)
+    .map(([, definition]) => definition);
+  return definitions.length > 0 ? definitions : [SPELL_SCHOOLS[0x00]];
 }
 
 function getSpellSchoolColor(school) {
-  const schools = getSpellSchoolNames(school);
-  return SPELL_SCHOOL_COLORS[schools.find(name => name !== 'Physical') || schools[0]] || SPELL_SCHOOL_COLORS.Unknown;
+  const definitions = getSpellSchoolDefinitions(school);
+  if (definitions.length === 1) return definitions[0].color;
+  const totals = definitions.reduce((sum, definition) => {
+    const value = Number.parseInt(definition.color.slice(1), 16);
+    sum.red += (value >> 16) & 0xff;
+    sum.green += (value >> 8) & 0xff;
+    sum.blue += value & 0xff;
+    return sum;
+  }, { red: 0, green: 0, blue: 0 });
+  const channel = value => Math.round(value / definitions.length).toString(16).padStart(2, '0');
+  return `#${channel(totals.red)}${channel(totals.green)}${channel(totals.blue)}`.toUpperCase();
 }
 
 function getSpellSchoolFill(school) {
