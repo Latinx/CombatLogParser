@@ -37,6 +37,7 @@ Thumbs.db
 
 # Agent metadata
 .serena/
+.mnemonics/
 
 # Build artifacts
 *.o
