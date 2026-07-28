@@ -2251,6 +2251,8 @@ const SPELL_CLASS_HINTS = {
 
 const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
 const STORED_LOG_KEY = 'combatLogParser.currentLog';
+const STORED_LOG_SIZE_KEY = 'combatLogParser.currentLogSize';
+const MAX_PERSISTED_LOG_CHARS = 32 * 1024 * 1024;
 const STORED_WATCH_PATH_KEY = 'combatLogParser.watchPath';
 const CHARACTER_PROFILE_CACHE_KEY = 'combatLogParser.characterProfiles.v2';
 const CHARACTER_PROFILE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -2429,6 +2431,8 @@ let state = {
   selectedOverallPanel: 'summary',
   actorFilter: 'players',
   fightPlayerFilter: null,
+  fightListModel: null,
+  fightListLimit: 50,
   reportCache: new Map(),
   petOwners: new Map(),
   playerNames: new Map(),
@@ -2442,6 +2446,7 @@ function getReportCache() {
 
 function invalidateReportCache() {
   getReportCache().clear();
+  state.fightListModel = null;
 }
 
 const panels = {
@@ -2977,6 +2982,8 @@ function resetLogState(rawLines) {
     selectedOverallPanel: 'summary',
     actorFilter: state.actorFilter || 'players',
     fightPlayerFilter: state.fightPlayerFilter || null,
+    fightListModel: null,
+    fightListLimit: 50,
     reportCache: new Map(),
     petOwners: new Map(),
     playerNames: new Map(),
@@ -2998,13 +3005,31 @@ function finishLoadedLog() {
 
 function persistCurrentLog(text) {
   openLogDatabase()
-    .then(db => putStoredLog(db, text))
+    .then(db => {
+      if (text.length > MAX_PERSISTED_LOG_CHARS) {
+        return Promise.all([
+          deleteStoredValue(db, STORED_LOG_KEY),
+          putStoredValue(db, STORED_LOG_SIZE_KEY, text.length)
+        ]);
+      }
+      return Promise.all([
+        putStoredLog(db, text),
+        putStoredValue(db, STORED_LOG_SIZE_KEY, text.length)
+      ]);
+    })
     .catch(err => console.warn('Could not persist combat log.', err));
 }
 
 function restorePersistedLog() {
   openLogDatabase()
-    .then(db => getStoredLog(db))
+    .then(async db => {
+      const storedSize = Number(await getStoredValue(db, STORED_LOG_SIZE_KEY)) || 0;
+      if (!storedSize || storedSize > MAX_PERSISTED_LOG_CHARS) {
+        await deleteStoredValue(db, STORED_LOG_KEY);
+        return '';
+      }
+      return getStoredLog(db);
+    })
     .then(text => {
       if (!text) return;
       uploadZone.classList.add('hidden');
@@ -3071,6 +3096,15 @@ function putStoredValue(db, key, value) {
 
 function putStoredLog(db, text) {
   return putStoredValue(db, STORED_LOG_KEY, text);
+}
+
+function deleteStoredValue(db, key) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOG_STORE_NAME, 'readwrite');
+    tx.objectStore(LOG_STORE_NAME).delete(key);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 function getStoredValue(db, key) {
@@ -3369,10 +3403,7 @@ function rememberAdvancedUnitOwners(petOwners, payload) {
 // ============================================
 
 function renderFightList() {
-  const allFights = state.fights
-    .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
-    .filter(item => item.players.length > 0)
-    .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
+  const allFights = getFightListModel();
   // Build unique player list for filter
   const allPlayers = new Map();
   allFights.forEach(({ players }) => {
@@ -3386,6 +3417,7 @@ function renderFightList() {
   const filteredFights = state.fightPlayerFilter
     ? allFights.filter(({ players }) => players.some(p => p.guid === state.fightPlayerFilter))
     : allFights;
+  const visibleFights = filteredFights.slice(0, state.fightListLimit || 50);
 
   if (filteredFights.length === 0) {
     fightList.innerHTML = `
@@ -3414,7 +3446,7 @@ function renderFightList() {
       </select>
       <span class="breakdown-row__sub">${filteredFights.length} fights</span>
     </div>
-    ${filteredFights.map(({ fight, index, players }) => {
+    ${visibleFights.map(({ fight, index, players }) => {
     const topPlayer = players[0];
     const stats = getFightCardStats(fight, players);
     const statusLabel = fight.kill ? 'Kill' : (fight.difficulty === 0 ? 'PvP' : 'Pull');
@@ -3448,7 +3480,8 @@ function renderFightList() {
       <svg class="fight-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </article>
   `;
-  }).join('')}`;
+  }).join('')}
+    ${visibleFights.length < filteredFights.length ? `<button class="btn" id="show-more-fights" type="button">Show ${Math.min(50, filteredFights.length - visibleFights.length)} more fights</button>` : ''}`;
 
   fightList.querySelectorAll('.fight-card').forEach(card => {
     card.addEventListener('click', () => selectFight(parseInt(card.dataset.fightIndex, 10)));
@@ -3456,13 +3489,40 @@ function renderFightList() {
   });
 
   attachFightPlayerFilter();
+  const showMoreButton = document.getElementById('show-more-fights');
+  if (showMoreButton) {
+    showMoreButton.addEventListener('click', () => {
+      state.fightListLimit = (state.fightListLimit || 50) + 50;
+      renderFightList();
+    });
+  }
 } // end renderFightList
+
+function getFightListModel() {
+  if (state.fightListModel?.actorFilter === state.actorFilter) return state.fightListModel.entries;
+  const entries = state.fights
+    .map((fight, index) => ({
+      fight,
+      index,
+      players: getFightPlayerRows(fight).map(player => ({
+        guid: player.guid,
+        name: player.name,
+        faction: player.faction,
+        amount: player.amount
+      }))
+    }))
+    .filter(item => item.players.length > 0)
+    .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
+  state.fightListModel = { actorFilter: state.actorFilter, entries };
+  return entries;
+}
 
 function attachFightPlayerFilter() {
   const filter = document.getElementById('fight-player-filter');
   if (!filter) return;
   filter.addEventListener('change', () => {
     state.fightPlayerFilter = filter.value || null;
+    state.fightListLimit = 50;
     persistFightPlayerFilter(state.fightPlayerFilter);
     renderFightList();
   });
@@ -3732,21 +3792,18 @@ async function enrichFightPlayerProfiles(fight) {
 }
 
 function scheduleProfileRefresh(fight) {
-  if (window._profileRefreshFrame) return;
-  window._profileRefreshFrame = requestAnimationFrame(() => {
-    window._profileRefreshFrame = null;
+  clearTimeout(window._profileRefreshTimer);
+  window._profileRefreshTimer = setTimeout(() => {
+    window._profileRefreshTimer = null;
     refreshProfileViews(fight);
-  });
+  }, 150);
 }
 
 function refreshProfileViews(fight) {
-  if (state.currentFight === fight) {
-    renderFightDetail();
-    renderPlayerGrid();
-    renderTimeline();
-    renderBreakdownView();
-    renderDeathsView();
-    renderAurasView();
+  if (panels.overall && !panels.overall.classList.contains('hidden')) {
+    renderOverallSubpanel();
+  } else if (state.currentFight === fight && panels.fights && !panels.fights.classList.contains('hidden')) {
+    renderFightSubpanel();
   }
 }
 
@@ -3862,10 +3919,7 @@ function renderFightDetail() {
   if (!state.currentFight) return;
   const f = state.currentFight;
   const currentIndex = state.fights.indexOf(f);
-  const allFights = state.fights
-    .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
-    .filter(item => item.players.length > 0)
-    .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
+  const allFights = getFightListModel();
   const fightOptions = allFights.map(({ fight, index }) => ({
     index,
     number: String(index + 1),
