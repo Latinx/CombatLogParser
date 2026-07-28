@@ -779,19 +779,25 @@ body {
   margin-bottom: var(--space-6);
 }
 .fight-detail__dropdown {
-  padding: 6px 12px;
+  height: 36px;
+  padding: 0 12px;
   border: 1px solid var(--gridline);
   border-radius: 6px;
   background: var(--parchment-raised);
   color: var(--ink);
   color-scheme: dark;
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   cursor: pointer;
   min-width: 280px;
   max-width: 480px;
   outline: none;
   transition: border-color var(--transition-fast);
+}
+.fight-detail__nav > .btn {
+  height: 36px;
 }
 .fight-detail__dropdown:focus {
   border-color: var(--rune-violet);
@@ -3241,7 +3247,6 @@ function renderFightList() {
     .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
     .filter(item => item.players.length > 0)
     .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
-
   // Build unique player list for filter
   const allPlayers = new Map();
   allFights.forEach(({ players }) => {
@@ -3631,6 +3636,14 @@ function renderFightDetail() {
     .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
     .filter(item => item.players.length > 0)
     .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
+  const fightOptions = allFights.map(({ fight, index }) => ({
+    index,
+    number: String(index + 1),
+    time: formatFightTime(fight.startDateTime),
+    duration: formatDuration(fight.duration),
+  }));
+  const fightNumberWidth = Math.max(...fightOptions.map(option => option.number.length));
+  const fightTimeWidth = Math.max(...fightOptions.map(option => option.time.length));
 
   fightList.innerHTML = `
     <div class="fight-detail">
@@ -3640,11 +3653,10 @@ function renderFightDetail() {
           Back
         </button>
         <select class="fight-detail__dropdown" id="fight-selector" aria-label="Select fight">
-          ${allFights.map(({ fight, index }) => `
-            <option value="${index}" ${index === currentIndex ? 'selected' : ''}>
-              Fight ${index + 1} · ${escapeHtml(formatFightTime(fight.startDateTime))} · ${formatDuration(fight.duration)}
-            </option>
-          `).join('')}
+          ${fightOptions.map(option => {
+            const label = `Fight ${option.number.padStart(fightNumberWidth)} · ${option.time.padEnd(fightTimeWidth)} · ${option.duration}`;
+            return `<option value="${option.index}" ${option.index === currentIndex ? 'selected' : ''}>${escapeHtml(label).replace(/ /g, '&nbsp;')}</option>`;
+          }).join('')}
         </select>
       </div>
       <div class="fight-detail__header">
