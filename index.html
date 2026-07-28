@@ -782,9 +782,10 @@ body {
   padding: 6px 12px;
   border: 1px solid var(--gridline);
   border-radius: 6px;
-  background: var(--surface);
+  background: var(--parchment-raised);
   color: var(--ink);
-  font-family: var(--font-ui);
+  color-scheme: dark;
+  font-family: var(--font-body);
   font-size: var(--text-sm);
   cursor: pointer;
   min-width: 280px;
@@ -793,29 +794,30 @@ body {
   transition: border-color var(--transition-fast);
 }
 .fight-detail__dropdown:focus {
-  border-color: var(--tank-blue);
+  border-color: var(--rune-violet);
 }
 .fight-detail__dropdown option {
-  background: var(--surface);
+  background: var(--parchment-raised);
   color: var(--ink);
 }
 .fight-player-filter {
   padding: 4px 10px;
   border: 1px solid var(--gridline);
   border-radius: 6px;
-  background: var(--surface);
+  background: var(--parchment-raised);
   color: var(--ink);
-  font-family: var(--font-ui);
+  color-scheme: dark;
+  font-family: var(--font-body);
   font-size: var(--text-xs);
   cursor: pointer;
   outline: none;
   max-width: 200px;
 }
 .fight-player-filter:focus {
-  border-color: var(--tank-blue);
+  border-color: var(--rune-violet);
 }
 .fight-player-filter option {
-  background: var(--surface);
+  background: var(--parchment-raised);
   color: var(--ink);
 }
 @media (max-width: 640px) {
