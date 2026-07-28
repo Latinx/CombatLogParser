@@ -3563,12 +3563,12 @@ function renderOverallContent() {
     case 'healingDone': return renderSingleReportContent('Healing Done', filterActorRows(buildHealingRows(fight, 'source')), fight);
     case 'healingTaken': return renderSingleReportContent('Healing Taken', filterActorRows(buildHealingRows(fight, 'dest')), fight);
     case 'threat': return renderEventCountReport('Threat', fight, ['THREAT']);
-    case 'buffs': return renderAuraReport('Buffs', fight, 'buff');
-    case 'debuffs': return renderAuraReport('Debuffs', fight, 'debuff');
-    case 'deaths': return renderEventCountReport('Deaths', fight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']);
-    case 'interrupts': return renderEventCountReport('Interrupts', fight, ['SPELL_INTERRUPT']);
+    case 'buffs': return renderUtilityReport('Buffs', fight, 'buffs');
+    case 'debuffs': return renderUtilityReport('Debuffs', fight, 'debuffs');
+    case 'deaths': return renderUtilityReport('Deaths', fight, 'deaths');
+    case 'interrupts': return renderUtilityReport('Interrupts', fight, 'interrupts');
     case 'dispels': return renderDispelReport(fight);
-    case 'resources': return renderEventCountReport('Resources', fight, ['ENERGIZE', 'DRAIN', 'LEECH']);
+    case 'resources': return renderUtilityReport('Resources', fight, 'resources');
     case 'casts': return renderEventCountReport('Casts', fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
     case 'summary':
     default: return renderOverallSummaryContent(fight);
@@ -3580,8 +3580,12 @@ function renderOverallSummaryContent(fight) {
   const damageTakenRows = filterActorRows(buildDamageTakenRows(fight));
   const healingDoneRows = filterActorRows(buildHealingRows(fight, 'source'));
   const healingTakenRows = filterActorRows(buildHealingRows(fight, 'dest'));
-  const deathRows = filterActorRows(buildEventCountRows(fight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']));
-  const interruptRows = filterActorRows(buildEventCountRows(fight, ['SPELL_INTERRUPT']));
+  const buffRows = filterActorRows(buildUtilityRows(fight, 'buffs'));
+  const debuffRows = filterActorRows(buildUtilityRows(fight, 'debuffs'));
+  const deathRows = filterActorRows(buildUtilityRows(fight, 'deaths'));
+  const interruptRows = filterActorRows(buildUtilityRows(fight, 'interrupts'));
+  const resourceRows = filterActorRows(buildUtilityRows(fight, 'resources'));
+  const dispelRows = filterActorRows(buildDispelRows(fight));
   const castRows = filterActorRows(buildEventCountRows(fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']));
 
   const totalDamage = damageDoneRows.reduce((sum, r) => sum + r.amount, 0);
@@ -3602,8 +3606,12 @@ function renderOverallSummaryContent(fight) {
       ${renderReportPanel('Healing Done', healingDoneRows, fight, true)}
       ${renderReportPanel('Healing Taken', healingTakenRows, fight, true)}
       ${renderReportPanel('Casts', castRows, fight, false, 'casts')}
-      ${renderReportPanel('Deaths', deathRows, fight, false, 'events')}
-      ${renderReportPanel('Interrupts', interruptRows, fight, false, 'casts')}
+      ${renderUtilityPanel('Buffs', buffRows, fight, 'buffs')}
+      ${renderUtilityPanel('Debuffs', debuffRows, fight, 'debuffs')}
+      ${renderUtilityPanel('Deaths', deathRows, fight, 'deaths')}
+      ${renderUtilityPanel('Interrupts', interruptRows, fight, 'interrupts')}
+      ${renderDispelPanel(dispelRows, fight)}
+      ${renderUtilityPanel('Resources', resourceRows, fight, 'resources')}
     </div>`;
 }
 
@@ -4101,12 +4109,12 @@ function renderFightSubpanelContent() {
     case 'healingDone': return renderSingleReportContent('Healing Done', filterActorRows(buildHealingRows(state.currentFight, 'source')), state.currentFight);
     case 'healingTaken': return renderSingleReportContent('Healing Taken', filterActorRows(buildHealingRows(state.currentFight, 'dest')), state.currentFight);
     case 'threat': return renderEventCountReport('Threat', state.currentFight, ['THREAT']);
-    case 'buffs': return renderAuraReport('Buffs', state.currentFight, 'buff');
-    case 'debuffs': return renderAuraReport('Debuffs', state.currentFight, 'debuff');
-    case 'deaths': return renderEventCountReport('Deaths', state.currentFight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']);
-    case 'interrupts': return renderEventCountReport('Interrupts', state.currentFight, ['SPELL_INTERRUPT']);
+    case 'buffs': return renderUtilityReport('Buffs', state.currentFight, 'buffs');
+    case 'debuffs': return renderUtilityReport('Debuffs', state.currentFight, 'debuffs');
+    case 'deaths': return renderUtilityReport('Deaths', state.currentFight, 'deaths');
+    case 'interrupts': return renderUtilityReport('Interrupts', state.currentFight, 'interrupts');
     case 'dispels': return renderDispelReport(state.currentFight);
-    case 'resources': return renderEventCountReport('Resources', state.currentFight, ['ENERGIZE', 'DRAIN', 'LEECH']);
+    case 'resources': return renderUtilityReport('Resources', state.currentFight, 'resources');
     case 'casts': return renderEventCountReport('Casts', state.currentFight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
     case 'raw': return renderFightRawContent(state.currentFight);
     case 'summary':
@@ -4420,12 +4428,12 @@ function renderSummaryContent(fight) {
   const healingDoneRows = filterActorRows(buildHealingRows(fight, 'source'));
   const healingTakenRows = filterActorRows(buildHealingRows(fight, 'dest'));
   const threatRows = filterActorRows(buildEventCountRows(fight, ['THREAT']));
-  const buffRows = filterActorRows(buildAuraRows(fight, 'buff'));
-  const debuffRows = filterActorRows(buildAuraRows(fight, 'debuff'));
-  const deathRows = filterActorRows(buildEventCountRows(fight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']));
-  const interruptRows = filterActorRows(buildEventCountRows(fight, ['SPELL_INTERRUPT']));
-  const dispelRows = filterActorRows(buildEventCountRows(fight, ['SPELL_DISPEL', 'SPELL_STOLEN', 'SPELL_DISPEL_FAILED']));
-  const resourceRows = filterActorRows(buildEventCountRows(fight, ['ENERGIZE', 'DRAIN', 'LEECH']));
+  const buffRows = filterActorRows(buildUtilityRows(fight, 'buffs'));
+  const debuffRows = filterActorRows(buildUtilityRows(fight, 'debuffs'));
+  const deathRows = filterActorRows(buildUtilityRows(fight, 'deaths'));
+  const interruptRows = filterActorRows(buildUtilityRows(fight, 'interrupts'));
+  const dispelRows = filterActorRows(buildDispelRows(fight));
+  const resourceRows = filterActorRows(buildUtilityRows(fight, 'resources'));
   const castRows = filterActorRows(buildEventCountRows(fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']));
 
   return `<div class="breakdown-controls">
@@ -4439,12 +4447,12 @@ function renderSummaryContent(fight) {
       ${renderReportPanel('Healing Taken', healingTakenRows, fight, true)}
       ${renderReportPanel('Threat', threatRows, fight, false, 'events')}
       ${renderReportPanel('Casts', castRows, fight, false, 'casts')}
-      ${renderReportPanel('Buffs', buffRows, fight, false, 'applications')}
-      ${renderReportPanel('Debuffs', debuffRows, fight, false, 'applications')}
-      ${renderReportPanel('Deaths', deathRows, fight, false, 'events')}
-      ${renderReportPanel('Interrupts', interruptRows, fight, false, 'casts')}
-      ${renderReportPanel('Dispels', dispelRows, fight, false, 'casts')}
-      ${renderReportPanel('Resources', resourceRows, fight, false, 'events')}
+      ${renderUtilityPanel('Buffs', buffRows, fight, 'buffs')}
+      ${renderUtilityPanel('Debuffs', debuffRows, fight, 'debuffs')}
+      ${renderUtilityPanel('Deaths', deathRows, fight, 'deaths')}
+      ${renderUtilityPanel('Interrupts', interruptRows, fight, 'interrupts')}
+      ${renderDispelPanel(dispelRows, fight)}
+      ${renderUtilityPanel('Resources', resourceRows, fight, 'resources')}
     </div>`;
 }
 
@@ -4551,19 +4559,69 @@ function renderEventCountReport(title, fight, typeTokens) {
 
 function renderDispelReport(fight) {
   const rows = filterActorRows(buildDispelRows(fight));
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
-  const topRows = rows.slice(0, 18);
   return `<div class="breakdown-controls">
       <button class="filter-btn filter-btn--active">Dispels</button>
       <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)}</span>
-    </div>
-    <section class="report-panel ${hasExpandedActorGroup(topRows, 'dispels') ? 'report-panel--expanded' : ''}">
+    </div>${renderDispelPanel(rows, fight)}`;
+}
+
+function renderDispelPanel(rows, fight) {
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  const topRows = rows.slice(0, 18);
+  return `<section class="report-panel ${hasExpandedActorGroup(topRows, 'dispels') ? 'report-panel--expanded' : ''}">
       <div class="report-panel__header">
         <span class="report-panel__title">Dispels</span>
         <span class="report-panel__meta">${formatNumber(total)} dispels</span>
       </div>
       ${topRows.length > 0 ? renderDispelTable(topRows, total, fight) : renderCompactEmptyRow('Dispels')}
     </section>`;
+}
+
+function renderUtilityReport(title, fight, kind) {
+  const rows = filterActorRows(buildUtilityRows(fight, kind));
+  return `<div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">${escapeHtml(title)}</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)}</span>
+    </div>${renderUtilityPanel(title, rows, fight, kind)}`;
+}
+
+function renderUtilityPanel(title, rows, fight, kind) {
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  const topRows = rows.slice(0, 18);
+  return `<section class="report-panel ${hasExpandedActorGroup(topRows, kind) ? 'report-panel--expanded' : ''}">
+    <div class="report-panel__header"><span class="report-panel__title">${escapeHtml(title)}</span><span class="report-panel__meta">${formatNumber(total)} events</span></div>
+    ${topRows.length > 0 ? renderUtilityTable(topRows, total, fight, kind) : renderCompactEmptyRow(title)}
+  </section>`;
+}
+
+function renderUtilityTable(rows, total, fight, kind) {
+  const hierarchy = buildActorHierarchy(rows);
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const maxAmount = Math.max(...hierarchy.map(group => group.total), 1);
+  return `<div class="breakdown-list">${renderGroupedActorSections(hierarchy, (group, index) => {
+    const expanded = isActorGroupExpanded(group.player.guid, kind);
+    return `${renderActorTotalRow(group.player, group.total, index, total, fightSeconds, maxAmount, kind)}${expanded ? renderUtilityGroupDetails(group, total, fightSeconds, maxAmount) : ''}`;
+  })}</div>`;
+}
+
+function renderUtilityGroupDetails(group, total, fightSeconds, maxAmount) {
+  if (group.children.length === 1 && group.children[0].isPlayerActual) return renderUtilityDetailRows(group.children[0].details || []);
+  return group.children.map(child => `${renderActorChildRow(child, total, fightSeconds, maxAmount)}${renderUtilityDetailRows(child.details || [])}`).join('');
+}
+
+function renderUtilityDetailRows(details) {
+  if (details.length === 0) return `<div class="breakdown-row__sub">No event payload details were recorded.</div>`;
+  const maxCount = Math.max(...details.map(detail => detail.count), 1);
+  return `<div class="breakdown-row__spells">${details.map((detail, index) => {
+    const pct = Math.max(2, detail.count / maxCount * 100);
+    const spell = { spellId: detail.spellId, name: detail.spellName, school: detail.spellSchool };
+    let text = '';
+    if (detail.kind === 'resources') text = `gained ${formatNumber(detail.resourceAmount)} ${escapeHtml(detail.resourceName)} from ${renderSpellName(spell)}${detail.sourceGuid ? ` · caused by ${renderActorName(detail.sourceName, detail.sourceGuid)}` : ''}`;
+    else if (detail.kind === 'interrupts') text = `interrupted ${renderSpellName({ spellId: detail.extraSpellId, name: detail.extraSpellName, school: detail.extraSpellSchool })} on ${renderActorName(detail.targetName, detail.targetGuid)} with ${renderSpellName(spell)}`;
+    else if (detail.kind === 'deaths') text = detail.killerGuid ? `killed by ${renderActorName(detail.killerName, detail.killerGuid)} using ${renderSpellName(spell)}` : 'killer unknown';
+    else text = `${renderSpellName(spell)} from ${detail.sourceGuid ? renderActorName(detail.sourceName, detail.sourceGuid) : '<span class="breakdown-row__sub">unknown source</span>'}`;
+    return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(spell)}"><span><span class="breakdown-row__sub">${index + 1}</span> <strong>${text}</strong></span><span class="spell-bar-container"><div class="spell-bar-fill" style="width:${pct}%;"></div></span><span style="font-family:var(--font-mono);text-align:right;">${formatNumber(detail.count)}</span></div>`;
+  }).join('')}</div>`;
 }
 
 function renderDispelTable(rows, total, fight) {
@@ -5062,7 +5120,8 @@ function mergeActorChildren(children) {
         ...child,
         guid: child.isPlayerActual ? child.guid : key,
         spells: mergeSpellRows([], child.spells || []),
-        dispels: mergeDispelDetails(child.dispels || [])
+        dispels: mergeDispelDetails(child.dispels || []),
+        details: mergeUtilityDetails(child.details || [])
       });
       return;
     }
@@ -5070,6 +5129,7 @@ function mergeActorChildren(children) {
     existing.amount += child.amount;
     existing.spells = mergeSpellRows(existing.spells || [], child.spells || []);
     existing.dispels = mergeDispelDetails([...(existing.dispels || []), ...(child.dispels || [])]);
+    existing.details = mergeUtilityDetails([...(existing.details || []), ...(child.details || [])]);
   });
   return Array.from(merged.values());
 }
@@ -5341,7 +5401,7 @@ function renderSpellDamageDrilldown(row, spell, fight) {
       </div>
       <div class="breakdown-row__spells">
         ${targets.length > 0 ? `<div class="breakdown-list">
-          ${targets.map((target, index) => renderSpellTargetRow(target, index + 1, spell.amount, maxTargetAmount, fight)).join('')}
+          ${targets.map((target, index) => renderSpellDamageTargetRow(target, index + 1, spell.amount, maxTargetAmount, fight)).join('')}
         </div>` : '<div class="breakdown-row__sub">No target detail for this spell.</div>'}
         <div class="metric-grid">
           ${renderMetricCard('school', spell.schoolName || 'Unknown')}
@@ -5362,7 +5422,7 @@ function renderSpellDamageDrilldown(row, spell, fight) {
   </div>`;
 }
 
-function renderSpellTargetRow(target, rank, totalAmount, maxAmount, fight) {
+function renderSpellDamageTargetRow(target, rank, totalAmount, maxAmount, fight) {
   const fightSeconds = Math.max(1, fight.duration / 1000);
   const pctOfMax = Math.max(2, (target.amount / maxAmount) * 100);
   const pctOfSpell = totalAmount > 0 ? (target.amount / totalAmount) * 100 : 0;
@@ -5663,6 +5723,111 @@ function computeEventCountRows(fight, typeTokens) {
   return mapToSortedRows(actors);
 }
 
+const POWER_TYPE_NAMES = {
+  '-2': 'health', '0': 'mana', '1': 'rage', '2': 'focus', '3': 'energy', '4': 'combo points',
+  '5': 'runes', '6': 'runic power', '7': 'soul shards', '8': 'lunar power', '9': 'holy power',
+  '11': 'maelstrom', '12': 'chi', '13': 'insanity', '16': 'arcane charges', '17': 'fury',
+  '18': 'pain', '19': 'essence'
+};
+
+function buildUtilityRows(fight, kind) {
+  return getCachedReportRows('utility', fight, kind, () => computeUtilityRows(fight, kind));
+}
+
+function computeUtilityRows(fight, kind) {
+  const actors = new Map();
+  const lastDamageByTarget = new Map();
+  const recentPartyKills = new Map();
+  for (const event of getFightEvents(fight)) {
+    if (kind === 'deaths') {
+      const damage = parseDamageEvent(event.type, event.params);
+      if (damage && damage.amount > 0 && isValidActorGuid(damage.destGuid)) {
+        lastDamageByTarget.set(damage.destGuid, { ...damage, lineNo: event.lineNo });
+      }
+    }
+    const fields = parseCombatLogFields(event.params);
+    let guid = '';
+    let name = '';
+    let flags = 0;
+    let detail = null;
+    if ((kind === 'buffs' || kind === 'debuffs') && event.type.includes('AURA_')) {
+      const isBrokenBySpell = event.type === 'SPELL_AURA_BROKEN_SPELL';
+      const auraType = String(isBrokenBySpell ? fields.payload[6] : fields.payload[3] || '').toLowerCase();
+      if (auraType !== (kind === 'buffs' ? 'buff' : 'debuff')) continue;
+      guid = fields.destGuid;
+      name = fields.destName;
+      flags = fields.destFlags;
+      detail = {
+        kind, spellId: parseInt(fields.payload[0], 10) || 0, spellName: fields.payload[1] || 'Unknown aura',
+        spellSchool: fields.payload[2] || '', sourceGuid: fields.sourceGuid, sourceName: getDisplayName(fields.sourceName, fields.sourceGuid),
+        action: event.type, count: 1
+      };
+    } else if (kind === 'interrupts' && event.type === 'SPELL_INTERRUPT') {
+      guid = fields.sourceGuid;
+      name = fields.sourceName;
+      flags = fields.sourceFlags;
+      detail = {
+        kind, spellId: parseInt(fields.payload[0], 10) || 0, spellName: fields.payload[1] || 'Interrupt', spellSchool: fields.payload[2] || '',
+        extraSpellId: parseInt(fields.payload[3], 10) || 0, extraSpellName: fields.payload[4] || 'Unknown spell', extraSpellSchool: fields.payload[5] || '',
+        targetGuid: fields.destGuid, targetName: getDisplayName(fields.destName, fields.destGuid), count: 1
+      };
+    } else if (kind === 'resources' && (event.type.includes('ENERGIZE') || event.type.includes('DRAIN') || event.type.includes('LEECH'))) {
+      const amountIndex = getCombatLogAmountIndex(fields.payload, 3);
+      const powerTypeOffset = event.type.includes('ENERGIZE') ? 2 : 1;
+      const powerType = fields.payload[amountIndex + powerTypeOffset] ?? fields.payload[4] ?? '';
+      const isGain = event.type.includes('ENERGIZE') || event.type.includes('LEECH');
+      guid = isGain ? fields.destGuid : fields.sourceGuid;
+      name = isGain ? fields.destName : fields.sourceName;
+      flags = isGain ? fields.destFlags : fields.sourceFlags;
+      detail = {
+        kind, spellId: parseInt(fields.payload[0], 10) || 0, spellName: fields.payload[1] || event.type, spellSchool: fields.payload[2] || '',
+        sourceGuid: fields.sourceGuid, sourceName: getDisplayName(fields.sourceName, fields.sourceGuid),
+        resourceName: POWER_TYPE_NAMES[String(powerType)] || `resource ${powerType}`,
+        resourceAmount: Math.abs(Number(fields.payload[amountIndex]) || 0),
+        action: event.type, count: 1
+      };
+    } else if (kind === 'deaths' && (event.type === 'UNIT_DIED' || event.type === 'UNIT_DESTROYED' || event.type === 'PARTY_KILL')) {
+      guid = fields.destGuid;
+      name = fields.destName;
+      flags = fields.destFlags;
+      if (event.type === 'UNIT_DIED' && event.lineNo - (recentPartyKills.get(guid) || -Infinity) <= 12) continue;
+      const directKiller = event.type === 'PARTY_KILL' && isValidActorGuid(fields.sourceGuid) ? {
+        sourceGuid: fields.sourceGuid, sourceName: fields.sourceName, spellId: 0, spellName: 'Killing blow', spellSchool: ''
+      } : lastDamageByTarget.get(fields.destGuid);
+      const recentKiller = directKiller && (event.type === 'PARTY_KILL' || event.lineNo - directKiller.lineNo <= 250) ? directKiller : null;
+      detail = {
+        kind, spellId: recentKiller?.spellId || 0, spellName: recentKiller?.spellName || 'Unknown attack', spellSchool: recentKiller?.spellSchool || '',
+        killerGuid: recentKiller?.sourceGuid || '', killerName: getDisplayName(recentKiller?.sourceName || '', recentKiller?.sourceGuid || ''), count: 1
+      };
+      if (event.type === 'PARTY_KILL') recentPartyKills.set(guid, event.lineNo);
+    } else continue;
+    // Filter the report's primary actor later, but retain NPC counterparts so
+    // player rows can still explain who applied an aura, dealt the killing
+    // blow, or caused a resource change.
+    if (!isValidActorGuid(guid)) continue;
+    const ownerGuid = state.petOwners.get(guid) || null;
+    if (!actors.has(guid)) actors.set(guid, { guid, name: getDisplayName(name, guid), ownerGuid, faction: getReactionGroup(flags), amount: 0, details: [] });
+    const actor = actors.get(guid);
+    actor.amount += 1;
+    actor.details.push(detail);
+  }
+  return Array.from(actors.values()).map(actor => ({ ...actor, details: mergeUtilityDetails(actor.details) })).sort((a, b) => b.amount - a.amount);
+}
+
+function mergeUtilityDetails(details) {
+  const merged = new Map();
+  for (const detail of details) {
+    const key = [detail.kind, detail.spellId, detail.extraSpellId, detail.targetGuid, detail.sourceGuid, detail.killerGuid, detail.resourceName, detail.action].join(':');
+    if (!merged.has(key)) merged.set(key, { ...detail });
+    else {
+      const current = merged.get(key);
+      current.count += detail.count;
+      current.resourceAmount = (current.resourceAmount || 0) + (detail.resourceAmount || 0);
+    }
+  }
+  return Array.from(merged.values()).sort((a, b) => b.count - a.count || a.spellName.localeCompare(b.spellName));
+}
+
 function buildDispelRows(fight) {
   return getCachedReportRows('dispels', fight, '', () => computeDispelRows(fight));
 }
@@ -5901,7 +6066,7 @@ function mapToSortedRowsWithSpells(map) {
 }
 
 function parseHealingEvent(type, rawEventParams) {
-  if (!type.includes('_HEAL')) return null;
+  if (!type.includes('_HEAL') || type.includes('_HEAL_ABSORBED')) return null;
   const fields = parseCombatLogFields(rawEventParams);
   const payload = fields.payload;
   if (payload.length < 4) return null;
