@@ -772,6 +772,38 @@ body {
 
 .fight-detail { animation: fadeUp var(--transition-slow) ease-out both; }
 
+.fight-detail__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.fight-detail__dropdown {
+  padding: 6px 12px;
+  border: 1px solid var(--gridline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  min-width: 280px;
+  max-width: 480px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.fight-detail__dropdown:focus {
+  border-color: var(--tank-blue);
+}
+.fight-detail__dropdown option {
+  background: var(--surface);
+  color: var(--ink);
+}
+@media (max-width: 640px) {
+  .fight-detail__nav { flex-wrap: wrap; }
+  .fight-detail__dropdown { min-width: 0; max-width: 100%; flex: 1; }
+}
+
 .fight-subnav {
   display: flex;
   flex-wrap: wrap;
@@ -3496,12 +3528,27 @@ function resetMainScroll() {
 function renderFightDetail() {
   if (!state.currentFight) return;
   const f = state.currentFight;
+  const currentIndex = state.fights.indexOf(f);
+  const allFights = state.fights
+    .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
+    .filter(item => item.players.length > 0)
+    .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
+
   fightList.innerHTML = `
     <div class="fight-detail">
-      <button class="btn" id="back-to-fights" style="margin-bottom: var(--space-6);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        Back to fights
-      </button>
+      <div class="fight-detail__nav">
+        <button class="btn" id="back-to-fights">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back
+        </button>
+        <select class="fight-detail__dropdown" id="fight-selector" aria-label="Select fight">
+          ${allFights.map(({ fight, index }) => `
+            <option value="${index}" ${index === currentIndex ? 'selected' : ''}>
+              [${fight.kill ? 'K' : (fight.difficulty === 0 ? 'P' : 'W')}] ${escapeHtml(fight.bossName)} · ${escapeHtml(formatFightTime(fight.startDateTime))} · ${formatDuration(fight.duration)}
+            </option>
+          `).join('')}
+        </select>
+      </div>
       <div class="fight-detail__header">
         <div>
           <span class="breakdown-row__sub">Fight analysis</span>
@@ -3525,17 +3572,27 @@ function renderFightDetail() {
   attachFightSubnavHandlers();
   attachActorFilterHandlers();
   attachBreakdownHandlers(fightList);
-  document.getElementById('back-to-fights').addEventListener('click', () => {
-    state.currentFight = null;
-    state.selectedSourceGuid = null;
-    state.selectedSpellKey = null;
-    state.selectedDamageTakenGuid = null;
-    state.selectedDamageTakenSourceGuid = null;
-    state.expandedActorGroups = new Set();
-    state.selectedFightPanel = 'summary';
-    renderFightList();
-    switchTab('fights');
-  });
+  const backBtn = document.getElementById('back-to-fights');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      state.currentFight = null;
+      state.selectedSourceGuid = null;
+      state.selectedSpellKey = null;
+      state.selectedDamageTakenGuid = null;
+      state.selectedDamageTakenSourceGuid = null;
+      state.expandedActorGroups = new Set();
+      state.selectedFightPanel = 'summary';
+      renderFightList();
+      switchTab('fights');
+    });
+  }
+  const fightSelector = document.getElementById('fight-selector');
+  if (fightSelector) {
+    fightSelector.addEventListener('change', () => {
+      const index = parseInt(fightSelector.value, 10);
+      selectFight(index);
+    });
+  }
 }
 
 function renderActorFilterToggle() {
