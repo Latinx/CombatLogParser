@@ -256,67 +256,114 @@ body {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
-.monitor-section {
-  margin-top: var(--space-5);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border);
-  width: 100%;
-  max-width: 480px;
-}
-.monitor-section__title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--ink);
-  margin-bottom: var(--space-1);
-}
-.monitor-section__desc {
-  font-size: var(--text-xs);
-  color: var(--ink-muted);
-  margin-bottom: var(--space-3);
-}
-.monitor-form {
+.header__monitor {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
-  align-items: stretch;
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--gridline);
 }
-.monitor-form input {
-  flex: 1;
-  min-width: 0;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
+.header__monitor-input {
+  width: 260px;
+  padding: 4px 10px;
+  border: 1px solid var(--gridline);
   border-radius: 6px;
-  background: var(--surface);
+  background: rgba(255,255,255,0.04);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  outline: none;
+  transition: border-color var(--transition-fast);
 }
-.monitor-status {
+.header__monitor-input:focus {
+  border-color: var(--tank-blue);
+}
+.header__monitor-input::placeholder {
+  color: var(--ink-muted);
+  opacity: 0.55;
+}
+.header__monitor-btn {
+  padding: 4px 12px;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.header__monitor-btn--watch {
+  background: var(--tank-blue);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: opacity var(--transition-fast);
+}
+.header__monitor-btn--watch:hover { opacity: 0.85; }
+.header__monitor-btn--watch:disabled { opacity: 0.4; cursor: default; }
+.header__monitor-btn--stop {
+  background: transparent;
+  color: var(--ink-muted);
+  border: 1px solid var(--gridline);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all var(--transition-fast);
+}
+.header__monitor-btn--stop:hover {
+  border-color: var(--ink-muted);
+  color: var(--ink);
+}
+.header__monitor-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--ink-muted);
-  margin-top: var(--space-2);
-  min-height: 1.2em;
-  word-break: break-all;
+  white-space: nowrap;
 }
 .monitor-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
+  flex-shrink: 0;
 }
 .monitor-dot--live {
-  background: var(--tank-blue);
-  box-shadow: 0 0 6px var(--tank-blue);
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
   animation: pulse-dot 2s ease-in-out infinite;
 }
 .monitor-dot--stopped {
   background: var(--ink-muted);
 }
+.monitor-dot--new {
+  background: #facc15;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
+}
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* New data flash on the whole page */
+@keyframes data-flash {
+  0% { background-color: rgba(250, 204, 21, 0.06); }
+  100% { background-color: transparent; }
+}
+.data-flash {
+  animation: data-flash 0.8s ease-out;
+}
+
+/* Last refreshed indicator */
+.monitor-refreshed {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  opacity: 0.7;
+}
+
+@media (max-width: 1024px) {
+  .header__monitor { display: none; }
 }
 
 .import-progress {
@@ -1871,6 +1918,16 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     </label>
     <input type="file" id="file-input" class="hidden" accept=".txt" aria-label="Load WoW combat log file">
     <input type="file" id="directory-input" class="hidden" webkitdirectory directory multiple aria-label="Load combat log directory">
+    <div class="header__monitor" id="header-monitor">
+      <input type="text" class="header__monitor-input" id="monitor-path" placeholder="WoWCombatLog.txt path…" aria-label="Log file path" spellcheck="false">
+      <button class="header__monitor-btn header__monitor-btn--watch" id="monitor-start" type="button">Watch</button>
+      <button class="header__monitor-btn header__monitor-btn--stop hidden" id="monitor-stop" type="button">Stop</button>
+      <span class="header__monitor-status hidden" id="monitor-status">
+        <span class="monitor-dot" id="monitor-dot"></span>
+        <span id="monitor-label"></span>
+        <span class="monitor-refreshed hidden" id="monitor-refreshed"></span>
+      </span>
+    </div>
   </div>
 </header>
 
@@ -1892,16 +1949,6 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <span class="upload-zone__status" id="upload-status" aria-live="polite"></span>
     <input type="file" id="upload-input" class="hidden" accept=".txt" aria-label="Choose combat log file">
     <input type="file" id="upload-directory-input" class="hidden" webkitdirectory directory multiple aria-label="Choose combat log directory">
-    <div class="monitor-section">
-      <div class="monitor-section__title">Live Monitor</div>
-      <div class="monitor-section__desc">Watch a WoWCombatLog.txt on disk for new data (SSE via server).</div>
-      <div class="monitor-form">
-        <input type="text" id="monitor-path" placeholder="e.g. C:\World of Warcraft\_retail_\Logs\WoWCombatLog.txt" aria-label="Log file path">
-        <button class="btn btn--primary" id="monitor-start" type="button">Watch</button>
-        <button class="btn hidden" id="monitor-stop" type="button">Stop</button>
-      </div>
-      <div class="monitor-status" id="monitor-status"></div>
-    </div>
   </section>
 
   <section class="hidden" id="panel-overall" role="tabpanel" aria-labelledby="tab-overall" tabindex="0">
@@ -2252,11 +2299,40 @@ const monitorPath = document.getElementById('monitor-path');
 const monitorStartBtn = document.getElementById('monitor-start');
 const monitorStopBtn = document.getElementById('monitor-stop');
 const monitorStatus = document.getElementById('monitor-status');
+const monitorDot = document.getElementById('monitor-dot');
+const monitorLabel = document.getElementById('monitor-label');
+const monitorRefreshed = document.getElementById('monitor-refreshed');
 let monitorEventSource = null;
+let lastRefreshTime = null;
 
-function setMonitorStatus(text, isLive = false) {
-  const dotClass = isLive ? 'monitor-dot--live' : 'monitor-dot--stopped';
-  monitorStatus.innerHTML = `<span class="monitor-dot ${dotClass}"></span>${escapeHtml(text)}`;
+function setMonitorStatus(text, isLive = false, isNewData = false) {
+  monitorStatus.classList.remove('hidden');
+  if (isLive) {
+    monitorDot.className = 'monitor-dot monitor-dot--live';
+  } else if (isNewData) {
+    monitorDot.className = 'monitor-dot monitor-dot--new';
+    // Flash the page body
+    document.body.classList.remove('data-flash');
+    // Force reflow
+    void document.body.offsetWidth;
+    document.body.classList.add('data-flash');
+    // Reset dot back to live after a moment
+    setTimeout(() => {
+      if (monitorEventSource || monitorStartBtn.disabled) {
+        monitorDot.className = 'monitor-dot monitor-dot--live';
+      }
+    }, 1200);
+  } else {
+    monitorDot.className = 'monitor-dot monitor-dot--stopped';
+  }
+  monitorLabel.textContent = text;
+}
+
+function setMonitorRefreshed() {
+  const now = new Date();
+  const time = now.toLocaleTimeString();
+  monitorRefreshed.classList.remove('hidden');
+  monitorRefreshed.textContent = `· ${time}`;
 }
 
 monitorStartBtn.addEventListener('click', () => {
@@ -2311,8 +2387,10 @@ monitorStartBtn.addEventListener('click', () => {
             const data = JSON.parse(dataStr);
             if (eventType === 'start') {
               setMonitorStatus(`Watching ${path} (${formatFileSize(data.fileSize)})`, true);
+              setMonitorRefreshed();
             } else if (eventType === 'append') {
               handleLiveAppend(data.lines, data.totalLines);
+              setMonitorRefreshed();
             }
           } catch (e) {
             console.warn('SSE parse error:', e);
@@ -2380,7 +2458,7 @@ function handleLiveAppend(newLines, totalBytes) {
   // Rescan for encounter starts/ends
   appendNewFights(state.rawLines.slice(newStartLine), newStartLine);
 
-  setMonitorStatus(`Watching · ${formatNumber(state.rawLines.length)} lines · ${formatFileSize(totalBytes)}`, true);
+  setMonitorStatus(`Watching · ${formatNumber(state.rawLines.length)} lines · ${formatFileSize(totalBytes)}`, true, true);
 
   // Re-render
   renderFightList();
