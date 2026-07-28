@@ -60,22 +60,35 @@
 **"The Open Spellbook"**
 
 ```
-+-----------------------------------------------------------------+
-|  v SPELLBOOK: COMBAT LOG PARSER              [UPLOAD LOG]        |
-+-----------------------------------------------------------------+
-|                                                                   |
-|  [Fights]  [Players]  [Timeline]  [Mechanics]  [Raw Log]         |
-|                                                                   |
-|  +-------------------------------------------------------------+  |
-|  |  HERO: Drop zone / Fight list                               |  |
-|  |  -- or --                                                   |  |
-|  |  SELECTED FIGHT DETAIL                                      |  |
-|  |  [Boss HP]  [Phases]  [Timeline]                            |  |
-|  |  Player Grid (class-colored cards)                          |  |
-|  +-------------------------------------------------------------+  |
-|                                                                   |
-+-----------------------------------------------------------------+
++------------------------------------------------------------------+
+|  COMBAT LOG PARSER                 [Load Log] [Load Directory]     |
++------------------------------------------------------------------+
+|  [Overall] [Fights] [Players] [Timeline] [Deaths] [Auras] [Raw]  |
++------------------------------------------------------------------+
+|                                                                    |
+|  +--------------------------------------------------------------+  |
+|  |  HERO: Upload zone / Fight list / Overall summary            |  |
+|  |  -- or --                                                    |  |
+|  |  SELECTED FIGHT or OVERALL DETAIL                            |  |
+|  |                                                              |  |
+|  |  [Summary] [Damage] [Healing] [Buffs] ... tab subnav         |  |
+|  |                                                              |  |
+|  |  +--------------------+  +--------------------+               |  |
+|  |  | Damage Done       |  | Damage Taken       |  Paired       |  |
+|  |  | #1 Warrior 1.2M   |  | (same layout)      |  report       |  |
+|  |  | #2 Mage   980K    |  | ...                |  panels       |  |
+|  |  | ...               |  |                    |               |  |
+|  |  +--------------------+  +--------------------+               |  |
+|  |                                                              |  |
+|  |  Actor filter: [All] [Players] (event-level filter)          |  |
+|  |                                                              |  |
+|  |  Player rows: class-colored | metric bar | spell drilldown   |  |
+|  +--------------------------------------------------------------+  |
+|                                                                    |
++------------------------------------------------------------------+
 ```
+
+**Responsive:** Tab bar wraps at < 1024px, stacks vertical at < 640px.
 
 ## Signature Element
 
