@@ -3587,7 +3587,7 @@ function renderOverallView() {
       state.selectedDamageTakenGuid = null;
       state.selectedDamageTakenSourceGuid = null;
       state.expandedActorGroups = new Set();
-      renderOverallView();
+      renderOverallSubpanel();
     });
   });
 
@@ -3600,7 +3600,8 @@ function renderOverallView() {
       state.selectedDamageTakenGuid = null;
       state.selectedDamageTakenSourceGuid = null;
       state.expandedActorGroups = new Set();
-      renderOverallView();
+      updateActorFilterButtons(overallEl);
+      renderOverallSubpanel();
     });
   });
 
@@ -3952,7 +3953,8 @@ function attachActorFilterHandlers() {
       state.selectedDamageTakenGuid = null;
       state.selectedDamageTakenSourceGuid = null;
       state.expandedActorGroups = new Set();
-      renderFightDetail();
+      updateActorFilterButtons(fightList);
+      renderFightSubpanel();
     });
   });
 }
@@ -3989,9 +3991,41 @@ function attachFightSubnavHandlers() {
       state.selectedDamageTakenGuid = null;
       state.selectedDamageTakenSourceGuid = null;
       state.expandedActorGroups = new Set();
-      renderFightDetail();
+      renderFightSubpanel();
     });
   });
+}
+
+function updateActorFilterButtons(rootEl) {
+  rootEl.querySelectorAll('[data-actor-filter]').forEach(button => {
+    button.classList.toggle('filter-btn--active', button.dataset.actorFilter === state.actorFilter);
+  });
+}
+
+function renderOverallSubpanel() {
+  const subpanel = document.getElementById('overall-subpanel');
+  if (!subpanel) {
+    renderOverallView();
+    return;
+  }
+  subpanel.innerHTML = renderOverallContent();
+  document.querySelectorAll('[data-overall-panel]').forEach(button => {
+    button.setAttribute('aria-selected', button.dataset.overallPanel === state.selectedOverallPanel);
+  });
+  attachBreakdownHandlers(subpanel);
+}
+
+function renderFightSubpanel() {
+  const subpanel = document.getElementById('fight-subpanel');
+  if (!subpanel) {
+    renderFightDetail();
+    return;
+  }
+  subpanel.innerHTML = renderFightSubpanelContent();
+  fightList.querySelectorAll('[data-fight-panel]').forEach(button => {
+    button.setAttribute('aria-selected', button.dataset.fightPanel === state.selectedFightPanel);
+  });
+  attachBreakdownHandlers(subpanel);
 }
 
 function renderFightSubpanelContent() {
@@ -4811,11 +4845,18 @@ function cssEscape(value) {
 }
 
 function rerenderBreakdowns() {
-  if (state.currentFight) renderFightDetail();
+  const overallPanelVisible = panels.overall && !panels.overall.classList.contains('hidden');
+  if (overallPanelVisible) {
+    renderOverallSubpanel();
+    return;
+  }
+  const fightsPanelVisible = panels.fights && !panels.fights.classList.contains('hidden');
+  if (fightsPanelVisible && state.currentFight) {
+    renderFightSubpanel();
+    return;
+  }
   const breakdownPanelVisible = panels.breakdown && !panels.breakdown.classList.contains('hidden');
   if (breakdownPanelVisible) renderBreakdownView();
-  const overallPanelVisible = panels.overall && !panels.overall.classList.contains('hidden');
-  if (overallPanelVisible) renderOverallView();
 }
 
 function renderDamageDoneTable(rows, totalDamage, fight, reportKey = 'damage-done') {
