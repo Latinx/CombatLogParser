@@ -164,6 +164,89 @@ function handleMonitorStop(req, res) {
   res.end(JSON.stringify({ stopped: true }));
 }
 
+function compactSlug(value) {
+  return String(value || '').normalize('NFKD').replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+}
+
+function profileLocale(region) {
+  return { eu: 'en-gb', kr: 'ko-kr', tw: 'zh-tw' }[region] || 'en-us';
+}
+
+function characterProfileUrl(locale, region, realm, name) {
+  return `https://worldofwarcraft.blizzard.com/${locale}/character/${region}/${encodeURIComponent(realm)}/${encodeURIComponent(name)}`;
+}
+
+async function fetchPublicPage(url) {
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'CombatLogParser/0.2' },
+    signal: AbortSignal.timeout(25000),
+  });
+  return { status: response.status, body: await response.text() };
+}
+
+function findCanonicalRealm(body, region, realm, name) {
+  const pattern = new RegExp(`href="/character/${region}/([^/]+)/([^/]+)/?"`, 'gi');
+  const requestedRealm = compactSlug(realm);
+  const requestedName = compactSlug(name);
+  for (const match of body.matchAll(pattern)) {
+    if (compactSlug(match[1]) === requestedRealm && compactSlug(match[2]) === requestedName) return match[1];
+  }
+  return null;
+}
+
+function extractCharacterProfile(body) {
+  const marker = 'var characterProfileInitialState = ';
+  const start = body.indexOf(marker);
+  if (start < 0) return null;
+  const payloadStart = start + marker.length;
+  const end = body.indexOf('</script>', payloadStart);
+  if (end < 0) return null;
+  return JSON.parse(body.slice(payloadStart, end).trim().replace(/;$/, ''));
+}
+
+async function handleCharacterProfile(url, res) {
+  const region = (url.searchParams.get('region') || '').toLowerCase();
+  const realm = (url.searchParams.get('realm') || '').toLowerCase();
+  const name = (url.searchParams.get('name') || '').toLowerCase();
+  if (!['us', 'eu', 'kr', 'tw'].includes(region) || !realm || !name) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Invalid character identity' }));
+    return;
+  }
+
+  try {
+    const locale = profileLocale(region);
+    let page = await fetchPublicPage(characterProfileUrl(locale, region, realm, name));
+    if (page.status === 404) {
+      const search = await fetchPublicPage(`https://worldofwarcraft.blizzard.com/${locale}/search/character?q=${encodeURIComponent(name)}`);
+      const canonicalRealm = search.status === 200 ? findCanonicalRealm(search.body, region, realm, name) : null;
+      if (canonicalRealm) page = await fetchPublicPage(characterProfileUrl(locale, region, canonicalRealm, name));
+    }
+    if (page.status === 404) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ found: false, retryable: false }));
+      return;
+    }
+    if (page.status !== 200) throw new Error(`Profile provider returned ${page.status}`);
+    const profile = extractCharacterProfile(page.body);
+    if (!profile?.character) throw new Error('Character profile payload missing');
+    const character = profile.character;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      found: true,
+      provider: 'blizzard-public-profile',
+      class: character.class,
+      spec: character.spec,
+      name: character.name,
+      realm: character.realm,
+    }));
+  } catch (error) {
+    console.warn('Character profile lookup failed:', error.message);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ found: false, retryable: true }));
+  }
+}
+
 // --- Server ---
 function startServer(port) {
   const server = http.createServer((req, res) => {
@@ -190,6 +273,10 @@ function startServer(port) {
     }
     if (url.pathname === '/api/monitor/stop' && req.method === 'GET') {
       handleMonitorStop(req, res);
+      return;
+    }
+    if (url.pathname === '/api/character-profile' && req.method === 'GET') {
+      void handleCharacterProfile(url, res);
       return;
     }
 
