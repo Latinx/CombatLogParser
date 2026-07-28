@@ -2666,8 +2666,8 @@ function handleLiveAppend(newLines, totalBytes) {
 
   // Re-render
   renderFightList();
-  renderOverallView();
-  renderBreakdownView();
+  if (!panels.overall.classList.contains('hidden')) renderOverallView();
+  if (!panels.breakdown.classList.contains('hidden')) renderBreakdownView();
 }
 
 function appendNewEvents(newLines, startLineNo) {
@@ -2817,6 +2817,8 @@ tabs.forEach(tab => {
       state.expandedActorGroups = new Set();
       renderFightList();
       resetMainScroll();
+    } else if (tab.id === 'tab-overall') {
+      renderOverallView();
     }
     switchTab(tab.dataset.panel);
   });
@@ -2900,8 +2902,8 @@ function setImportProgress(title, current, total, detail = '') {
   </div>`;
 }
 
-function nextFrame() {
-  return new Promise(resolve => requestAnimationFrame(() => resolve()));
+function yieldToBrowser() {
+  return new Promise(resolve => setTimeout(resolve, 0));
 }
 
 // ============================================
@@ -2915,7 +2917,7 @@ async function parseLogFile(file) {
       if (event.lengthComputable) setImportProgress('Reading combat log', event.loaded, event.total, file.name);
     });
     setImportProgress('Parsing combat log', 1, 1, `${formatNumber(text.length)} characters`);
-    await nextFrame();
+    await yieldToBrowser();
     persistCurrentLog(text);
     loadLogText(text);
   } catch (err) {
@@ -2944,10 +2946,10 @@ async function parseLogFiles(files) {
       if (state.rawLines.length > 0 && state.rawLines[state.rawLines.length - 1] !== '') state.rawLines.push('');
       nextLines.forEach(line => state.rawLines.push(line));
       setImportProgress('Reading combat log directory', completedBytes, totalBytes, `${label} · ${formatNumber(state.rawLines.length)} lines`);
-      await nextFrame();
+      await yieldToBrowser();
     }
     setImportProgress('Parsing combat log directory', 1, 1, `${files.length} files · ${formatNumber(state.rawLines.length)} lines`);
-    await nextFrame();
+    await yieldToBrowser();
     finishLoadedLog();
   } catch (err) {
     console.error('Directory read error:', err);
@@ -2997,13 +2999,7 @@ function resetLogState(rawLines) {
 function finishLoadedLog() {
   parseRawLines();
   renderFightList();
-  renderOverallView();
-  renderPlayerGrid();
-  renderTimeline();
-  renderRawLog();
-  renderBreakdownView();
-  renderDeathsView();
-  renderAurasView();
+  if (!panels.overall.classList.contains('hidden')) renderOverallView();
 }
 
 function persistCurrentLog(text) {
@@ -3016,7 +3012,7 @@ function persistCurrentLog(text) {
         ]);
       }
       return Promise.all([
-        putStoredLog(db, text),
+        putStoredValue(db, STORED_LOG_KEY, text),
         putStoredValue(db, STORED_LOG_SIZE_KEY, text.length)
       ]);
     })
@@ -3031,7 +3027,7 @@ function restorePersistedLog() {
         await deleteStoredValue(db, STORED_LOG_KEY);
         return '';
       }
-      return getStoredLog(db);
+      return getStoredValue(db, STORED_LOG_KEY);
     })
     .then(text => {
       if (!text) return;
@@ -3097,10 +3093,6 @@ function putStoredValue(db, key, value) {
   });
 }
 
-function putStoredLog(db, text) {
-  return putStoredValue(db, STORED_LOG_KEY, text);
-}
-
 function deleteStoredValue(db, key) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(LOG_STORE_NAME, 'readwrite');
@@ -3112,17 +3104,8 @@ function deleteStoredValue(db, key) {
 
 function getStoredValue(db, key) {
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(LOG_STORE_NAME, 'readwrite');
-    const request = tx.objectStore(LOG_STORE_NAME).get(key);
-    request.onsuccess = () => resolve(request.result || '');
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function getStoredLog(db) {
-  return new Promise((resolve, reject) => {
     const tx = db.transaction(LOG_STORE_NAME, 'readonly');
-    const request = tx.objectStore(LOG_STORE_NAME).get(STORED_LOG_KEY);
+    const request = tx.objectStore(LOG_STORE_NAME).get(key);
     request.onsuccess = () => resolve(request.result || '');
     request.onerror = () => reject(request.error);
   });
