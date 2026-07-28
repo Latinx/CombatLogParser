@@ -2696,7 +2696,19 @@ function switchTab(panelName) {
 }
 
 tabs.forEach(tab => {
-  tab.addEventListener('click', () => switchTab(tab.dataset.panel));
+  tab.addEventListener('click', () => {
+    if (tab.id === 'tab-fights') {
+      state.currentFight = null;
+      state.selectedSourceGuid = null;
+      state.selectedSpellKey = null;
+      state.selectedDamageTakenGuid = null;
+      state.selectedDamageTakenSourceGuid = null;
+      state.expandedActorGroups = new Set();
+      renderFightList();
+      resetMainScroll();
+    }
+    switchTab(tab.dataset.panel);
+  });
   tab.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tab.click(); }
   });
