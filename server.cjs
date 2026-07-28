@@ -1,7 +1,6 @@
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
-const { execFile } = require('child_process');
 
 const HOST = '127.0.0.1';
 const START_PORT = Number(process.env.COMBAT_LOG_PARSER_PORT) || 8081;
@@ -200,21 +199,11 @@ function startServer(port) {
   server.listen(port, HOST, () => {
     const url = `http://${HOST}:${port}`;
     console.log(`Combat Log Parser running at ${url}`);
-    openBrowser(url);
   });
 }
 
 function openBrowser(url) {
-  if (process.env.COMBAT_LOG_PARSER_NO_OPEN === '1') return;
-  if (process.platform === 'win32') {
-    execFile('cmd', ['/c', 'start', '', url], { windowsHide: true });
-    return;
-  }
-  if (process.platform === 'darwin') {
-    execFile('open', [url]);
-    return;
-  }
-  execFile('xdg-open', [url]);
+  // Browser auto-open disabled. Navigate to the URL manually.
 }
 
 startServer(START_PORT);
