@@ -4571,6 +4571,8 @@ function addDamageToSpellRow(spell, damage) {
 
 function addDamageToTargetRows(spell, damage) {
   if (!isValidActorGuid(damage.destGuid)) return;
+  // When filtering to players, skip NPC (non-player, non-pet) targets
+  if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(damage.destGuid)) return;
   const targets = new Map((spell.targets || []).map(target => [target.guid, target]));
   const target = targets.get(damage.destGuid) || {
     guid: damage.destGuid,
@@ -4608,6 +4610,8 @@ function addAmountToSpellRow(spell, detail) {
     spell.max = Math.max(spell.max, detail.amount);
   }
   if (!isValidActorGuid(detail.peerGuid)) return;
+  // When filtering to players, skip NPC (non-player, non-pet) targets
+  if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(detail.peerGuid)) return;
   const targets = new Map((spell.targets || []).map(target => [target.guid, target]));
   const target = targets.get(detail.peerGuid) || {
     guid: detail.peerGuid,
