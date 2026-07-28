@@ -1921,9 +1921,6 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <button class="btn header__tab" role="tab" aria-selected="true" aria-controls="panel-fights" id="tab-fights" data-panel="fights" type="button">
       <span>Fights</span>
     </button>
-    <button class="btn header__tab" role="tab" aria-controls="panel-upload" id="tab-upload" data-panel="upload" type="button">
-      <span>Upload</span>
-    </button>
     <label class="btn btn--primary" for="file-input">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>Load Log</span>
@@ -2284,7 +2281,6 @@ let state = {
 };
 
 const panels = {
-  upload: document.getElementById('panel-upload'),
   overall: document.getElementById('panel-overall'),
   fights: document.getElementById('panel-fights'),
   players: document.getElementById('panel-players'),
@@ -5334,11 +5330,6 @@ function formatNumber(num) {
 
 renderFightList();
 restorePersistedLog();
-
-// Default to upload tab when no persisted log
-if (!state.rawLines || state.rawLines.length === 0) {
-  switchTab('upload');
-}
 </script>
 </body>
 </html>
