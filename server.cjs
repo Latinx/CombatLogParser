@@ -45,6 +45,18 @@ function sendFile(res, filePath) {
 /// --- Live Monitor SSE ---
 const monitors = new Map();
 
+function translateWindowsPath(p) {
+  if (!p) return p;
+  // C:\... -> /mnt/c/...
+  const match = p.match(/^([A-Za-z]):\\(.*)$/);
+  if (match) {
+    const drive = match[1].toLowerCase();
+    const rest = match[2].replace(/\\/g, '/');
+    return `/mnt/${drive}/${rest}`;
+  }
+  return p;
+}
+
 function handlePickFile(req, res) {
   res.writeHead(200, { 'Content-Type': 'application/json' });
   // Node.js can't open native file dialogs; returns null so client falls back to browser picker
@@ -53,7 +65,11 @@ function handlePickFile(req, res) {
 
 function handleMonitorWatch(req, res) {
   const url = new URL(req.url, `http://${HOST}:8081`);
-  const filePath = url.searchParams.get('path');
+  let filePath = url.searchParams.get('path');
+
+  // Translate Windows paths to WSL paths
+  filePath = translateWindowsPath(filePath);
+
   if (!filePath) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Missing path query param' }));
