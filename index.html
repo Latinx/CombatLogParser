@@ -799,6 +799,25 @@ body {
   background: var(--surface);
   color: var(--ink);
 }
+.fight-player-filter {
+  padding: 4px 10px;
+  border: 1px solid var(--gridline);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  outline: none;
+  max-width: 200px;
+}
+.fight-player-filter:focus {
+  border-color: var(--tank-blue);
+}
+.fight-player-filter option {
+  background: var(--surface);
+  color: var(--ink);
+}
 @media (max-width: 640px) {
   .fight-detail__nav { flex-wrap: wrap; }
   .fight-detail__dropdown { min-width: 0; max-width: 100%; flex: 1; }
@@ -2308,6 +2327,7 @@ let state = {
   selectedFightPanel: 'summary',
   selectedOverallPanel: 'summary',
   actorFilter: 'all',
+  fightPlayerFilter: null,
   petOwners: new Map(),
   playerNames: new Map(),
   rawLines: []
@@ -2884,6 +2904,21 @@ function persistWatchPath(path) {
     .catch(err => console.warn('Could not persist watch path.', err));
 }
 
+function persistFightPlayerFilter(guid) {
+  openLogDatabase()
+    .then(db => putStoredValue(db, 'combatLogParser.fightPlayerFilter', guid || ''))
+    .catch(err => console.warn('Could not persist fight player filter.', err));
+}
+
+function restoreFightPlayerFilter() {
+  openLogDatabase()
+    .then(db => getStoredValue(db, 'combatLogParser.fightPlayerFilter'))
+    .then(val => {
+      if (val) state.fightPlayerFilter = val;
+    })
+    .catch(() => {});
+}
+
 function restoreWatchPath() {
   openLogDatabase()
     .then(db => getStoredValue(db, STORED_WATCH_PATH_KEY))
@@ -3200,23 +3235,53 @@ function rememberAdvancedUnitOwners(petOwners, payload) {
 // ============================================
 
 function renderFightList() {
-  const fightsWithPlayers = state.fights
+  const allFights = state.fights
     .map((fight, index) => ({ fight, index, players: getFightPlayerRows(fight) }))
     .filter(item => item.players.length > 0)
     .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
 
-  if (fightsWithPlayers.length === 0) {
+  // Build unique player list for filter
+  const allPlayers = new Map();
+  allFights.forEach(({ players }) => {
+    players.forEach(p => {
+      if (!allPlayers.has(p.guid)) allPlayers.set(p.guid, { guid: p.guid, name: p.name });
+    });
+  });
+  const playerFilterList = Array.from(allPlayers.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+  // Apply player filter
+  const filteredFights = state.fightPlayerFilter
+    ? allFights.filter(({ players }) => players.some(p => p.guid === state.fightPlayerFilter))
+    : allFights;
+
+  if (filteredFights.length === 0) {
     fightList.innerHTML = `
+      <div class="breakdown-controls" style="flex-wrap:wrap;">
+        <span class="breakdown-row__sub">Fights</span>
+        <select class="fight-player-filter" id="fight-player-filter" aria-label="Filter by player">
+          <option value="">All players</option>
+          ${playerFilterList.map(p => `<option value="${p.guid}" ${state.fightPlayerFilter === p.guid ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
+        </select>
+      </div>
       <div class="empty-state">
         <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         <h3 class="empty-state__title">No Player Fights Found</h3>
         <p class="empty-state__desc">No detected fight windows contain player combat activity.</p>
-      </div >
-    `;
+      </div >`;
+    attachFightPlayerFilter();
     return;
   }
 
-  fightList.innerHTML = fightsWithPlayers.map(({ fight, index, players }) => {
+  fightList.innerHTML = `
+    <div class="breakdown-controls" style="flex-wrap:wrap;">
+      <span class="breakdown-row__sub">Fights</span>
+      <select class="fight-player-filter" id="fight-player-filter" aria-label="Filter by player">
+        <option value="">All players</option>
+        ${playerFilterList.map(p => `<option value="${p.guid}" ${state.fightPlayerFilter === p.guid ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
+      </select>
+      <span class="breakdown-row__sub">${filteredFights.length} fights</span>
+    </div>
+    ${filteredFights.map(({ fight, index, players }) => {
     const topPlayer = players[0];
     const stats = getFightCardStats(fight, players);
     const statusLabel = fight.kill ? 'Kill' : (fight.difficulty === 0 ? 'PvP' : 'Pull');
@@ -3250,14 +3315,25 @@ function renderFightList() {
       <svg class="fight-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </article>
   `;
-  }).join('');
+  }).join('')}`;
 
   fightList.querySelectorAll('.fight-card').forEach(card => {
     card.addEventListener('click', () => selectFight(parseInt(card.dataset.fightIndex, 10)));
     card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
   });
 
+  attachFightPlayerFilter();
 } // end renderFightList
+
+function attachFightPlayerFilter() {
+  const filter = document.getElementById('fight-player-filter');
+  if (!filter) return;
+  filter.addEventListener('change', () => {
+    state.fightPlayerFilter = filter.value || null;
+    persistFightPlayerFilter(state.fightPlayerFilter);
+    renderFightList();
+  });
+}
 
 function getMetaFight() {
   if (state.fights.length === 0) return null;
@@ -3564,7 +3640,7 @@ function renderFightDetail() {
         <select class="fight-detail__dropdown" id="fight-selector" aria-label="Select fight">
           ${allFights.map(({ fight, index }) => `
             <option value="${index}" ${index === currentIndex ? 'selected' : ''}>
-              [${fight.kill ? 'K' : (fight.difficulty === 0 ? 'P' : 'W')}] ${escapeHtml(fight.bossName)} · ${escapeHtml(formatFightTime(fight.startDateTime))} · ${formatDuration(fight.duration)}
+              Fight ${index + 1} · ${escapeHtml(formatFightTime(fight.startDateTime))} · ${formatDuration(fight.duration)}
             </option>
           `).join('')}
         </select>
@@ -5407,6 +5483,7 @@ function formatNumber(num) {
 
 renderFightList();
 restorePersistedLog();
+restoreFightPlayerFilter();
 </script>
 </body>
 </html>
