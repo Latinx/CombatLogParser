@@ -2429,6 +2429,7 @@ let state = {
   selectedOverallPanel: 'summary',
   actorFilter: 'players',
   fightPlayerFilter: null,
+  reportCache: new Map(),
   petOwners: new Map(),
   playerNames: new Map(),
   rawLines: []
@@ -2642,6 +2643,7 @@ function handleLiveAppend(newLines, totalBytes) {
 
   // Rescan for encounter starts/ends
   appendNewFights(state.rawLines.slice(newStartLine), newStartLine);
+  state.reportCache.clear();
 
   setMonitorStatus(`Watching · ${formatNumber(state.rawLines.length)} lines · ${formatFileSize(totalBytes)}`, true, true);
 
@@ -3333,6 +3335,7 @@ function parseAllEvents() {
   state.events = events;
   state.petOwners = petOwners;
   state.playerNames = playerNames;
+  state.reportCache.clear();
 }
 
 function rememberAdvancedUnitOwners(petOwners, payload) {
@@ -3591,7 +3594,7 @@ function renderOverallView() {
 function getFightCardStats(fight, players) {
   const fightSeconds = Math.max(1, fight.duration / 1000);
   const totalDamage = players.reduce((sum, player) => sum + player.amount, 0);
-  const eventCount = state.events.filter(event => event.lineNo >= fight.startLineNo && event.lineNo <= fight.endLineNo).length;
+  const eventCount = getFightEvents(fight).length;
   return {
     totalDamage,
     fightDps: Math.round(totalDamage / fightSeconds),
@@ -3829,12 +3832,6 @@ function selectFight(index) {
   state.expandedActorGroups = new Set();
   state.selectedFightPanel = 'summary';
   renderFightDetail();
-  renderPlayerGrid();
-  renderTimeline();
-  renderRawLog();
-  renderBreakdownView();
-  renderDeathsView();
-  renderAurasView();
   resetMainScroll();
   void enrichFightPlayerProfiles(state.currentFight);
 }
@@ -4021,8 +4018,8 @@ function renderFightPlayersContent() {
 }
 
 function renderFightTimelineContent(fight) {
-  const events = state.events
-    .filter(e => e.lineNo >= fight.startLineNo && e.lineNo <= fight.endLineNo && isCombatBoundaryEvent(e.type))
+  const events = getFightEvents(fight)
+    .filter(e => isCombatBoundaryEvent(e.type))
     .slice(0, 120);
 
   if (events.length === 0) return renderFightPlaceholder('Timeline', 'No combat events were found in this fight window.');
@@ -4191,8 +4188,8 @@ function renderTimeline() {
     bossHpEl.innerHTML += `<div class="timeline__hp-phase" style="left: ${Math.floor(index / (phases.length - 1) * 100)}%; animation-delay: ${index * 0.3}s;"></div>`;
   });
 
-  const fightEvents = state.events
-    .filter(e => e.lineNo >= fight.startLineNo && e.lineNo <= fight.endLineNo && isCombatBoundaryEvent(e.type))
+  const fightEvents = getFightEvents(fight)
+    .filter(e => isCombatBoundaryEvent(e.type))
     .slice(0, 250);
 
   const fragment = document.createDocumentFragment();
@@ -5016,7 +5013,7 @@ function renderInlineSpellTargetRows(spell) {
       return `<details class="spell-target-group">
         <summary>${parentRow}</summary>
         <div class="spell-target-group__children">
-          ${group.children.map(child => renderSpellTargetRow(child, '↳', spell, maxTargetAmount, 'summon')).join('')}
+          ${group.children.map(child => renderSpellTargetRow(child, '↳', spell, maxTargetAmount, child.instances > 1 ? `${child.instances} summons` : 'summon')).join('')}
         </div>
       </details>`;
     }).join('')}
@@ -5063,6 +5060,7 @@ function buildSpellTargetHierarchy(targets) {
   });
 
   return Array.from(groups.values()).map(group => {
+    group.children = mergeSpellTargetChildren(group.children);
     const rows = [...(group.parent ? [group.parent] : []), ...group.children];
     const total = rows.reduce((merged, row) => mergeSpellTargetStats(merged, row), {
       ...(group.parent || rows[0]),
@@ -5079,6 +5077,21 @@ function buildSpellTargetHierarchy(targets) {
       children: group.children.sort((a, b) => b.amount - a.amount)
     };
   }).filter(group => group.total.amount > 0).sort((a, b) => b.total.amount - a.total.amount);
+}
+
+function mergeSpellTargetChildren(children) {
+  const merged = new Map();
+  children.forEach(child => {
+    const key = `${child.ownerGuid || ''}:${normalizeActorName(child.name)}`;
+    if (!merged.has(key)) {
+      merged.set(key, { ...child, instances: 1 });
+      return;
+    }
+    const current = merged.get(key);
+    mergeSpellTargetStats(current, child);
+    current.instances += 1;
+  });
+  return Array.from(merged.values());
 }
 
 function mergeSpellTargetStats(total, row) {
@@ -5241,10 +5254,48 @@ function getSpellSchoolStyle(spell) {
   return `--spell-school-color: ${color}; --spell-school-fill: ${getSpellSchoolFill(spell?.school)}; --spell-school-glow: ${color}66;`;
 }
 
+function getCachedReportRows(kind, fight, detail, buildRows) {
+  const key = `${kind}:${fight.startLineNo}:${fight.endLineNo}:${state.actorFilter}:${detail || ''}`;
+  if (state.reportCache.has(key)) {
+    const cached = state.reportCache.get(key);
+    state.reportCache.delete(key);
+    state.reportCache.set(key, cached);
+    return cached;
+  }
+  const rows = buildRows();
+  state.reportCache.set(key, rows);
+  if (state.reportCache.size > 80) {
+    state.reportCache.delete(state.reportCache.keys().next().value);
+  }
+  return rows;
+}
+
+function getFightEvents(fight) {
+  const events = state.events;
+  let low = 0;
+  let high = events.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (events[mid].lineNo < fight.startLineNo) low = mid + 1;
+    else high = mid;
+  }
+  const start = low;
+  high = events.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (events[mid].lineNo <= fight.endLineNo) low = mid + 1;
+    else high = mid;
+  }
+  return events.slice(start, low);
+}
+
 function buildDamageDoneRows(fight) {
+  return getCachedReportRows('damage-done', fight, '', () => computeDamageDoneRows(fight));
+}
+
+function computeDamageDoneRows(fight) {
   const sources = new Map();
-  for (const event of state.events) {
-    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+  for (const event of getFightEvents(fight)) {
     const damage = parseDamageEvent(event.type, event.params);
     if (!damage || !isValidActorGuid(damage.sourceGuid)) continue;
     if (!filterEventByActor(damage.sourceGuid, damage.destGuid)) continue;
@@ -5278,9 +5329,12 @@ function buildDamageDoneRows(fight) {
 }
 
 function buildDamageTakenRows(fight) {
+  return getCachedReportRows('damage-taken', fight, '', () => computeDamageTakenRows(fight));
+}
+
+function computeDamageTakenRows(fight) {
   const targets = new Map();
-  for (const event of state.events) {
-    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+  for (const event of getFightEvents(fight)) {
     const damage = parseDamageEvent(event.type, event.params);
     if (!damage || damage.amount <= 0) continue;
     if (!filterEventByActor(damage.sourceGuid, damage.destGuid)) continue;
@@ -5313,9 +5367,12 @@ function buildDamageTakenRows(fight) {
 }
 
 function buildDamageTakenSourceRows(fight, targetGuid) {
+  return getCachedReportRows('damage-taken-sources', fight, targetGuid, () => computeDamageTakenSourceRows(fight, targetGuid));
+}
+
+function computeDamageTakenSourceRows(fight, targetGuid) {
   const sources = new Map();
-  for (const event of state.events) {
-    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+  for (const event of getFightEvents(fight)) {
     const damage = parseDamageEvent(event.type, event.params);
     if (!damage) continue;
     if (!filterEventByActor(damage.sourceGuid, damage.destGuid)) continue;
@@ -5351,9 +5408,12 @@ function buildDamageTakenSourceRows(fight, targetGuid) {
 }
 
 function buildHealingRows(fight, actorSide) {
+  return getCachedReportRows('healing', fight, actorSide, () => computeHealingRows(fight, actorSide));
+}
+
+function computeHealingRows(fight, actorSide) {
   const actors = new Map();
-  for (const event of state.events) {
-    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+  for (const event of getFightEvents(fight)) {
     const healing = parseHealingEvent(event.type, event.params);
     if (!healing || healing.amount <= 0) continue;
     if (!filterEventByActor(healing.sourceGuid, healing.destGuid)) continue;
@@ -5391,9 +5451,13 @@ function buildHealingRows(fight, actorSide) {
 }
 
 function buildEventCountRows(fight, typeTokens) {
+  const detail = typeTokens.join(',');
+  return getCachedReportRows('event-count', fight, detail, () => computeEventCountRows(fight, typeTokens));
+}
+
+function computeEventCountRows(fight, typeTokens) {
   const actors = new Map();
-  for (const event of state.events) {
-    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+  for (const event of getFightEvents(fight)) {
     if (!typeTokens.some(token => event.type.includes(token))) continue;
     const fields = parseCombatLogFields(event.params);
     const useDest = !isValidActorGuid(fields.sourceGuid) && isValidActorGuid(fields.destGuid);
@@ -5409,9 +5473,12 @@ function buildEventCountRows(fight, typeTokens) {
 }
 
 function buildAuraRows(fight, auraKind) {
+  return getCachedReportRows('auras', fight, auraKind, () => computeAuraRows(fight, auraKind));
+}
+
+function computeAuraRows(fight, auraKind) {
   const actors = new Map();
-  for (const event of state.events) {
-    if (event.lineNo < fight.startLineNo || event.lineNo > fight.endLineNo) continue;
+  for (const event of getFightEvents(fight)) {
     if (!event.type.includes('AURA_')) continue;
     const fields = parseCombatLogFields(event.params);
     const auraType = (fields.payload[3] || fields.payload[fields.payload.length - 1] || '').toLowerCase();
