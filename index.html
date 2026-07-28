@@ -3623,6 +3623,13 @@ async function getCharacterProfile(identity) {
     const response = await fetch(`/api/character-profile?${params}`);
     if (!response.ok) return null;
     const profile = await response.json();
+    if (!profile.found) {
+      if (!profile.retryable) {
+        cache[key] = { fetchedAt: Date.now(), profile: null };
+        localStorage.setItem(CHARACTER_PROFILE_CACHE_KEY, JSON.stringify(cache));
+      }
+      return null;
+    }
     cache[key] = { fetchedAt: Date.now(), profile };
     localStorage.setItem(CHARACTER_PROFILE_CACHE_KEY, JSON.stringify(cache));
     return profile;

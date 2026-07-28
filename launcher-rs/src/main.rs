@@ -118,38 +118,39 @@ fn handle_character_profile(
         "tw" => "zh-tw",
         _ => "en-us",
     };
-    let url = format!(
-        "https://worldofwarcraft.blizzard.com/{locale}/character/{region}/{}/{}",
-        percent_encode_path_segment(realm),
-        percent_encode_path_segment(name)
-    );
-    let response = match minreq::get(&url)
-        .with_header("User-Agent", "CombatLogParser/0.2")
-        .with_timeout(12)
-        .send()
-    {
-        Ok(response) => response,
-        Err(_) => return write_json(stream, 502, "{\"error\":\"Profile lookup failed\"}"),
-    };
-    if response.status_code == 404 {
-        return write_json(stream, 404, "{\"error\":\"Character not found\"}");
-    }
-    if response.status_code != 200 {
-        return write_json(stream, 502, "{\"error\":\"Profile provider unavailable\"}");
+    let mut page = fetch_public_page(&character_profile_url(locale, region, realm, name));
+    if matches!(page, Ok((404, _))) {
+        let search_url = format!(
+            "https://worldofwarcraft.blizzard.com/{locale}/search/character?q={}",
+            percent_encode_path_segment(name)
+        );
+        if let Ok((200, search_body)) = fetch_public_page(&search_url) {
+            if let Some(canonical_realm) = find_canonical_realm(&search_body, region, realm, name) {
+                page = fetch_public_page(&character_profile_url(locale, region, &canonical_realm, name));
+            }
+        }
     }
 
-    let body = match response.as_str() {
-        Ok(body) => body,
-        Err(_) => return write_json(stream, 502, "{\"error\":\"Invalid profile response\"}"),
+    let (status, body) = match page {
+        Ok(page) => page,
+        Err(_) => return write_json(stream, 200, "{\"found\":false,\"retryable\":true}"),
     };
-    let profile = match extract_character_profile(body) {
+    if status == 404 {
+        return write_json(stream, 200, "{\"found\":false,\"retryable\":false}");
+    }
+    if status != 200 {
+        return write_json(stream, 200, "{\"found\":false,\"retryable\":true}");
+    }
+
+    let profile = match extract_character_profile(&body) {
         Ok(profile) => profile,
-        Err(_) => return write_json(stream, 502, "{\"error\":\"Invalid profile JSON\"}"),
+        Err(_) => return write_json(stream, 200, "{\"found\":false,\"retryable\":true}"),
     };
     let Some(character) = profile.get("character") else {
         return write_json(stream, 404, "{\"error\":\"Character profile unavailable\"}");
     };
     let result = serde_json::json!({
+        "found": true,
         "provider": "blizzard-public-profile",
         "class": character.get("class"),
         "spec": character.get("spec"),
@@ -157,6 +158,51 @@ fn handle_character_profile(
         "realm": character.get("realm"),
     });
     write_json(stream, 200, &result.to_string())
+}
+
+fn character_profile_url(locale: &str, region: &str, realm: &str, name: &str) -> String {
+    format!(
+        "https://worldofwarcraft.blizzard.com/{locale}/character/{region}/{}/{}",
+        percent_encode_path_segment(realm),
+        percent_encode_path_segment(name)
+    )
+}
+
+fn fetch_public_page(url: &str) -> Result<(i32, String), ()> {
+    let response = minreq::get(url)
+        .with_header("User-Agent", "CombatLogParser/0.2")
+        .with_timeout(25)
+        .send()
+        .map_err(|_| ())?;
+    let status = response.status_code;
+    let body = response.as_str().map_err(|_| ())?.to_string();
+    Ok((status, body))
+}
+
+fn find_canonical_realm(body: &str, region: &str, realm: &str, name: &str) -> Option<String> {
+    let prefix = format!("href=\"/character/{region}/");
+    let requested_realm = compact_slug(realm);
+    let requested_name = compact_slug(name);
+    let mut remainder = body;
+    while let Some(start) = remainder.find(&prefix) {
+        remainder = &remainder[start + prefix.len()..];
+        let end = remainder.find('"')?;
+        let path = remainder[..end].trim_end_matches('/');
+        let mut parts = path.split('/');
+        let candidate_realm = parts.next()?;
+        let candidate_name = parts.next()?;
+        if compact_slug(candidate_realm) == requested_realm
+            && compact_slug(candidate_name) == requested_name
+        {
+            return Some(candidate_realm.to_string());
+        }
+        remainder = &remainder[end..];
+    }
+    None
+}
+
+fn compact_slug(value: &str) -> String {
+    value.chars().filter(|character| character.is_alphanumeric()).flat_map(char::to_lowercase).collect()
 }
 
 fn extract_character_profile(body: &str) -> Result<serde_json::Value, ()> {
@@ -407,5 +453,15 @@ mod tests {
 </script>"#;
         let profile = extract_character_profile(html).expect("profile should parse");
         assert_eq!(profile["character"]["class"]["id"], 6);
+    }
+
+    #[test]
+    fn finds_canonical_realm_from_character_search() {
+        let html = r#"<a href="/character/us/bleeding-hollow/jeni/"></a>
+<a href="/character/us/burning-blade/jeni/"></a>"#;
+        assert_eq!(
+            find_canonical_realm(html, "us", "burningblade", "jeni"),
+            Some("burning-blade".to_string())
+        );
     }
 }
