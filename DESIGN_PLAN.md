@@ -60,26 +60,22 @@
 **"The Open Spellbook"**
 
 ```
- ┌─────────────────────────────────────────────────────────────────┐
- │  ▼ SPELLBOOK: COMBAT LOG PARSER          [UPLOAD LOG]           │
- ├──────────────┬──────────────────────────────────────────────────┤
- │              │                                                   │
- │  NAV TABS    │            MAIN CONTENT                          │
- │  (vertical)  │                                                   │
- │              │  ┌────────────────────────────────────────────┐   │
- │  Fights      │  │  HERO: Drop zone / Fight list              │   │
- │  Players     │  │  — or —                                    │   │
- │  Timeline    │  │  SELECTED FIGHT DETAIL                     │   │
- │  Mechanics   │  │  Boss HP | Phases | Timeline               │   │
- │  Raw Log     │  │  Player Grid (class-colored cards)         │   │
- │              │  └────────────────────────────────────────────┘   │
- │              │                                                   │
- └──────────────┴───────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|  v SPELLBOOK: COMBAT LOG PARSER              [UPLOAD LOG]        |
++-----------------------------------------------------------------+
+|                                                                   |
+|  [Fights]  [Players]  [Timeline]  [Mechanics]  [Raw Log]         |
+|                                                                   |
+|  +-------------------------------------------------------------+  |
+|  |  HERO: Drop zone / Fight list                               |  |
+|  |  -- or --                                                   |  |
+|  |  SELECTED FIGHT DETAIL                                      |  |
+|  |  [Boss HP]  [Phases]  [Timeline]                            |  |
+|  |  Player Grid (class-colored cards)                          |  |
+|  +-------------------------------------------------------------+  |
+|                                                                   |
++-----------------------------------------------------------------+
 ```
-
-**Responsive:** Sidebar collapses to bottom tab bar < 768px. Timeline goes vertical on mobile.
-
----
 
 ## Signature Element
 
