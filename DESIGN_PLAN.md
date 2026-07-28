@@ -11,12 +11,12 @@
 
 | Token | Hex | Role |
 |-------|-----|------|
-| `ink-well` | `#0d0b08` | Deepest background — almost black, warm undertone |
-| `parchment` | `#1a1510` | Primary surface — cards, panels, sidebar |
-| `parchment-raised` | `#241e18` | Hover/focus elevation, input backgrounds |
-| `gold-vein` | `#c9a84c` | Primary accent — headers, dividers, CTAs, focus rings |
-| `gold-glint` | `#f0d47a` | Hover/active states, highlighted numbers |
-| `ink` | `#e8dfd0` | Primary body text — warm off-white, readable on dark |
+| `ink-well` | `#0d0b08` | Deepest bg — warm undertone |
+| `parchment` | `#1a1510` | Primary surface — cards, panels |
+| `parchment-raised` | `#241e18` | Hover/focus, input backgrounds |
+| `gold-vein` | `#c9a84c` | Primary accent — headers, CTAs |
+| `gold-glint` | `#f0d47a` | Hover/active, highlighted numbers |
+| `ink` | `#e8dfd0` | Body text — warm off-white |
 
 **Class color system (semantic, not decorative):**
 ```css
@@ -40,9 +40,9 @@
 
 | Role | Font | Why |
 |------|------|-----|
-| **Display** | `Cinzel` (Google Fonts) | High-contrast serif with stone-carved gravitas — evokes WoW's Friz Quadrata without licensing issues. Used sparingly: page title, fight names, boss names. |
-| **Body** | `DM Sans` (Google Fonts) | Geometric humanist, excellent at small sizes, neutral but not sterile. All UI text, tables, tooltips. |
-| **Data/Mono** | `JetBrains Mono` (Google Fonts) | Technical clarity for timestamps, line numbers, spell IDs, damage numbers. Tabular nums enabled. |
+| **Display** | `Cinzel` | WoW-like serif for titles, boss names. Used sparingly. |
+| **Body** | `DM Sans` | Geometric humanist for UI text, tables, tooltips. |
+| **Data/Mono** | `JetBrains Mono` | Clarity for timestamps, spell IDs, numbers. |
 
 **Type Scale (clamp-based, fluid):**
 - `--text-xs`: 0.7rem / 1.3
