@@ -1,6 +1,7 @@
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
+const { execFile } = require('child_process');
 
 const HOST = '127.0.0.1';
 const START_PORT = Number(process.env.COMBAT_LOG_PARSER_PORT) || 8081;
@@ -58,9 +59,40 @@ function translateWindowsPath(p) {
 }
 
 function handlePickFile(req, res) {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  // Node.js can't open native file dialogs; returns null so client falls back to browser picker
-  res.end(JSON.stringify({ path: null, cancelled: false }));
+  const respond = payload => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(payload));
+  };
+
+  const finish = (error, stdout) => {
+    if (error) {
+      const cancelled = error.code === 1;
+      respond({ path: null, cancelled, unsupported: !cancelled });
+      return;
+    }
+    const selectedPath = String(stdout || '').trim();
+    respond({ path: selectedPath || null, cancelled: !selectedPath });
+  };
+
+  if (process.platform === 'win32' || process.env.WSL_DISTRO_NAME) {
+    const script = [
+      'Add-Type -AssemblyName System.Windows.Forms',
+      '$dialog = New-Object System.Windows.Forms.OpenFileDialog',
+      '$dialog.Title = "Select WoW Combat Log"',
+      '$dialog.Filter = "Combat Logs (*.txt)|*.txt|All Files (*.*)|*.*"',
+      'if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dialog.FileName }'
+    ].join('; ');
+    execFile('powershell.exe', ['-NoProfile', '-STA', '-Command', script], { timeout: 120000 }, finish);
+    return;
+  }
+
+  if (process.platform === 'darwin') {
+    const script = 'POSIX path of (choose file with prompt "Select WoW Combat Log" of type {"public.plain-text"})';
+    execFile('osascript', ['-e', script], { timeout: 120000 }, finish);
+    return;
+  }
+
+  execFile('zenity', ['--file-selection', '--title', 'Select WoW Combat Log', '--file-filter', '*.txt'], { timeout: 120000 }, finish);
 }
 
 function handleMonitorWatch(req, res) {

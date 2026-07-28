@@ -2567,19 +2567,21 @@ monitorStopBtn.addEventListener('click', () => {
 });
 
 monitorBrowseBtn.addEventListener('click', () => {
-  // Try native file dialog via server first (Rust launcher)
+  monitorBrowseBtn.disabled = true;
   fetch('/api/pick-file')
     .then(resp => resp.json())
     .then(data => {
       if (data.path) {
         monitorPath.value = data.path;
         monitorStartBtn.click();
+      } else if (data.unsupported) {
+        setMonitorStatus('Native file picker is unavailable. Paste the full combat log path into the field.');
       }
     })
     .catch(() => {
-      // Fallback: browser file input (Node.js server or fallback)
-      monitorFileInput.click();
-    });
+      setMonitorStatus('Could not open the file picker. Paste the full combat log path into the field.');
+    })
+    .finally(() => { monitorBrowseBtn.disabled = false; });
 });
 
 monitorFileInput.addEventListener('change', (e) => {
