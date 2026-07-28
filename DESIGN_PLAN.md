@@ -60,24 +60,21 @@
 **"The Open Spellbook"**
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  ▼  SPELLBOOK: COMBAT LOG PARSER          [UPLOAD LOG]      │  ← Persistent header (gold rule below)
-├──────────────┬──────────────────────────────────────────────┤
-│              │                                              │
-│  NAV TABS    │            MAIN CONTENT                      │
-│  (vertical)  │                                              │
-│              │  ┌────────────────────────────────────────┐  │
-│  [Fights]    │  │  HERO: Drop zone / Fight list           │  │
-│  [Players]   │  │  — or —                                 │  │
-│  [Timeline]  │  │  SELECTED FIGHT DETAIL                  │  │
-│  [Mechanics] │  │  ┌─────────┬─────────┬────────────────┐  │
-│  [Raw Log]   │  │  │ Boss HP │ Phases  │  Timeline      │  │
-│              │  │  │  (bar)  │ (pills) │  (visual)      │  │
-│              │  │  ├─────────┼─────────┼────────────────┤  │
-│              │  │  │  Player Grid (class-colored cards)   │  │
-│              │  │  └────────────────────────────────────────┘  │
-│              │                                              │
-└──────────────┴──────────────────────────────────────────────┘
+ ┌─────────────────────────────────────────────────────────────────┐
+ │  ▼ SPELLBOOK: COMBAT LOG PARSER          [UPLOAD LOG]           │
+ ├──────────────┬──────────────────────────────────────────────────┤
+ │              │                                                   │
+ │  NAV TABS    │            MAIN CONTENT                          │
+ │  (vertical)  │                                                   │
+ │              │  ┌────────────────────────────────────────────┐   │
+ │  Fights      │  │  HERO: Drop zone / Fight list              │   │
+ │  Players     │  │  — or —                                    │   │
+ │  Timeline    │  │  SELECTED FIGHT DETAIL                     │   │
+ │  Mechanics   │  │  Boss HP | Phases | Timeline               │   │
+ │  Raw Log     │  │  Player Grid (class-colored cards)         │   │
+ │              │  └────────────────────────────────────────────┘   │
+ │              │                                                   │
+ └──────────────┴───────────────────────────────────────────────────┘
 ```
 
 **Responsive:** Sidebar collapses to bottom tab bar < 768px. Timeline goes vertical on mobile.
