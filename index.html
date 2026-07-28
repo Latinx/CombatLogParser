@@ -1964,7 +1964,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <input type="file" id="file-input" class="hidden" accept=".txt" aria-label="Load WoW combat log file">
     <input type="file" id="directory-input" class="hidden" webkitdirectory directory multiple aria-label="Load combat log directory">
     <div class="header__monitor" id="header-monitor">
-      <input type="text" class="header__monitor-input" id="monitor-path" placeholder="WoWCombatLog.txt path…" aria-label="Log file path" spellcheck="false">
+      <input type="text" class="header__monitor-input" id="monitor-path" placeholder="/tmp/jcode/WoWCombatLog.txt…" aria-label="Log file path" spellcheck="false">
       <button class="header__monitor-btn header__monitor-btn--browse" id="monitor-browse" type="button" title="Browse for combat log file">📂</button>
       <button class="header__monitor-btn header__monitor-btn--watch" id="monitor-start" type="button">Watch</button>
       <button class="header__monitor-btn header__monitor-btn--stop hidden" id="monitor-stop" type="button">Stop</button>
@@ -2445,7 +2445,21 @@ monitorStopBtn.addEventListener('click', () => {
   stopMonitorUI();
 });
 
-monitorBrowseBtn.addEventListener('click', () => monitorFileInput.click());
+monitorBrowseBtn.addEventListener('click', () => {
+  // Try native file dialog via server first (Rust launcher)
+  fetch('/api/pick-file')
+    .then(resp => resp.json())
+    .then(data => {
+      if (data.path) {
+        monitorPath.value = data.path;
+        monitorStartBtn.click();
+      }
+    })
+    .catch(() => {
+      // Fallback: browser file input (Node.js server or fallback)
+      monitorFileInput.click();
+    });
+});
 
 monitorFileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];

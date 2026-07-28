@@ -43,8 +43,14 @@ function sendFile(res, filePath) {
   });
 }
 
-// --- Live Monitor SSE ---
+/// --- Live Monitor SSE ---
 const monitors = new Map();
+
+function handlePickFile(req, res) {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  // Node.js can't open native file dialogs; returns null so client falls back to browser picker
+  res.end(JSON.stringify({ path: null, cancelled: false }));
+}
 
 function handleMonitorWatch(req, res) {
   const url = new URL(req.url, `http://${HOST}:8081`);
@@ -159,6 +165,10 @@ function startServer(port) {
     const url = new URL(req.url, `http://${HOST}:${port}`);
 
     // API endpoints
+    if (url.pathname === '/api/pick-file' && req.method === 'GET') {
+      handlePickFile(req, res);
+      return;
+    }
     if (url.pathname === '/api/monitor/watch' && req.method === 'GET') {
       handleMonitorWatch(req, res);
       return;
