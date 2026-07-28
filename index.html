@@ -299,6 +299,22 @@ body {
 }
 .header__monitor-btn--watch:hover { opacity: 0.85; }
 .header__monitor-btn--watch:disabled { opacity: 0.4; cursor: default; }
+.header__monitor-btn--browse {
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid var(--gridline);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+}
+.header__monitor-btn--browse:hover {
+  border-color: var(--ink-muted);
+  background: rgba(255,255,255,0.05);
+}
 .header__monitor-btn--stop {
   background: transparent;
   color: var(--ink-muted);
@@ -1919,7 +1935,8 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <input type="file" id="file-input" class="hidden" accept=".txt" aria-label="Load WoW combat log file">
     <input type="file" id="directory-input" class="hidden" webkitdirectory directory multiple aria-label="Load combat log directory">
     <div class="header__monitor" id="header-monitor">
-      <input type="text" class="header__monitor-input" id="monitor-path" placeholder="WoWCombatLog.txt path…" aria-label="Log file path" spellcheck="false">
+      <input type="text" class="header__monitor-input" id="monitor-path" placeholder="WoWCombatLog.txt path…" aria-label="Log file path" spellcheck="false" readonly>
+      <button class="header__monitor-btn header__monitor-btn--browse" id="monitor-browse" type="button" title="Browse for combat log file">📂</button>
       <button class="header__monitor-btn header__monitor-btn--watch" id="monitor-start" type="button">Watch</button>
       <button class="header__monitor-btn header__monitor-btn--stop hidden" id="monitor-stop" type="button">Stop</button>
       <span class="header__monitor-status hidden" id="monitor-status">
@@ -1927,6 +1944,7 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
         <span id="monitor-label"></span>
         <span class="monitor-refreshed hidden" id="monitor-refreshed"></span>
       </span>
+      <input type="file" id="monitor-file-input" class="hidden" accept=".txt">
     </div>
   </div>
 </header>
@@ -2302,6 +2320,8 @@ const monitorStatus = document.getElementById('monitor-status');
 const monitorDot = document.getElementById('monitor-dot');
 const monitorLabel = document.getElementById('monitor-label');
 const monitorRefreshed = document.getElementById('monitor-refreshed');
+const monitorBrowseBtn = document.getElementById('monitor-browse');
+const monitorFileInput = document.getElementById('monitor-file-input');
 let monitorEventSource = null;
 let lastRefreshTime = null;
 
@@ -2417,6 +2437,27 @@ monitorStopBtn.addEventListener('click', () => {
   }).catch(() => {});
   stopMonitorUI();
 });
+
+monitorBrowseBtn.addEventListener('click', () => monitorFileInput.click());
+
+monitorFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  // Try to get the file path from the browser. Chrome localhost exposes file.path.
+  if (file.path) {
+    monitorPath.value = file.path;
+  } else {
+    // Fallback: show the name so the user knows what was selected
+    monitorPath.value = file.name;
+    setMonitorStatus(`Selected ${file.name} — enter the full path manually or use a Chromium-based browser`, false);
+    return;
+  }
+  // Auto-start watching since we have the path
+  monitorStartBtn.click();
+  e.target.value = '';
+});
+
+monitorFileInput.addEventListener('cancel', () => { monitorFileInput.value = ''; });
 
 function stopMonitorUI() {
   if (monitorEventSource) { monitorEventSource.close(); monitorEventSource = null; }
