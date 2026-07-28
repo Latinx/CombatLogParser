@@ -1,6 +1,6 @@
 {
   "name": "combatlogparser",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "A WoW combatlog parser by WoWAnalyzer.",
   "type": "module",
   "main": "src/index.js",
