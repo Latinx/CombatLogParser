@@ -2435,6 +2435,15 @@ let state = {
   rawLines: []
 };
 
+function getReportCache() {
+  if (!(state.reportCache instanceof Map)) state.reportCache = new Map();
+  return state.reportCache;
+}
+
+function invalidateReportCache() {
+  getReportCache().clear();
+}
+
 const panels = {
   overall: document.getElementById('panel-overall'),
   fights: document.getElementById('panel-fights'),
@@ -2643,7 +2652,7 @@ function handleLiveAppend(newLines, totalBytes) {
 
   // Rescan for encounter starts/ends
   appendNewFights(state.rawLines.slice(newStartLine), newStartLine);
-  state.reportCache.clear();
+  invalidateReportCache();
 
   setMonitorStatus(`Watching · ${formatNumber(state.rawLines.length)} lines · ${formatFileSize(totalBytes)}`, true, true);
 
@@ -2965,7 +2974,10 @@ function resetLogState(rawLines) {
     selectedDamageTakenSourceGuid: null,
     expandedActorGroups: new Set(),
     selectedFightPanel: 'summary',
-    actorFilter: state.actorFilter || 'all',
+    selectedOverallPanel: 'summary',
+    actorFilter: state.actorFilter || 'players',
+    fightPlayerFilter: state.fightPlayerFilter || null,
+    reportCache: new Map(),
     petOwners: new Map(),
     playerNames: new Map(),
     rawLines
@@ -3055,6 +3067,10 @@ function putStoredValue(db, key, value) {
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
+}
+
+function putStoredLog(db, text) {
+  return putStoredValue(db, STORED_LOG_KEY, text);
 }
 
 function getStoredValue(db, key) {
@@ -3335,7 +3351,7 @@ function parseAllEvents() {
   state.events = events;
   state.petOwners = petOwners;
   state.playerNames = playerNames;
-  state.reportCache.clear();
+  invalidateReportCache();
 }
 
 function rememberAdvancedUnitOwners(petOwners, payload) {
@@ -5256,16 +5272,17 @@ function getSpellSchoolStyle(spell) {
 
 function getCachedReportRows(kind, fight, detail, buildRows) {
   const key = `${kind}:${fight.startLineNo}:${fight.endLineNo}:${state.actorFilter}:${detail || ''}`;
-  if (state.reportCache.has(key)) {
-    const cached = state.reportCache.get(key);
-    state.reportCache.delete(key);
-    state.reportCache.set(key, cached);
+  const cache = getReportCache();
+  if (cache.has(key)) {
+    const cached = cache.get(key);
+    cache.delete(key);
+    cache.set(key, cached);
     return cached;
   }
   const rows = buildRows();
-  state.reportCache.set(key, rows);
-  if (state.reportCache.size > 80) {
-    state.reportCache.delete(state.reportCache.keys().next().value);
+  cache.set(key, rows);
+  if (cache.size > 80) {
+    cache.delete(cache.keys().next().value);
   }
   return rows;
 }
