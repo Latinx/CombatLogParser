@@ -1707,6 +1707,30 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   border-top-color: rgba(125, 92, 255, 0.55);
 }
 
+.spell-target-group {
+  grid-column: 1 / -1;
+}
+
+.spell-target-group > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.spell-target-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.spell-target-group__children {
+  margin-left: 22px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(125, 92, 255, 0.28);
+}
+
+.spell-target-group__children .spell-row--target {
+  margin-left: 0;
+  opacity: 0.9;
+}
+
 .combat-tooltip {
   position: fixed;
   top: 0;
@@ -4914,22 +4938,90 @@ function renderSpellName(spell) {
 }
 
 function renderInlineSpellTargetRows(spell) {
-  const targets = spell.targets || [];
-  if (targets.length === 0) return `<div class="breakdown-row__sub">No target detail for this spell.</div>`;
-  const maxTargetAmount = Math.max(...targets.map(target => target.amount), 1);
+  const targetGroups = buildSpellTargetHierarchy(spell.targets || []);
+  if (targetGroups.length === 0) return `<div class="breakdown-row__sub">No target detail for this spell.</div>`;
+  const maxTargetAmount = Math.max(...targetGroups.map(group => group.total.amount), 1);
   return `<div class="breakdown-row__spells">
-    ${targets.map((target, index) => {
-      const pctOfMax = Math.max(2, (target.amount / maxTargetAmount) * 100);
-      const pctOfSpell = spell.amount > 0 ? (target.amount / spell.amount) * 100 : 0;
-      const average = target.hits > 0 ? Math.round(target.amount / target.hits) : 0;
-      const tooltip = `${target.name}\nAmount: ${formatNumber(target.amount)}\nHits: ${target.hits}\nCrits: ${target.crits}\nMisses: ${target.misses}\nMin: ${formatNumber(target.min || 0)}\nMax: ${formatNumber(target.max || 0)}\nAverage: ${formatNumber(average)}`;
-      return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(spell)}">
-        <span><span class="breakdown-row__sub">${index + 1}</span> ${renderActorName(target.name, target.guid)}</span>
-        <span class="spell-bar-container" data-tooltip="${escapeHtml(tooltip)}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
-        <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(target.amount)}</span><span class="breakdown-row__sub">${pctOfSpell.toFixed(1)}%</span></span>
-      </div>`;
+    ${targetGroups.map((group, index) => {
+      const parentRow = renderSpellTargetRow(group.total, index + 1, spell, maxTargetAmount, group.children.length ? `${group.children.length} summon${group.children.length === 1 ? '' : 's'}` : '');
+      if (group.children.length === 0) return parentRow;
+      return `<details class="spell-target-group">
+        <summary>${parentRow}</summary>
+        <div class="spell-target-group__children">
+          ${group.children.map(child => renderSpellTargetRow(child, '↳', spell, maxTargetAmount, 'summon')).join('')}
+        </div>
+      </details>`;
     }).join('')}
   </div>`;
+}
+
+function renderSpellTargetRow(target, rank, spell, maxTargetAmount, suffix = '') {
+  const pctOfMax = Math.max(2, (target.amount / maxTargetAmount) * 100);
+  const pctOfSpell = spell.amount > 0 ? (target.amount / spell.amount) * 100 : 0;
+  const average = target.hits > 0 ? Math.round(target.amount / target.hits) : 0;
+  const tooltip = `${target.name}\nAmount: ${formatNumber(target.amount)}\nHits: ${target.hits}\nCrits: ${target.crits}\nMisses: ${target.misses}\nMin: ${formatNumber(target.min || 0)}\nMax: ${formatNumber(target.max || 0)}\nAverage: ${formatNumber(average)}`;
+  return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(spell)}">
+    <span><span class="breakdown-row__sub">${rank}</span> ${renderActorName(target.name, target.guid, '', target.ownerGuid)}${suffix ? `<span class="breakdown-row__sub"> · ${escapeHtml(suffix)}</span>` : ''}</span>
+    <span class="spell-bar-container" data-tooltip="${escapeHtml(tooltip)}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
+    <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(target.amount)}</span><span class="breakdown-row__sub">${pctOfSpell.toFixed(1)}%</span></span>
+  </div>`;
+}
+
+function buildSpellTargetHierarchy(targets) {
+  const groups = new Map();
+  targets.forEach(target => {
+    const ownerGuid = target.ownerGuid || state.petOwners.get(target.guid) || null;
+    const parentGuid = isPlayerGuid(ownerGuid) ? ownerGuid : target.guid;
+    if (!groups.has(parentGuid)) {
+      groups.set(parentGuid, {
+        parent: isPlayerGuid(ownerGuid) ? {
+          guid: ownerGuid,
+          name: getDisplayName('', ownerGuid),
+          ownerGuid: null,
+          amount: 0,
+          events: 0,
+          hits: 0,
+          crits: 0,
+          misses: 0,
+          min: 0,
+          max: 0
+        } : null,
+        children: []
+      });
+    }
+    const group = groups.get(parentGuid);
+    if (target.guid === parentGuid) group.parent = { ...target, ownerGuid: null };
+    else group.children.push({ ...target, ownerGuid });
+  });
+
+  return Array.from(groups.values()).map(group => {
+    const rows = [...(group.parent ? [group.parent] : []), ...group.children];
+    const total = rows.reduce((merged, row) => mergeSpellTargetStats(merged, row), {
+      ...(group.parent || rows[0]),
+      amount: 0,
+      events: 0,
+      hits: 0,
+      crits: 0,
+      misses: 0,
+      min: 0,
+      max: 0
+    });
+    return {
+      total,
+      children: group.children.sort((a, b) => b.amount - a.amount)
+    };
+  }).filter(group => group.total.amount > 0).sort((a, b) => b.total.amount - a.total.amount);
+}
+
+function mergeSpellTargetStats(total, row) {
+  total.amount += row.amount || 0;
+  total.events += row.events || 0;
+  total.hits += row.hits || 0;
+  total.crits += row.crits || 0;
+  total.misses += row.misses || 0;
+  if (row.min > 0) total.min = total.min === 0 ? row.min : Math.min(total.min, row.min);
+  total.max = Math.max(total.max || 0, row.max || 0);
+  return total;
 }
 
 function renderSourceDamageDrilldown(row, totalDamage, fight) {
@@ -5320,6 +5412,7 @@ function addDamageToTargetRows(spell, damage) {
   const target = targets.get(damage.destGuid) || {
     guid: damage.destGuid,
     name: getDisplayName(damage.destName, damage.destGuid),
+    ownerGuid: state.petOwners.get(damage.destGuid) || null,
     amount: 0,
     events: 0,
     hits: 0,
@@ -5359,6 +5452,7 @@ function addAmountToSpellRow(spell, detail) {
   const target = targets.get(detail.peerGuid) || {
     guid: detail.peerGuid,
     name: getDisplayName(detail.peerName, detail.peerGuid),
+    ownerGuid: state.petOwners.get(detail.peerGuid) || null,
     amount: 0,
     events: 0,
     hits: 0,
