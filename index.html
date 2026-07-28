@@ -3390,19 +3390,8 @@ function rememberAdvancedUnitOwners(petOwners, payload) {
 
 function renderFightList() {
   const allFights = getFightListModel();
-  // Build unique player list for filter
-  const allPlayers = new Map();
-  allFights.forEach(({ players }) => {
-    players.forEach(p => {
-      if (!allPlayers.has(p.guid)) allPlayers.set(p.guid, { guid: p.guid, name: p.name });
-    });
-  });
-  const playerFilterList = Array.from(allPlayers.values()).sort((a, b) => a.name.localeCompare(b.name));
-
-  // Apply player filter
-  const filteredFights = state.fightPlayerFilter
-    ? allFights.filter(({ players }) => players.some(p => p.guid === state.fightPlayerFilter))
-    : allFights;
+  const playerFilterList = getFightPlayerFilterList(allFights);
+  const filteredFights = getFilteredFightListModel(allFights);
   const visibleFights = filteredFights.slice(0, state.fightListLimit || 50);
 
   if (filteredFights.length === 0) {
@@ -3501,6 +3490,21 @@ function getFightListModel() {
     .sort((a, b) => (b.fight.startDateTime?.getTime?.() || 0) - (a.fight.startDateTime?.getTime?.() || 0) || b.index - a.index);
   state.fightListModel = { actorFilter: state.actorFilter, entries };
   return entries;
+}
+
+function getFightPlayerFilterList(fights = getFightListModel()) {
+  const playersByGuid = new Map();
+  fights.forEach(({ players }) => {
+    players.forEach(player => {
+      if (!playersByGuid.has(player.guid)) playersByGuid.set(player.guid, { guid: player.guid, name: player.name });
+    });
+  });
+  return Array.from(playersByGuid.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getFilteredFightListModel(fights = getFightListModel()) {
+  if (!state.fightPlayerFilter) return fights;
+  return fights.filter(({ players }) => players.some(player => player.guid === state.fightPlayerFilter));
 }
 
 function attachFightPlayerFilter() {
@@ -3883,14 +3887,14 @@ function getBestInferredPlayerClass(votesByGuid, guid) {
   return classKey;
 }
 
-function selectFight(index) {
+function selectFight(index, preservePanel = false) {
   state.currentFight = state.fights[index];
   state.selectedSourceGuid = null;
   state.selectedSpellKey = null;
   state.selectedDamageTakenGuid = null;
   state.selectedDamageTakenSourceGuid = null;
   state.expandedActorGroups = new Set();
-  state.selectedFightPanel = 'summary';
+  if (!preservePanel) state.selectedFightPanel = 'summary';
   renderFightDetail();
   resetMainScroll();
   void enrichFightPlayerProfiles(state.currentFight);
@@ -3905,8 +3909,9 @@ function renderFightDetail() {
   if (!state.currentFight) return;
   const f = state.currentFight;
   const currentIndex = state.fights.indexOf(f);
-  const allFights = getFightListModel();
-  const fightOptions = allFights.map(({ fight, index }) => ({
+  const filteredFights = getFilteredFightListModel();
+  const playerFilterList = getFightPlayerFilterList();
+  const fightOptions = filteredFights.map(({ fight, index }) => ({
     index,
     number: String(index + 1),
     time: formatFightTime(fight.startDateTime),
@@ -3927,6 +3932,10 @@ function renderFightDetail() {
             const label = `Fight ${option.number.padStart(fightNumberWidth)} · ${option.time.padEnd(fightTimeWidth)} · ${option.duration}`;
             return `<option value="${option.index}" ${option.index === currentIndex ? 'selected' : ''}>${escapeHtml(label).replace(/ /g, '&nbsp;')}</option>`;
           }).join('')}
+        </select>
+        <select class="fight-detail__dropdown" id="fight-detail-player-filter" aria-label="Filter fights by player">
+          <option value="">All players</option>
+          ${playerFilterList.map(player => `<option value="${player.guid}" ${state.fightPlayerFilter === player.guid ? 'selected' : ''}>${escapeHtml(player.name)}</option>`).join('')}
         </select>
       </div>
       <div class="fight-detail__header">
@@ -3970,7 +3979,23 @@ function renderFightDetail() {
   if (fightSelector) {
     fightSelector.addEventListener('change', () => {
       const index = parseInt(fightSelector.value, 10);
-      selectFight(index);
+      selectFight(index, true);
+    });
+  }
+  const playerFilter = document.getElementById('fight-detail-player-filter');
+  if (playerFilter) {
+    playerFilter.addEventListener('change', () => {
+      state.fightPlayerFilter = playerFilter.value || null;
+      state.fightListLimit = 50;
+      persistFightPlayerFilter(state.fightPlayerFilter);
+      const matchingFights = getFilteredFightListModel();
+      const currentMatch = matchingFights.find(({ fight }) => fight === state.currentFight);
+      if (currentMatch) renderFightDetail();
+      else if (matchingFights[0]) selectFight(matchingFights[0].index, true);
+      else {
+        state.currentFight = null;
+        renderFightList();
+      }
     });
   }
 }
