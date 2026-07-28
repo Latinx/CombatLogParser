@@ -1059,6 +1059,45 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 
 .empty-state__desc { max-width: 400px; margin: 0 auto; }
 
+.overall-hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.overall-hero__stat {
+  background: linear-gradient(135deg, rgba(20, 31, 54, 0.92), rgba(13, 20, 38, 0.8));
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: 16px;
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.overall-hero__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.overall-hero__value {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  color: var(--gold-glint);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.overall-hero__sub {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
 .breakdown-view {
   display: flex;
   flex-direction: column;
@@ -1751,6 +1790,9 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 <header class="header" role="banner">
   <h1 class="header__title">Combat Log Parser</h1>
   <div class="header__actions">
+    <button class="btn header__tab" role="tab" aria-controls="panel-overall" id="tab-overall" data-panel="overall" type="button">
+      <span>Overall</span>
+    </button>
     <button class="btn header__tab" role="tab" aria-selected="true" aria-controls="panel-fights" id="tab-fights" data-panel="fights" type="button">
       <span>Fights</span>
     </button>
@@ -1787,6 +1829,9 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <input type="file" id="upload-directory-input" class="hidden" webkitdirectory directory multiple aria-label="Choose combat log directory">
   </section>
 
+  <section class="hidden" id="panel-overall" role="tabpanel" aria-labelledby="tab-overall" tabindex="0">
+    <div id="overall-view"></div >
+  </section>
   <section class="fight-list" id="panel-fights" role="tabpanel" aria-labelledby="tab-fights" tabindex="0"></section>
 
   <section class="hidden" id="panel-players" role="tabpanel" aria-labelledby="tab-players" tabindex="0">
@@ -2099,6 +2144,7 @@ let state = {
 
 const panels = {
   upload: document.getElementById('panel-upload'),
+  overall: document.getElementById('panel-overall'),
   fights: document.getElementById('panel-fights'),
   players: document.getElementById('panel-players'),
   timeline: document.getElementById('panel-timeline'),
@@ -2314,6 +2360,7 @@ function resetLogState(rawLines) {
 function finishLoadedLog() {
   parseRawLines();
   renderFightList();
+  renderOverallView();
   renderPlayerGrid();
   renderTimeline();
   renderRawLog();
@@ -2706,6 +2753,66 @@ function renderFightList() {
   });
 
 } // end renderFightList
+
+function renderOverallView() {
+  const overallEl = document.getElementById('overall-view');
+  if (state.fights.length === 0) {
+    overallEl.innerHTML = `<div class="empty-state">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <h3 class="empty-state__title">No Fights Loaded</h3>
+      <p class="empty-state__desc">Load a combat log to see an overall summary.</p>
+    </div>`;
+    return;
+  }
+
+  // Build a synthetic "all fights" view by aggregating across every fight
+  const metaFight = {
+    startLineNo: state.fights.reduce((min, f) => Math.min(min, f.startLineNo), Infinity),
+    endLineNo: state.fights.reduce((max, f) => Math.max(max, f.endLineNo), -Infinity),
+    startDateTime: state.fights[0].startDateTime,
+    endDateTime: state.fights[state.fights.length - 1].endDateTime,
+    duration: state.fights.reduce((sum, f) => sum + f.duration, 0),
+    bossName: 'All Fights',
+    bossId: 0,
+    difficulty: 0,
+    kill: state.fights.some(f => f.kill)
+  };
+
+  const damageDoneRows = filterActorRows(buildDamageDoneRows(metaFight));
+  const damageTakenRows = filterActorRows(buildDamageTakenRows(metaFight));
+  const healingDoneRows = filterActorRows(buildHealingRows(metaFight, 'source'));
+  const healingTakenRows = filterActorRows(buildHealingRows(metaFight, 'dest'));
+  const deathRows = filterActorRows(buildEventCountRows(metaFight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']));
+  const interruptRows = filterActorRows(buildEventCountRows(metaFight, ['SPELL_INTERRUPT']));
+  const castRows = filterActorRows(buildEventCountRows(metaFight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']));
+
+  const totalDamage = damageDoneRows.reduce((sum, r) => sum + r.amount, 0);
+  const totalHealing = healingDoneRows.reduce((sum, r) => sum + r.amount, 0);
+  const totalSeconds = Math.max(1, metaFight.duration / 1000);
+  const totalLines = state.rawLines.length;
+
+  overallEl.innerHTML = `
+    <div class="breakdown-controls">
+      <span class="breakdown-row__sub">${state.fights.length} fights · ${formatDuration(metaFight.duration)} total · ${formatNumber(totalLines)} lines</span>
+    </div>
+    <div class="overall-hero">
+      <div class="overall-hero__stat"><span class="overall-hero__label">Total Damage</span><span class="overall-hero__value">${formatNumber(totalDamage)}</span><span class="overall-hero__sub">${formatNumber(Math.round(totalDamage / totalSeconds))} DPS</span></div>
+      <div class="overall-hero__stat"><span class="overall-hero__label">Total Healing</span><span class="overall-hero__value">${formatNumber(totalHealing)}</span><span class="overall-hero__sub">${formatNumber(Math.round(totalHealing / totalSeconds))} HPS</span></div>
+      <div class="overall-hero__stat"><span class="overall-hero__label">Fights</span><span class="overall-hero__value">${state.fights.length}</span><span class="overall-hero__sub">${state.fights.filter(f => f.kill).length} kills</span></div>
+      <div class="overall-hero__stat"><span class="overall-hero__label">Lines</span><span class="overall-hero__value">${formatNumber(totalLines)}</span><span class="overall-hero__sub">${state.events.length} events</span></div>
+    </div>
+    <div class="report-grid">
+      ${renderReportPanel('Damage Done', damageDoneRows, metaFight, true)}
+      ${renderReportPanel('Damage Taken', damageTakenRows, metaFight, true)}
+      ${renderReportPanel('Healing Done', healingDoneRows, metaFight, true)}
+      ${renderReportPanel('Healing Taken', healingTakenRows, metaFight, true)}
+      ${renderReportPanel('Casts', castRows, metaFight, false, 'casts')}
+      ${renderReportPanel('Deaths', deathRows, metaFight, false, 'events')}
+      ${renderReportPanel('Interrupts', interruptRows, metaFight, false, 'casts')}
+    </div>`;
+
+  attachBreakdownHandlers(overallEl);
+}
 
 function getFightCardStats(fight, players) {
   const fightSeconds = Math.max(1, fight.duration / 1000);
