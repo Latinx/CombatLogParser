@@ -256,6 +256,68 @@ body {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
+.monitor-section {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+  width: 100%;
+  max-width: 480px;
+}
+.monitor-section__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--space-1);
+}
+.monitor-section__desc {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-bottom: var(--space-3);
+}
+.monitor-form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+.monitor-form input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.monitor-status {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-top: var(--space-2);
+  min-height: 1.2em;
+  word-break: break-all;
+}
+.monitor-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.monitor-dot--live {
+  background: var(--tank-blue);
+  box-shadow: 0 0 6px var(--tank-blue);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.monitor-dot--stopped {
+  background: var(--ink-muted);
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
 
 .import-progress {
   display: grid;
@@ -1827,6 +1889,16 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     <span class="upload-zone__status" id="upload-status" aria-live="polite"></span>
     <input type="file" id="upload-input" class="hidden" accept=".txt" aria-label="Choose combat log file">
     <input type="file" id="upload-directory-input" class="hidden" webkitdirectory directory multiple aria-label="Choose combat log directory">
+    <div class="monitor-section">
+      <div class="monitor-section__title">Live Monitor</div>
+      <div class="monitor-section__desc">Watch a WoWCombatLog.txt on disk for new data (SSE via server).</div>
+      <div class="monitor-form">
+        <input type="text" id="monitor-path" placeholder="e.g. C:\World of Warcraft\_retail_\Logs\WoWCombatLog.txt" aria-label="Log file path">
+        <button class="btn btn--primary" id="monitor-start" type="button">Watch</button>
+        <button class="btn hidden" id="monitor-stop" type="button">Stop</button>
+      </div>
+      <div class="monitor-status" id="monitor-status"></div>
+    </div>
   </section>
 
   <section class="hidden" id="panel-overall" role="tabpanel" aria-labelledby="tab-overall" tabindex="0">
@@ -2171,6 +2243,268 @@ const timelineTracksEl = document.getElementById('timeline-tracks');
 const rawLogContent = document.getElementById('raw-log-content');
 const combatTooltip = document.getElementById('combat-tooltip');
 const mainEl = document.querySelector('.main');
+
+// --- Live Monitor ---
+const monitorPath = document.getElementById('monitor-path');
+const monitorStartBtn = document.getElementById('monitor-start');
+const monitorStopBtn = document.getElementById('monitor-stop');
+const monitorStatus = document.getElementById('monitor-status');
+let monitorEventSource = null;
+
+function setMonitorStatus(text, isLive = false) {
+  const dotClass = isLive ? 'monitor-dot--live' : 'monitor-dot--stopped';
+  monitorStatus.innerHTML = `<span class="monitor-dot ${dotClass}"></span>${escapeHtml(text)}`;
+}
+
+monitorStartBtn.addEventListener('click', () => {
+  const path = monitorPath.value.trim();
+  if (!path) { setMonitorStatus('Enter a log file path.'); return; }
+
+  // Start SSE monitor via server
+  setMonitorStatus('Connecting...');
+  monitorStartBtn.disabled = true;
+
+  // First, POST to start monitoring
+  fetch('/api/monitor/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  }).then(resp => {
+    if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+
+    // Now connect to the same endpoint as SSE (the response is an SSE stream)
+    // Since the POST response IS the SSE stream, create EventSource differently.
+    // We use the raw response as event stream.
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    monitorStartBtn.classList.add('hidden');
+    monitorStopBtn.classList.remove('hidden');
+    monitorStopBtn.disabled = false;
+
+    function processSSEChunk() {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          setMonitorStatus('Monitor disconnected.');
+          stopMonitorUI();
+          return;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop(); // Keep incomplete chunk
+
+        for (const part of parts) {
+          const lines = part.split('\n');
+          let eventType = '';
+          let dataStr = '';
+          for (const l of lines) {
+            if (l.startsWith('event: ')) eventType = l.slice(7);
+            else if (l.startsWith('data: ')) dataStr = l.slice(6);
+          }
+          if (!dataStr) continue;
+
+          try {
+            const data = JSON.parse(dataStr);
+            if (eventType === 'start') {
+              setMonitorStatus(`Watching ${path} (${formatFileSize(data.fileSize)})`, true);
+            } else if (eventType === 'append') {
+              handleLiveAppend(data.lines, data.totalLines);
+            }
+          } catch (e) {
+            console.warn('SSE parse error:', e);
+          }
+        }
+        processSSEChunk();
+      }).catch(err => {
+        setMonitorStatus(`Monitor error: ${err.message}`);
+        stopMonitorUI();
+      });
+    }
+    processSSEChunk();
+  }).catch(err => {
+    setMonitorStatus(`Failed: ${err.message}. Is the server running?`);
+    monitorStartBtn.disabled = false;
+  });
+});
+
+monitorStopBtn.addEventListener('click', () => {
+  fetch('/api/monitor/stop', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: monitorPath.value.trim() })
+  }).catch(() => {});
+  stopMonitorUI();
+});
+
+function stopMonitorUI() {
+  if (monitorEventSource) { monitorEventSource.close(); monitorEventSource = null; }
+  monitorStartBtn.classList.remove('hidden');
+  monitorStartBtn.disabled = false;
+  monitorStopBtn.classList.add('hidden');
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
+}
+
+function handleLiveAppend(newLines, totalBytes) {
+  if (newLines.length === 0) return;
+
+  // Switch to fights view if we haven't yet
+  if (!fightList.classList.contains('hidden')) {
+    // already visible
+  } else {
+    uploadZone.classList.add('hidden');
+    fightList.classList.remove('hidden');
+    switchTab('fights');
+  }
+
+  const prevLineCount = state.rawLines.length;
+
+  // Append new lines to rawLines
+  newLines.forEach(line => {
+    if (line === '' && state.rawLines[state.rawLines.length - 1] === '') return;
+    state.rawLines.push(line);
+  });
+
+  // Re-parse events and fights
+  const newStartLine = prevLineCount;
+  appendNewEvents(state.rawLines.slice(newStartLine), newStartLine);
+
+  // Rescan for encounter starts/ends
+  appendNewFights(state.rawLines.slice(newStartLine), newStartLine);
+
+  setMonitorStatus(`Watching · ${formatNumber(state.rawLines.length)} lines · ${formatFileSize(totalBytes)}`, true);
+
+  // Re-render
+  renderFightList();
+  renderOverallView();
+  renderBreakdownView();
+}
+
+function appendNewEvents(newLines, startLineNo) {
+  newLines.forEach((line, offset) => {
+    const lineNo = startLineNo + offset;
+    if (!line.trim()) return;
+    const timeEndIndex = line.indexOf('  ');
+    if (timeEndIndex === -1) return;
+    const rawDateTime = line.substr(0, timeEndIndex);
+    const event = line.substr(timeEndIndex + 2);
+    const eventNameEndIndex = event.indexOf(',');
+    if (eventNameEndIndex === -1) return;
+    const eventName = event.substr(0, eventNameEndIndex);
+    const rawEventParams = event.substr(eventNameEndIndex + 1);
+
+    // COMBATANT_INFO
+    if (eventName === 'COMBATANT_INFO') {
+      const parts = splitLine(rawEventParams);
+      try {
+        const player = parseCombatantInfo(parts);
+        state.players.set(player.playerId, player);
+      } catch (e) {}
+    }
+
+    // Track player GUIDs and class hints
+    const fields = parseCombatLogFields(rawEventParams);
+    if (fields.parts.length >= 5) {
+      const sourceId = fields.sourceGuid;
+      const destId = fields.destGuid;
+      if (sourceId && sourceId.startsWith('Player-')) {
+        if (!state.players.has(sourceId)) {
+          state.players.set(sourceId, {
+            playerId: sourceId, specId: 0, classKey: null,
+            strength: 0, agility: 0, stamina: 0, intellect: 0,
+            dodge: 0, parry: 0, block: 0,
+            critMelee: 0, critRanged: 0, critSpell: 0,
+            speed: 0, leech: 0,
+            hasteMelee: 0, hasteRanged: 0, hasteSpell: 0,
+            avoidance: 0, mastery: 0,
+            versatilityDamageDone: 0, versatilityHealingDone: 0, versatilityDamageReduction: 0,
+            armor: 0
+          });
+        }
+        if (!state.playerNames.has(sourceId)) {
+          state.playerNames.set(sourceId, fields.sourceName);
+        }
+      }
+      if (destId && destId.startsWith('Player-')) {
+        if (!state.playerNames.has(destId)) {
+          state.playerNames.set(destId, fields.destName);
+        }
+      }
+      const spellId = eventHasSpellIdPayload(eventName) ? parseInt(fields.payload[0], 10) || 0 : 0;
+      if (sourceId && sourceId.startsWith('Player-') && spellId && SPELL_CLASS_HINTS[spellId]) {
+        addPlayerClassVote(state._inferredClassVotes || (state._inferredClassVotes = new Map()), sourceId, SPELL_CLASS_HINTS[spellId], spellId);
+      }
+      if (eventName === 'SPELL_SUMMON' && sourceId && sourceId.startsWith('Player-') && destId && !destId.startsWith('Player-')) {
+        state.petOwners.set(destId, sourceId);
+      }
+      rememberAdvancedUnitOwners(state.petOwners, fields.payload);
+    }
+
+    state.events.push({
+      lineNo,
+      rawDateTime,
+      type: eventName,
+      params: rawEventParams
+    });
+  });
+
+  // Fill in missing player entries
+  for (const [guid, player] of state.players) {
+    if (!player.classKey && state._inferredClassVotes) {
+      player.classKey = getBestInferredPlayerClass(state._inferredClassVotes, guid);
+    }
+  }
+}
+
+function appendNewFights(newLines, startLineNo) {
+  let currentFightStart = null;
+
+  newLines.forEach((line, offset) => {
+    const lineNo = startLineNo + offset;
+    if (!line.trim()) return;
+    const timeEndIndex = line.indexOf('  ');
+    if (timeEndIndex === -1) return;
+    const rawDateTime = line.substr(0, timeEndIndex);
+    const event = line.substr(timeEndIndex + 2);
+    const eventNameEndIndex = event.indexOf(',');
+    if (eventNameEndIndex === -1) return;
+    const eventName = event.substr(0, eventNameEndIndex);
+    const rawEventParams = event.substr(eventNameEndIndex + 1);
+
+    if (eventName === 'ENCOUNTER_START') {
+      const parts = splitLine(rawEventParams);
+      currentFightStart = { lineNo, dateTime: parseDateTime(rawDateTime), event: parts };
+    } else if (eventName === 'ENCOUNTER_END' && currentFightStart) {
+      const parts = splitLine(rawEventParams);
+      const kill = parts[4] == '1';
+      const endDateTime = parseDateTime(rawDateTime);
+      const duration = endDateTime - currentFightStart.dateTime;
+      const isSameFight = currentFightStart.event[0] === parts[0] &&
+                          currentFightStart.event[1] === parts[1] &&
+                          currentFightStart.event[2] === parts[2];
+      if (isSameFight && duration > 0) {
+        state.fights.push({
+          startLineNo: currentFightStart.lineNo,
+          endLineNo: lineNo,
+          startDateTime: currentFightStart.dateTime,
+          endDateTime,
+          bossId: Number(parts[0]),
+          bossName: parts[1],
+          difficulty: Number(parts[2]),
+          kill,
+          duration
+        });
+        state.fights.sort((a, b) => a.startLineNo - b.startLineNo);
+      }
+      currentFightStart = null;
+    }
+  });
+}
 
 function switchTab(panelName) {
   Object.entries(panels).forEach(([name, el]) => {
