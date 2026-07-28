@@ -2136,6 +2136,7 @@ let state = {
   selectedDamageTakenSourceGuid: null,
   expandedActorGroups: new Set(),
   selectedFightPanel: 'summary',
+  selectedOverallPanel: 'summary',
   actorFilter: 'all',
   petOwners: new Map(),
   playerNames: new Map(),
@@ -2754,19 +2755,9 @@ function renderFightList() {
 
 } // end renderFightList
 
-function renderOverallView() {
-  const overallEl = document.getElementById('overall-view');
-  if (state.fights.length === 0) {
-    overallEl.innerHTML = `<div class="empty-state">
-      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      <h3 class="empty-state__title">No Fights Loaded</h3>
-      <p class="empty-state__desc">Load a combat log to see an overall summary.</p>
-    </div>`;
-    return;
-  }
-
-  // Build a synthetic "all fights" view by aggregating across every fight
-  const metaFight = {
+function getMetaFight() {
+  if (state.fights.length === 0) return null;
+  return {
     startLineNo: state.fights.reduce((min, f) => Math.min(min, f.startLineNo), Infinity),
     endLineNo: state.fights.reduce((max, f) => Math.max(max, f.endLineNo), -Infinity),
     startDateTime: state.fights[0].startDateTime,
@@ -2777,24 +2768,65 @@ function renderOverallView() {
     difficulty: 0,
     kill: state.fights.some(f => f.kill)
   };
+}
 
-  const damageDoneRows = filterActorRows(buildDamageDoneRows(metaFight));
-  const damageTakenRows = filterActorRows(buildDamageTakenRows(metaFight));
-  const healingDoneRows = filterActorRows(buildHealingRows(metaFight, 'source'));
-  const healingTakenRows = filterActorRows(buildHealingRows(metaFight, 'dest'));
-  const deathRows = filterActorRows(buildEventCountRows(metaFight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']));
-  const interruptRows = filterActorRows(buildEventCountRows(metaFight, ['SPELL_INTERRUPT']));
-  const castRows = filterActorRows(buildEventCountRows(metaFight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']));
+function renderOverallSubnav() {
+  const panels = [
+    ['summary', 'Summary'],
+    ['damageDone', 'Damage Done'],
+    ['damageTaken', 'Damage Taken'],
+    ['healingDone', 'Healing Done'],
+    ['healingTaken', 'Healing Taken'],
+    ['threat', 'Threat'],
+    ['buffs', 'Buffs'],
+    ['debuffs', 'Debuffs'],
+    ['deaths', 'Deaths'],
+    ['interrupts', 'Interrupts'],
+    ['dispels', 'Dispels'],
+    ['resources', 'Resources'],
+    ['casts', 'Casts'],
+  ];
+  return `<div class="fight-subnav" role="tablist" aria-label="Overall detail sections">
+    ${panels.map(([key, label]) => `<button class="fight-subnav__item" type="button" data-overall-panel="${key}" aria-selected="${state.selectedOverallPanel === key}">${label}</button>`).join('')}
+  </div>`;
+}
+
+function renderOverallContent() {
+  const fight = getMetaFight();
+  if (!fight) return '';
+  switch (state.selectedOverallPanel) {
+    case 'damageDone': return renderBreakdownContent(fight);
+    case 'damageTaken': return renderSingleReportContent('Damage Taken', filterActorRows(buildDamageTakenRows(fight)), fight);
+    case 'healingDone': return renderSingleReportContent('Healing Done', filterActorRows(buildHealingRows(fight, 'source')), fight);
+    case 'healingTaken': return renderSingleReportContent('Healing Taken', filterActorRows(buildHealingRows(fight, 'dest')), fight);
+    case 'threat': return renderEventCountReport('Threat', fight, ['THREAT']);
+    case 'buffs': return renderAuraReport('Buffs', fight, 'buff');
+    case 'debuffs': return renderAuraReport('Debuffs', fight, 'debuff');
+    case 'deaths': return renderEventCountReport('Deaths', fight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']);
+    case 'interrupts': return renderEventCountReport('Interrupts', fight, ['SPELL_INTERRUPT']);
+    case 'dispels': return renderEventCountReport('Dispels', fight, ['SPELL_DISPEL', 'SPELL_STOLEN', 'SPELL_DISPEL_FAILED']);
+    case 'resources': return renderEventCountReport('Resources', fight, ['ENERGIZE', 'DRAIN', 'LEECH']);
+    case 'casts': return renderEventCountReport('Casts', fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
+    case 'summary':
+    default: return renderOverallSummaryContent(fight);
+  }
+}
+
+function renderOverallSummaryContent(fight) {
+  const damageDoneRows = filterActorRows(buildDamageDoneRows(fight));
+  const damageTakenRows = filterActorRows(buildDamageTakenRows(fight));
+  const healingDoneRows = filterActorRows(buildHealingRows(fight, 'source'));
+  const healingTakenRows = filterActorRows(buildHealingRows(fight, 'dest'));
+  const deathRows = filterActorRows(buildEventCountRows(fight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']));
+  const interruptRows = filterActorRows(buildEventCountRows(fight, ['SPELL_INTERRUPT']));
+  const castRows = filterActorRows(buildEventCountRows(fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']));
 
   const totalDamage = damageDoneRows.reduce((sum, r) => sum + r.amount, 0);
   const totalHealing = healingDoneRows.reduce((sum, r) => sum + r.amount, 0);
-  const totalSeconds = Math.max(1, metaFight.duration / 1000);
+  const totalSeconds = Math.max(1, fight.duration / 1000);
   const totalLines = state.rawLines.length;
 
-  overallEl.innerHTML = `
-    <div class="breakdown-controls">
-      <span class="breakdown-row__sub">${state.fights.length} fights · ${formatDuration(metaFight.duration)} total · ${formatNumber(totalLines)} lines</span>
-    </div>
+  return `
     <div class="overall-hero">
       <div class="overall-hero__stat"><span class="overall-hero__label">Total Damage</span><span class="overall-hero__value">${formatNumber(totalDamage)}</span><span class="overall-hero__sub">${formatNumber(Math.round(totalDamage / totalSeconds))} DPS</span></div>
       <div class="overall-hero__stat"><span class="overall-hero__label">Total Healing</span><span class="overall-hero__value">${formatNumber(totalHealing)}</span><span class="overall-hero__sub">${formatNumber(Math.round(totalHealing / totalSeconds))} HPS</span></div>
@@ -2802,14 +2834,62 @@ function renderOverallView() {
       <div class="overall-hero__stat"><span class="overall-hero__label">Lines</span><span class="overall-hero__value">${formatNumber(totalLines)}</span><span class="overall-hero__sub">${state.events.length} events</span></div>
     </div>
     <div class="report-grid">
-      ${renderReportPanel('Damage Done', damageDoneRows, metaFight, true)}
-      ${renderReportPanel('Damage Taken', damageTakenRows, metaFight, true)}
-      ${renderReportPanel('Healing Done', healingDoneRows, metaFight, true)}
-      ${renderReportPanel('Healing Taken', healingTakenRows, metaFight, true)}
-      ${renderReportPanel('Casts', castRows, metaFight, false, 'casts')}
-      ${renderReportPanel('Deaths', deathRows, metaFight, false, 'events')}
-      ${renderReportPanel('Interrupts', interruptRows, metaFight, false, 'casts')}
+      ${renderReportPanel('Damage Done', damageDoneRows, fight, true)}
+      ${renderReportPanel('Damage Taken', damageTakenRows, fight, true)}
+      ${renderReportPanel('Healing Done', healingDoneRows, fight, true)}
+      ${renderReportPanel('Healing Taken', healingTakenRows, fight, true)}
+      ${renderReportPanel('Casts', castRows, fight, false, 'casts')}
+      ${renderReportPanel('Deaths', deathRows, fight, false, 'events')}
+      ${renderReportPanel('Interrupts', interruptRows, fight, false, 'casts')}
     </div>`;
+}
+
+function renderOverallView() {
+  const overallEl = document.getElementById('overall-view');
+  const fight = getMetaFight();
+  if (!fight) {
+    overallEl.innerHTML = `<div class="empty-state">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <h3 class="empty-state__title">No Fights Loaded</h3>
+      <p class="empty-state__desc">Load a combat log to see an overall summary.</p>
+    </div>`;
+    return;
+  }
+
+  overallEl.innerHTML = `
+    <div class="breakdown-controls">
+      <span class="breakdown-row__sub">${state.fights.length} fights · ${formatDuration(fight.duration)} total · ${formatNumber(state.rawLines.length)} lines</span>
+    </div>
+    ${renderActorFilterToggle()}
+    ${renderOverallSubnav()}
+    <div class="fight-subpanel" id="overall-subpanel">${renderOverallContent()}</div>
+  `;
+
+  // Attach subnav handlers
+  overallEl.querySelectorAll('[data-overall-panel]').forEach(button => {
+    button.addEventListener('click', () => {
+      state.selectedOverallPanel = button.dataset.overallPanel;
+      state.selectedSourceGuid = null;
+      state.selectedSpellKey = null;
+      state.selectedDamageTakenGuid = null;
+      state.selectedDamageTakenSourceGuid = null;
+      state.expandedActorGroups = new Set();
+      renderOverallView();
+    });
+  });
+
+  // Attach actor filter handlers scoped to overall view
+  overallEl.querySelectorAll('[data-actor-filter]').forEach(button => {
+    button.addEventListener('click', () => {
+      state.actorFilter = button.dataset.actorFilter === 'players' ? 'players' : 'all';
+      state.selectedSourceGuid = null;
+      state.selectedSpellKey = null;
+      state.selectedDamageTakenGuid = null;
+      state.selectedDamageTakenSourceGuid = null;
+      state.expandedActorGroups = new Set();
+      renderOverallView();
+    });
+  });
 
   attachBreakdownHandlers(overallEl);
 }
