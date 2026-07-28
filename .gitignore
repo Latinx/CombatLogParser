@@ -40,4 +40,4 @@ Thumbs.db
 .mnemonics/
 
 # Build artifacts
-*.o
+*.o.uploads/

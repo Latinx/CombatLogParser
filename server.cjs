@@ -6,8 +6,6 @@ const { execFile } = require('child_process');
 const HOST = '127.0.0.1';
 const START_PORT = Number(process.env.COMBAT_LOG_PARSER_PORT) || 8081;
 const ROOT = __dirname;
-const UPLOADS_DIR = path.join(ROOT, '.uploads');
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -94,23 +92,6 @@ function handleMonitorWatch(req, res) {
   req.on('close', () => stopMonitor(filePath));
 }
 
-function handleMonitorUpload(req, res) {
-  const fileName = `upload-${Date.now()}.txt`;
-  const filePath = path.join(UPLOADS_DIR, fileName);
-  const writeStream = fs.createWriteStream(filePath);
-
-  req.pipe(writeStream);
-  writeStream.on('finish', () => {
-    const stat = fs.statSync(filePath);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ path: filePath, fileSize: stat.size }));
-  });
-  writeStream.on('error', (err) => {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: err.message }));
-  });
-}
-
 function checkForNewData(monitor) {
   try {
     const stat = fs.statSync(monitor.filePath);
@@ -180,10 +161,6 @@ function startServer(port) {
     // API endpoints
     if (url.pathname === '/api/monitor/watch' && req.method === 'GET') {
       handleMonitorWatch(req, res);
-      return;
-    }
-    if (url.pathname === '/api/monitor/upload' && req.method === 'POST') {
-      handleMonitorUpload(req, res);
       return;
     }
     if (url.pathname === '/api/monitor/stop' && req.method === 'GET') {

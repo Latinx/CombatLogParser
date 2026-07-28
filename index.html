@@ -2134,6 +2134,7 @@ const SPELL_CLASS_HINTS = {
 
 const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
 const STORED_LOG_KEY = 'combatLogParser.currentLog';
+const STORED_WATCH_PATH_KEY = 'combatLogParser.watchPath';
 const LOG_DB_NAME = 'combatLogParserDB';
 const LOG_STORE_NAME = 'logs';
 
@@ -2401,12 +2402,22 @@ monitorStartBtn.addEventListener('click', () => {
     monitorStopBtn.classList.remove('hidden');
     setMonitorStatus(`Watching ${data.path} (${formatFileSize(data.fileSize)})`, true);
     setMonitorRefreshed();
+    // Persist watch path and initial log text
+    persistWatchPath(data.path);
+    if (state.rawLines.length > 0) persistCurrentLog(state.rawLines.join('\n'));
   });
 
   es.addEventListener('append', (e) => {
     const data = JSON.parse(e.data);
     handleLiveAppend(data.lines, data.totalLines);
     setMonitorRefreshed();
+    // Persist updated log (throttled)
+    if (!window._persistThrottle) {
+      window._persistThrottle = setTimeout(() => {
+        window._persistThrottle = null;
+        if (state.rawLines.length > 0) persistCurrentLog(state.rawLines.join('\n'));
+      }, 3000);
+    }
   });
 
   es.addEventListener('error', () => {
@@ -2439,23 +2450,16 @@ monitorBrowseBtn.addEventListener('click', () => monitorFileInput.click());
 monitorFileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  setMonitorStatus('Uploading file to server…');
-  const formData = new FormData();
-  formData.append('file', file);
-  fetch('/api/monitor/upload', {
-    method: 'POST',
-    body: file
-  }).then(resp => {
-    if (!resp.ok) throw new Error(`Upload failed: ${resp.status}`);
-    return resp.json();
-  }).then(data => {
-    monitorPath.value = data.path;
-    // Auto-start watching
+
+  // Chrome/Edge expose the real filesystem path on localhost
+  if (file.path) {
+    monitorPath.value = file.path;
     monitorStartBtn.click();
-  }).catch(err => {
-    setMonitorStatus(`Upload error: ${err.message}. Try typing the path manually.`, false);
+  } else {
+    // Fallback: Firefox/Safari don't expose file.path
     monitorPath.value = file.name;
-  });
+    setMonitorStatus(`Selected ${file.name} — paste the full path from your file explorer`, false);
+  }
   e.target.value = '';
 });
 
@@ -2860,12 +2864,39 @@ function openLogDatabase() {
   });
 }
 
-function putStoredLog(db, text) {
+function persistWatchPath(path) {
+  openLogDatabase()
+    .then(db => putStoredValue(db, STORED_WATCH_PATH_KEY, path))
+    .catch(err => console.warn('Could not persist watch path.', err));
+}
+
+function restoreWatchPath() {
+  openLogDatabase()
+    .then(db => getStoredValue(db, STORED_WATCH_PATH_KEY))
+    .then(path => {
+      if (!path) return;
+      monitorPath.value = path;
+      // Auto-start watching if monitor was active
+      monitorStartBtn.click();
+    })
+    .catch(() => {});
+}
+
+function putStoredValue(db, key, value) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(LOG_STORE_NAME, 'readwrite');
-    tx.objectStore(LOG_STORE_NAME).put(text, STORED_LOG_KEY);
+    tx.objectStore(LOG_STORE_NAME).put(value, key);
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
+  });
+}
+
+function getStoredValue(db, key) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOG_STORE_NAME, 'readwrite');
+    const request = tx.objectStore(LOG_STORE_NAME).get(key);
+    request.onsuccess = () => resolve(request.result || '');
+    request.onerror = () => reject(request.error);
   });
 }
 
