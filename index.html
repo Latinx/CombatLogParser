@@ -2162,6 +2162,8 @@ const SPELL_CLASS_HINTS = {
 const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
 const STORED_LOG_KEY = 'combatLogParser.currentLog';
 const STORED_WATCH_PATH_KEY = 'combatLogParser.watchPath';
+const CHARACTER_PROFILE_CACHE_KEY = 'combatLogParser.characterProfiles.v1';
+const CHARACTER_PROFILE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 const LOG_DB_NAME = 'combatLogParserDB';
 const LOG_STORE_NAME = 'logs';
 
@@ -2284,6 +2286,7 @@ function parseCombatantInfo(parts) {
   player.buffs = parts[i++];
   player.classKey = SPEC_TO_CLASS[player.specId] || null;
   player.specName = SPEC_NAMES[player.specId] || `Spec ${player.specId}`;
+  player.classSource = player.classKey ? 'combatant-info' : null;
   return player;
 }
 
@@ -2628,6 +2631,7 @@ function appendNewEvents(newLines, startLineNo) {
   for (const [guid, player] of state.players) {
     if (!player.classKey && state._inferredClassVotes) {
       player.classKey = getBestInferredPlayerClass(state._inferredClassVotes, guid);
+      if (player.classKey) player.classSource = 'spell-inference';
     }
   }
 }
@@ -3535,7 +3539,15 @@ function renderActorName(name, guid, className = '', ownerGuid = null) {
   const classGuid = isPlayerGuid(guid) ? guid : ownerGuid;
   const color = classGuid ? getPlayerClassColor(classGuid) : 'var(--ink-muted)';
   const classKey = classGuid ? getPlayerClassKey(classGuid) : null;
-  const title = classKey ? `${name}\n${classKey} · ${guid}` : `${name}\nUnknown class · ${guid}`;
+  const player = classGuid ? state.players.get(classGuid) : null;
+  const sourceLabels = {
+    'combatant-info': 'COMBATANT_INFO',
+    'blizzard-public-profile': 'Blizzard public profile',
+    'spell-inference': 'Spell inference · low confidence'
+  };
+  const source = sourceLabels[player?.classSource] || player?.classSource || 'Unknown source';
+  const classLabel = player?.specName ? `${formatClassName(classKey)} · ${player.specName}` : formatClassName(classKey);
+  const title = classKey ? `${name}\n${classLabel}\n${source} · ${guid}` : `${name}\nUnknown class · ${guid}`;
   return `<strong class="actor-name ${className}" style="color: ${color}; --player-color: ${color};" title="${escapeHtml(title)}">${escapeHtml(formatActorDisplayName(name))}</strong>`;
 }
 
@@ -3557,6 +3569,74 @@ function getPlayerClassKey(guid) {
   const player = state.players.get(guid);
   if (!player) return null;
   return normalizeClassKey(player.classKey) || SPEC_TO_CLASS[player.specId] || null;
+}
+
+async function enrichFightPlayerProfiles(fight) {
+  if (!fight) return;
+  const identities = getFightPlayerRows(fight)
+    .map(row => ({ guid: row.guid, identity: parseCharacterIdentity(state.playerNames.get(row.guid) || row.name) }))
+    .filter(item => item.identity && !(state.players.get(item.guid)?.specId > 0));
+  const unique = Array.from(new Map(identities.map(item => [item.guid, item])).values());
+
+  for (let index = 0; index < unique.length; index += 4) {
+    await Promise.all(unique.slice(index, index + 4).map(async ({ guid, identity }) => {
+      const profile = await getCharacterProfile(identity);
+      const classKey = normalizeClassKey(profile?.class?.enum || profile?.class?.name);
+      if (!classKey) return;
+      const player = state.players.get(guid);
+      if (!player || player.specId > 0) return;
+      player.classKey = classKey;
+      player.specId = Number(profile.spec?.id) || 0;
+      player.specName = profile.spec?.name || '';
+      player.classSource = profile.provider || 'public-profile';
+    }));
+  }
+
+  if (state.currentFight === fight) {
+    renderFightDetail();
+    renderPlayerGrid();
+    renderTimeline();
+    renderBreakdownView();
+    renderDeathsView();
+    renderAurasView();
+  }
+}
+
+function parseCharacterIdentity(actorName) {
+  const parts = String(actorName || '').trim().split('-').filter(Boolean);
+  if (parts.length < 3) return null;
+  const region = parts.pop().toLowerCase();
+  if (!['us', 'eu', 'kr', 'tw'].includes(region)) return null;
+  const name = parts.shift();
+  const realm = parts.join('-').toLowerCase().replace(/[^a-z0-9-]/g, '');
+  if (!name || !realm) return null;
+  return { region, realm, name: name.toLowerCase() };
+}
+
+async function getCharacterProfile(identity) {
+  const key = `${identity.region}/${identity.realm}/${identity.name}`;
+  const cache = readCharacterProfileCache();
+  const cached = cache[key];
+  if (cached && Date.now() - cached.fetchedAt < CHARACTER_PROFILE_CACHE_TTL) return cached.profile;
+  try {
+    const params = new URLSearchParams(identity);
+    const response = await fetch(`/api/character-profile?${params}`);
+    if (!response.ok) return null;
+    const profile = await response.json();
+    cache[key] = { fetchedAt: Date.now(), profile };
+    localStorage.setItem(CHARACTER_PROFILE_CACHE_KEY, JSON.stringify(cache));
+    return profile;
+  } catch {
+    return null;
+  }
+}
+
+function readCharacterProfileCache() {
+  try {
+    return JSON.parse(localStorage.getItem(CHARACTER_PROFILE_CACHE_KEY)) || {};
+  } catch {
+    return {};
+  }
 }
 
 function normalizeClassKey(className) {
@@ -3621,6 +3701,7 @@ function selectFight(index) {
   renderDeathsView();
   renderAurasView();
   resetMainScroll();
+  void enrichFightPlayerProfiles(state.currentFight);
 }
 
 function resetMainScroll() {

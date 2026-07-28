@@ -86,6 +86,7 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
         "/api/monitor/stop" => {
             write_json(&mut stream, 200, "{\"stopped\":true}")
         }
+        "/api/character-profile" => handle_character_profile(&mut stream, &query_params),
         _ => {
             if path_only == "/" || path_only == "/index.html" {
                 write_ok(&mut stream, "text/html; charset=utf-8", INDEX_HTML.as_bytes())
@@ -94,6 +95,84 @@ fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             }
         }
     }
+}
+
+fn handle_character_profile(
+    stream: &mut TcpStream,
+    query_params: &HashMap<String, String>,
+) -> std::io::Result<()> {
+    let region = query_params.get("region").map(String::as_str).unwrap_or("");
+    let realm = query_params.get("realm").map(String::as_str).unwrap_or("");
+    let name = query_params.get("name").map(String::as_str).unwrap_or("");
+
+    if !matches!(region, "us" | "eu" | "kr" | "tw")
+        || !is_safe_profile_segment(realm)
+        || !is_safe_profile_segment(name)
+    {
+        return write_json(stream, 400, "{\"error\":\"Invalid character identity\"}");
+    }
+
+    let locale = match region {
+        "eu" => "en-gb",
+        "kr" => "ko-kr",
+        "tw" => "zh-tw",
+        _ => "en-us",
+    };
+    let url = format!(
+        "https://worldofwarcraft.blizzard.com/{locale}/character/{region}/{}/{}",
+        percent_encode_path_segment(realm),
+        percent_encode_path_segment(name)
+    );
+    let response = match minreq::get(&url)
+        .with_header("User-Agent", "CombatLogParser/0.2")
+        .with_timeout(12)
+        .send()
+    {
+        Ok(response) => response,
+        Err(_) => return write_json(stream, 502, "{\"error\":\"Profile lookup failed\"}"),
+    };
+    if response.status_code == 404 {
+        return write_json(stream, 404, "{\"error\":\"Character not found\"}");
+    }
+    if response.status_code != 200 {
+        return write_json(stream, 502, "{\"error\":\"Profile provider unavailable\"}");
+    }
+
+    let body = match response.as_str() {
+        Ok(body) => body,
+        Err(_) => return write_json(stream, 502, "{\"error\":\"Invalid profile response\"}"),
+    };
+    let profile = match extract_character_profile(body) {
+        Ok(profile) => profile,
+        Err(_) => return write_json(stream, 502, "{\"error\":\"Invalid profile JSON\"}"),
+    };
+    let Some(character) = profile.get("character") else {
+        return write_json(stream, 404, "{\"error\":\"Character profile unavailable\"}");
+    };
+    let result = serde_json::json!({
+        "provider": "blizzard-public-profile",
+        "class": character.get("class"),
+        "spec": character.get("spec"),
+        "name": character.get("name"),
+        "realm": character.get("realm"),
+    });
+    write_json(stream, 200, &result.to_string())
+}
+
+fn extract_character_profile(body: &str) -> Result<serde_json::Value, ()> {
+    let marker = "var characterProfileInitialState = ";
+    let start = body.find(marker).map(|index| index + marker.len()).ok_or(())?;
+    let end = body[start..].find("</script>").map(|index| start + index).ok_or(())?;
+    let payload = body[start..end].trim().strip_suffix(';').unwrap_or(body[start..end].trim());
+    serde_json::from_str(payload).map_err(|_| ())
+}
+
+fn is_safe_profile_segment(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 64
+        && value
+            .chars()
+            .all(|character| character.is_alphanumeric() || character == '-')
 }
 
 fn handle_pick_file(stream: &mut TcpStream) -> std::io::Result<()> {
@@ -251,21 +330,37 @@ fn write_raw(stream: &mut TcpStream, status: &str, content_type: &str, body: &[u
 }
 
 fn url_decode(input: &str) -> String {
-    let mut result = String::with_capacity(input.len());
-    let mut chars = input.chars();
-    while let Some(c) = chars.next() {
-        match c {
-            '+' => result.push(' '),
-            '%' => {
-                let hex: String = chars.by_ref().take(2).collect();
-                if let Ok(byte) = u8::from_str_radix(&hex, 16) {
-                    result.push(byte as char);
+    let bytes = input.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => decoded.push(b' '),
+            b'%' if index + 2 < bytes.len() => {
+                if let Ok(hex) = std::str::from_utf8(&bytes[index + 1..index + 3]) {
+                    if let Ok(byte) = u8::from_str_radix(hex, 16) {
+                        decoded.push(byte);
+                        index += 2;
+                    }
                 }
             }
-            _ => result.push(c),
+            byte => decoded.push(byte),
+        }
+        index += 1;
+    }
+    String::from_utf8_lossy(&decoded).into_owned()
+}
+
+fn percent_encode_path_segment(value: &str) -> String {
+    let mut encoded = String::with_capacity(value.len());
+    for byte in value.as_bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'~') {
+            encoded.push(*byte as char);
+        } else {
+            encoded.push_str(&format!("%{byte:02X}"));
         }
     }
-    result
+    encoded
 }
 
 fn json_escape(s: &str) -> String {
@@ -294,5 +389,23 @@ fn open_browser(url: &str) {
 
     if let Err(err) = result {
         eprintln!("Could not open browser automatically: {err}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decodes_utf8_query_values() {
+        assert_eq!(url_decode("T%C3%A1m-Arthas-US"), "Tám-Arthas-US");
+    }
+
+    #[test]
+    fn extracts_character_profile_json() {
+        let html = r#"<script>var characterProfileInitialState = {"character":{"class":{"id":6}}};
+</script>"#;
+        let profile = extract_character_profile(html).expect("profile should parse");
+        assert_eq!(profile["character"]["class"]["id"], 6);
     }
 }
