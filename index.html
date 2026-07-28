@@ -2385,84 +2385,52 @@ function setMonitorRefreshed() {
 
 monitorStartBtn.addEventListener('click', () => {
   const path = monitorPath.value.trim();
-  if (!path) { setMonitorStatus('Enter a log file path.'); return; }
+  if (!path) { setMonitorStatus('Select a log file first.'); return; }
 
-  // Start SSE monitor via server
   setMonitorStatus('Connecting...');
   monitorStartBtn.disabled = true;
 
-  // First, POST to start monitoring
-  fetch('/api/monitor/start', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path })
-  }).then(resp => {
-    if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+  if (monitorEventSource) { monitorEventSource.close(); }
 
-    // Now connect to the same endpoint as SSE (the response is an SSE stream)
-    // Since the POST response IS the SSE stream, create EventSource differently.
-    // We use the raw response as event stream.
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+  const es = new EventSource(`/api/monitor/watch?path=${encodeURIComponent(path)}`);
+  monitorEventSource = es;
 
+  es.addEventListener('start', (e) => {
+    const data = JSON.parse(e.data);
     monitorStartBtn.classList.add('hidden');
     monitorStopBtn.classList.remove('hidden');
-    monitorStopBtn.disabled = false;
-
-    function processSSEChunk() {
-      reader.read().then(({ done, value }) => {
-        if (done) {
-          setMonitorStatus('Monitor disconnected.');
-          stopMonitorUI();
-          return;
-        }
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split('\n\n');
-        buffer = parts.pop(); // Keep incomplete chunk
-
-        for (const part of parts) {
-          const lines = part.split('\n');
-          let eventType = '';
-          let dataStr = '';
-          for (const l of lines) {
-            if (l.startsWith('event: ')) eventType = l.slice(7);
-            else if (l.startsWith('data: ')) dataStr = l.slice(6);
-          }
-          if (!dataStr) continue;
-
-          try {
-            const data = JSON.parse(dataStr);
-            if (eventType === 'start') {
-              setMonitorStatus(`Watching ${path} (${formatFileSize(data.fileSize)})`, true);
-              setMonitorRefreshed();
-            } else if (eventType === 'append') {
-              handleLiveAppend(data.lines, data.totalLines);
-              setMonitorRefreshed();
-            }
-          } catch (e) {
-            console.warn('SSE parse error:', e);
-          }
-        }
-        processSSEChunk();
-      }).catch(err => {
-        setMonitorStatus(`Monitor error: ${err.message}`);
-        stopMonitorUI();
-      });
-    }
-    processSSEChunk();
-  }).catch(err => {
-    setMonitorStatus(`Failed: ${err.message}. Is the server running?`);
-    monitorStartBtn.disabled = false;
+    setMonitorStatus(`Watching ${data.path} (${formatFileSize(data.fileSize)})`, true);
+    setMonitorRefreshed();
   });
+
+  es.addEventListener('append', (e) => {
+    const data = JSON.parse(e.data);
+    handleLiveAppend(data.lines, data.totalLines);
+    setMonitorRefreshed();
+  });
+
+  es.addEventListener('error', () => {
+    // EventSource auto-reconnects, but if readyState is CLOSED, stop
+    if (es.readyState === EventSource.CLOSED) {
+      setMonitorStatus('Connection lost. Check that the file still exists.');
+      stopMonitorUI();
+    }
+  });
+
+  // Open fires only on first successful connection
+  es.onopen = () => {
+    monitorStartBtn.classList.add('hidden');
+    monitorStopBtn.classList.remove('hidden');
+  };
 });
 
 monitorStopBtn.addEventListener('click', () => {
-  fetch('/api/monitor/stop', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path: monitorPath.value.trim() })
-  }).catch(() => {});
+  if (monitorEventSource) {
+    monitorEventSource.close();
+    monitorEventSource = null;
+  }
+  // Tell server to stop watching
+  fetch(`/api/monitor/stop?path=${encodeURIComponent(monitorPath.value.trim())}`).catch(() => {});
   stopMonitorUI();
 });
 
@@ -2471,17 +2439,23 @@ monitorBrowseBtn.addEventListener('click', () => monitorFileInput.click());
 monitorFileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  // Try to get the file path from the browser. Chrome localhost exposes file.path.
-  if (file.path) {
-    monitorPath.value = file.path;
-  } else {
-    // Fallback: show the name so the user knows what was selected
+  setMonitorStatus('Uploading file to server…');
+  const formData = new FormData();
+  formData.append('file', file);
+  fetch('/api/monitor/upload', {
+    method: 'POST',
+    body: file
+  }).then(resp => {
+    if (!resp.ok) throw new Error(`Upload failed: ${resp.status}`);
+    return resp.json();
+  }).then(data => {
+    monitorPath.value = data.path;
+    // Auto-start watching
+    monitorStartBtn.click();
+  }).catch(err => {
+    setMonitorStatus(`Upload error: ${err.message}. Try typing the path manually.`, false);
     monitorPath.value = file.name;
-    setMonitorStatus(`Selected ${file.name} — enter the full path manually or use a Chromium-based browser`, false);
-    return;
-  }
-  // Auto-start watching since we have the path
-  monitorStartBtn.click();
+  });
   e.target.value = '';
 });
 
@@ -2492,6 +2466,7 @@ function stopMonitorUI() {
   monitorStartBtn.classList.remove('hidden');
   monitorStartBtn.disabled = false;
   monitorStopBtn.classList.add('hidden');
+  monitorStatus.classList.add('hidden');
 }
 
 function formatFileSize(bytes) {
