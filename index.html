@@ -3567,7 +3567,7 @@ function renderOverallContent() {
     case 'debuffs': return renderAuraReport('Debuffs', fight, 'debuff');
     case 'deaths': return renderEventCountReport('Deaths', fight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']);
     case 'interrupts': return renderEventCountReport('Interrupts', fight, ['SPELL_INTERRUPT']);
-    case 'dispels': return renderEventCountReport('Dispels', fight, ['SPELL_DISPEL', 'SPELL_STOLEN', 'SPELL_DISPEL_FAILED']);
+    case 'dispels': return renderDispelReport(fight);
     case 'resources': return renderEventCountReport('Resources', fight, ['ENERGIZE', 'DRAIN', 'LEECH']);
     case 'casts': return renderEventCountReport('Casts', fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
     case 'summary':
@@ -4105,7 +4105,7 @@ function renderFightSubpanelContent() {
     case 'debuffs': return renderAuraReport('Debuffs', state.currentFight, 'debuff');
     case 'deaths': return renderEventCountReport('Deaths', state.currentFight, ['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL']);
     case 'interrupts': return renderEventCountReport('Interrupts', state.currentFight, ['SPELL_INTERRUPT']);
-    case 'dispels': return renderEventCountReport('Dispels', state.currentFight, ['SPELL_DISPEL', 'SPELL_STOLEN', 'SPELL_DISPEL_FAILED']);
+    case 'dispels': return renderDispelReport(state.currentFight);
     case 'resources': return renderEventCountReport('Resources', state.currentFight, ['ENERGIZE', 'DRAIN', 'LEECH']);
     case 'casts': return renderEventCountReport('Casts', state.currentFight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
     case 'raw': return renderFightRawContent(state.currentFight);
@@ -4547,6 +4547,64 @@ function renderEventCountReport(title, fight, typeTokens) {
       <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)}</span>
     </div>
     ${renderReportPanel(title, rows, fight, false, title === 'Casts' || title === 'Interrupts' || title === 'Dispels' ? 'casts' : 'events')}`;
+}
+
+function renderDispelReport(fight) {
+  const rows = filterActorRows(buildDispelRows(fight));
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  const topRows = rows.slice(0, 18);
+  return `<div class="breakdown-controls">
+      <button class="filter-btn filter-btn--active">Dispels</button>
+      <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)}</span>
+    </div>
+    <section class="report-panel ${hasExpandedActorGroup(topRows, 'dispels') ? 'report-panel--expanded' : ''}">
+      <div class="report-panel__header">
+        <span class="report-panel__title">Dispels</span>
+        <span class="report-panel__meta">${formatNumber(total)} dispels</span>
+      </div>
+      ${topRows.length > 0 ? renderDispelTable(topRows, total, fight) : renderCompactEmptyRow('Dispels')}
+    </section>`;
+}
+
+function renderDispelTable(rows, total, fight) {
+  const hierarchy = buildActorHierarchy(rows);
+  const fightSeconds = Math.max(1, fight.duration / 1000);
+  const maxAmount = Math.max(...hierarchy.map(group => group.total), 1);
+  return `<div class="breakdown-list">
+    ${renderGroupedActorSections(hierarchy, (group, index) => {
+      const expanded = isActorGroupExpanded(group.player.guid, 'dispels');
+      return `${renderActorTotalRow(group.player, group.total, index, total, fightSeconds, maxAmount, 'dispels')}${expanded ? renderDispelGroupDetails(group, total, fightSeconds, maxAmount) : ''}`;
+    })}
+  </div>`;
+}
+
+function renderDispelGroupDetails(group, total, fightSeconds, maxAmount) {
+  if (group.children.length === 1 && group.children[0].isPlayerActual) {
+    return renderDispelDetailRows(group.children[0].dispels || []);
+  }
+  return group.children.map(child => `${renderActorChildRow(child, total, fightSeconds, maxAmount)}${renderDispelDetailRows(child.dispels || [])}`).join('');
+}
+
+function renderDispelDetailRows(details) {
+  if (details.length === 0) return `<div class="breakdown-row__sub">No dispel payload details were recorded.</div>`;
+  const maxCount = Math.max(...details.map(detail => detail.amount), 1);
+  const total = details.reduce((sum, detail) => sum + detail.amount, 0);
+  return `<div class="breakdown-row__spells">
+    ${details.map((detail, index) => {
+      const pctOfMax = Math.max(2, (detail.amount / maxCount) * 100);
+      const pctOfActor = total > 0 ? (detail.amount / total) * 100 : 0;
+      const aura = { spellId: detail.auraSpellId, name: detail.auraName, school: detail.auraSchool };
+      const appliedBy = detail.originalSourceGuid
+        ? renderActorName(detail.originalSourceName, detail.originalSourceGuid)
+        : '<span class="breakdown-row__sub">unknown source</span>';
+      const action = detail.failed ? 'failed to dispel' : (detail.stolen ? 'stole' : 'dispelled');
+      return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(aura)}">
+        <span><span class="breakdown-row__sub">${index + 1}</span> <strong>${action} ${renderSpellName(aura)}</strong><span class="breakdown-row__sub"> from </span>${renderActorName(detail.targetName, detail.targetGuid)}<span class="breakdown-row__sub"> · applied by </span>${appliedBy}</span>
+        <span class="spell-bar-container" data-tooltip="${escapeHtml(`${detail.auraName}\nTarget: ${detail.targetName}\nApplied by: ${detail.originalSourceName || 'Unknown'}\nDispel ability: ${detail.dispelSpellName}\nCount: ${detail.amount}`)}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
+        <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(detail.amount)}</span><span class="breakdown-row__sub">${pctOfActor.toFixed(1)}%</span></span>
+      </div>`;
+    }).join('')}
+  </div>`;
 }
 
 function renderAuraReport(title, fight, auraType) {
@@ -5000,12 +5058,18 @@ function mergeActorChildren(children) {
   children.forEach(child => {
     const key = child.isPlayerActual ? `player:${child.guid}` : `pet:${normalizeActorName(child.name)}`;
     if (!merged.has(key)) {
-      merged.set(key, { ...child, guid: child.isPlayerActual ? child.guid : key, spells: mergeSpellRows([], child.spells || []) });
+      merged.set(key, {
+        ...child,
+        guid: child.isPlayerActual ? child.guid : key,
+        spells: mergeSpellRows([], child.spells || []),
+        dispels: mergeDispelDetails(child.dispels || [])
+      });
       return;
     }
     const existing = merged.get(key);
     existing.amount += child.amount;
     existing.spells = mergeSpellRows(existing.spells || [], child.spells || []);
+    existing.dispels = mergeDispelDetails([...(existing.dispels || []), ...(child.dispels || [])]);
   });
   return Array.from(merged.values());
 }
@@ -5597,6 +5661,92 @@ function computeEventCountRows(fight, typeTokens) {
     addReportAmount(actors, guid, getDisplayName(name, guid), 1, ownerGuid, getReactionGroup(flags));
   }
   return mapToSortedRows(actors);
+}
+
+function buildDispelRows(fight) {
+  return getCachedReportRows('dispels', fight, '', () => computeDispelRows(fight));
+}
+
+function computeDispelRows(fight) {
+  const actors = new Map();
+  const pendingByAura = new Map();
+  for (const event of getFightEvents(fight)) {
+    const isDispel = event.type === 'SPELL_DISPEL' || event.type === 'SPELL_STOLEN' || event.type === 'SPELL_DISPEL_FAILED';
+    const isAuraRemoved = event.type === 'SPELL_AURA_REMOVED';
+    if (!isDispel && !isAuraRemoved) continue;
+    const fields = parseCombatLogFields(event.params);
+
+    if (isAuraRemoved) {
+      const auraSpellId = parseInt(fields.payload[0], 10) || 0;
+      const pendingKey = `${fields.destGuid}:${auraSpellId}`;
+      const queue = pendingByAura.get(pendingKey) || [];
+      while (queue.length > 0 && event.lineNo - queue[0].lineNo > 12) queue.shift();
+      const detail = queue.shift();
+      if (detail) {
+        detail.originalSourceGuid = fields.sourceGuid;
+        detail.originalSourceName = getDisplayName(fields.sourceName, fields.sourceGuid);
+      }
+      if (queue.length > 0) pendingByAura.set(pendingKey, queue);
+      else pendingByAura.delete(pendingKey);
+      continue;
+    }
+
+    if (!isValidActorGuid(fields.sourceGuid)) continue;
+    if (!filterEventByActor(fields.sourceGuid, fields.destGuid)) continue;
+    const ownerGuid = state.petOwners.get(fields.sourceGuid) || null;
+    if (!actors.has(fields.sourceGuid)) {
+      actors.set(fields.sourceGuid, {
+        guid: fields.sourceGuid,
+        name: getDisplayName(fields.sourceName, fields.sourceGuid),
+        ownerGuid,
+        faction: getReactionGroup(fields.sourceFlags),
+        amount: 0,
+        dispels: []
+      });
+    }
+    const actor = actors.get(fields.sourceGuid);
+    const detail = {
+      lineNo: event.lineNo,
+      dispelSpellId: parseInt(fields.payload[0], 10) || 0,
+      dispelSpellName: fields.payload[1] || 'Unknown dispel',
+      auraSpellId: parseInt(fields.payload[3], 10) || 0,
+      auraName: fields.payload[4] || 'Unknown aura',
+      auraSchool: fields.payload[5] || 0,
+      auraType: fields.payload[6] || '',
+      targetGuid: fields.destGuid,
+      targetName: getDisplayName(fields.destName, fields.destGuid),
+      originalSourceGuid: '',
+      originalSourceName: '',
+      stolen: event.type === 'SPELL_STOLEN',
+      failed: event.type === 'SPELL_DISPEL_FAILED',
+      amount: 1
+    };
+    actor.amount += 1;
+    actor.dispels.push(detail);
+    if (!detail.failed && detail.auraSpellId && fields.destGuid) {
+      const pendingKey = `${fields.destGuid}:${detail.auraSpellId}`;
+      if (!pendingByAura.has(pendingKey)) pendingByAura.set(pendingKey, []);
+      pendingByAura.get(pendingKey).push(detail);
+    }
+  }
+
+  return Array.from(actors.values()).map(actor => ({
+    ...actor,
+    dispels: mergeDispelDetails(actor.dispels)
+  })).sort((a, b) => b.amount - a.amount);
+}
+
+function mergeDispelDetails(details) {
+  const merged = new Map();
+  details.forEach(detail => {
+    const key = [detail.auraSpellId, detail.targetGuid, detail.originalSourceGuid, detail.dispelSpellId, detail.stolen, detail.failed].join(':');
+    if (!merged.has(key)) {
+      merged.set(key, { ...detail });
+      return;
+    }
+    merged.get(key).amount += detail.amount;
+  });
+  return Array.from(merged.values()).sort((a, b) => b.amount - a.amount || a.auraName.localeCompare(b.auraName));
 }
 
 function buildAuraRows(fight, auraKind) {
