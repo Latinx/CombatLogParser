@@ -9,7 +9,6 @@
 WoWCombatLog.txt
 
 # misc
-.DS_Store
 .env.local
 .env.development.local
 .env.test.local
@@ -19,17 +18,25 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-temp
-.tmp
-.sass-cache
+# Rust build artifacts
+launcher-rs/target/
+launcher-rs/Cargo.lock
 
-# Regularly changing or system specific IDE files
-/.idea/vcs.xml
-/.idea/workspace.xml
-/.vscode
+# OS
+.DS_Store
+Thumbs.db
 
-.vs/ProjectSettings.json
-.vs/slnx.sqlite
-.vs/slnx.sqlite-journal
-.vs/VSWorkspaceState.json
-.vs/WoWAnalyzer/v15/.suo
+# IDE
+.vscode/
+.idea/
+
+# Temp / generated scripts
+*.sh
+*.py
+*.mjs
+
+# Agent metadata
+.serena/
+
+# Build artifacts
+*.o
