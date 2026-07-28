@@ -2162,7 +2162,7 @@ const SPELL_CLASS_HINTS = {
 const DIFFICULTY_LABELS = { 14: 'Normal', 15: 'Heroic', 16: 'Mythic', 17: 'LFR' };
 const STORED_LOG_KEY = 'combatLogParser.currentLog';
 const STORED_WATCH_PATH_KEY = 'combatLogParser.watchPath';
-const CHARACTER_PROFILE_CACHE_KEY = 'combatLogParser.characterProfiles.v1';
+const CHARACTER_PROFILE_CACHE_KEY = 'combatLogParser.characterProfiles.v2';
 const CHARACTER_PROFILE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 const LOG_DB_NAME = 'combatLogParserDB';
 const LOG_STORE_NAME = 'logs';
@@ -2630,8 +2630,7 @@ function appendNewEvents(newLines, startLineNo) {
   // Fill in missing player entries
   for (const [guid, player] of state.players) {
     if (!player.classKey && state._inferredClassVotes) {
-      player.classKey = getBestInferredPlayerClass(state._inferredClassVotes, guid);
-      if (player.classKey) player.classSource = 'spell-inference';
+      player.inferredClassKey = getBestInferredPlayerClass(state._inferredClassVotes, guid);
     }
   }
 }
@@ -3573,25 +3572,50 @@ function getPlayerClassKey(guid) {
 
 async function enrichFightPlayerProfiles(fight) {
   if (!fight) return;
+  const priorityGuids = new Set([
+    state.fightPlayerFilter,
+    state.selectedSourceGuid,
+    state.selectedDamageTakenGuid,
+    state.selectedDamageTakenSourceGuid
+  ].filter(Boolean));
   const identities = getFightPlayerRows(fight)
     .map(row => ({ guid: row.guid, identity: parseCharacterIdentity(state.playerNames.get(row.guid) || row.name) }))
     .filter(item => item.identity && !(state.players.get(item.guid)?.specId > 0));
-  const unique = Array.from(new Map(identities.map(item => [item.guid, item])).values());
+  const unique = Array.from(new Map(identities.map(item => [item.guid, item])).values())
+    .sort((a, b) => Number(priorityGuids.has(b.guid)) - Number(priorityGuids.has(a.guid)));
 
   for (let index = 0; index < unique.length; index += 4) {
     await Promise.all(unique.slice(index, index + 4).map(async ({ guid, identity }) => {
       const profile = await getCharacterProfile(identity);
       const classKey = normalizeClassKey(profile?.class?.enum || profile?.class?.name);
-      if (!classKey) return;
       const player = state.players.get(guid);
       if (!player || player.specId > 0) return;
+      if (!classKey) {
+        if (profile && !profile.found && !profile.retryable && player.inferredClassKey) {
+          player.classKey = player.inferredClassKey;
+          player.classSource = 'spell-inference';
+          scheduleProfileRefresh(fight);
+        }
+        return;
+      }
       player.classKey = classKey;
       player.specId = Number(profile.spec?.id) || 0;
       player.specName = profile.spec?.name || '';
       player.classSource = profile.provider || 'public-profile';
+      scheduleProfileRefresh(fight);
     }));
   }
+}
 
+function scheduleProfileRefresh(fight) {
+  if (window._profileRefreshFrame) return;
+  window._profileRefreshFrame = requestAnimationFrame(() => {
+    window._profileRefreshFrame = null;
+    refreshProfileViews(fight);
+  });
+}
+
+function refreshProfileViews(fight) {
   if (state.currentFight === fight) {
     renderFightDetail();
     renderPlayerGrid();
@@ -3621,20 +3645,20 @@ async function getCharacterProfile(identity) {
   try {
     const params = new URLSearchParams(identity);
     const response = await fetch(`/api/character-profile?${params}`);
-    if (!response.ok) return null;
+    if (!response.ok) return { found: false, retryable: true };
     const profile = await response.json();
     if (!profile.found) {
       if (!profile.retryable) {
-        cache[key] = { fetchedAt: Date.now(), profile: null };
+        cache[key] = { fetchedAt: Date.now(), profile };
         localStorage.setItem(CHARACTER_PROFILE_CACHE_KEY, JSON.stringify(cache));
       }
-      return null;
+      return profile;
     }
     cache[key] = { fetchedAt: Date.now(), profile };
     localStorage.setItem(CHARACTER_PROFILE_CACHE_KEY, JSON.stringify(cache));
     return profile;
   } catch {
-    return null;
+    return { found: false, retryable: true };
   }
 }
 
