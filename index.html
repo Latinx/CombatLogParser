@@ -3937,12 +3937,18 @@ function refreshWowheadTooltips() {
   }
 }
 
+function getActivePanelName() {
+  // Use overall panel when the overall tab is visible, otherwise fight panel
+  if (panels.overall && !panels.overall.classList.contains('hidden')) return state.selectedOverallPanel;
+  return state.selectedFightPanel;
+}
+
 function isActorGroupExpanded(guid, reportKey = 'default') {
-  return state.expandedActorGroups.has(`${state.selectedFightPanel}:${reportKey}:${guid}`);
+  return state.expandedActorGroups.has(`${getActivePanelName()}:${reportKey}:${guid}`);
 }
 
 function toggleActorGroup(guid, reportKey = 'default') {
-  const key = `${state.selectedFightPanel}:${reportKey}:${guid}`;
+  const key = `${getActivePanelName()}:${reportKey}:${guid}`;
   state.selectedSourceGuid = null;
   state.selectedSpellKey = null;
   state.selectedDamageTakenGuid = null;
@@ -3960,6 +3966,8 @@ function rerenderBreakdowns() {
   if (state.currentFight) renderFightDetail();
   const breakdownPanelVisible = panels.breakdown && !panels.breakdown.classList.contains('hidden');
   if (breakdownPanelVisible) renderBreakdownView();
+  const overallPanelVisible = panels.overall && !panels.overall.classList.contains('hidden');
+  if (overallPanelVisible) renderOverallView();
 }
 
 function renderDamageDoneTable(rows, totalDamage, fight, reportKey = 'damage-done') {
