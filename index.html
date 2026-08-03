@@ -4313,6 +4313,7 @@ function resetLogState(rawLines) {
     selectedDamageTakenGuid: null,
     selectedDamageTakenSourceGuid: null,
     auditSelection: null,
+    auditExpandedEvents: new Set(),
     expandedActorGroups: new Set(),
     selectedFightPanel: 'summary',
     selectedOverallPanel: 'summary',
@@ -6292,7 +6293,7 @@ function renderAuditPanel(fight, reportKey) {
     ? records.find(record => record.spellName)?.spellName || selection.spellKey
     : getDisplayName('', selection.actorGuid);
   const rows = records.length > 0
-    ? records.map(record => `<details class="audit-event">
+    ? records.map(record => `<details class="audit-event" data-audit-line="${record.lineNo}"${state.auditExpandedEvents.has(String(record.lineNo)) ? ' open' : ''}>
         <summary><span class="audit-event__line">L${record.lineNo + 1}</span><span class="audit-event__time">${escapeHtml(record.timestamp)}</span><span class="audit-event__type">${escapeHtml(record.eventType)}</span><span class="audit-event__spell">${escapeHtml(record.spellName)}</span><span class="audit-event__amount">${formatNumber(record.rawAmount)}${record.effectiveAmount !== record.rawAmount ? ` · ${formatNumber(record.effectiveAmount)} effective` : ''}</span>${record.suspectReason ? '<span class="audit-event__flag">flagged</span>' : ''}</summary>
         <div class="audit-event__body">
           <div class="audit-event__route">${escapeHtml(record.sourceName || record.sourceGuid || 'unknown')} → ${escapeHtml(record.destName || record.destGuid || 'unknown')}</div>
@@ -6510,6 +6511,7 @@ function attachBreakdownHandlers(rootEl) {
     const openAudit = (event) => {
       event.preventDefault();
       event.stopPropagation();
+      state.auditExpandedEvents.clear();
       state.auditSelection = {
         kind: button.dataset.auditKind,
         actorGuid: button.dataset.auditActor,
@@ -6528,11 +6530,18 @@ function attachBreakdownHandlers(rootEl) {
   if (auditCloseButton) {
     auditCloseButton.addEventListener('click', (event) => {
       event.preventDefault();
-      event.stopPropagation();
       state.auditSelection = null;
+      state.auditExpandedEvents.clear();
       rerenderBreakdowns();
     });
   }
+  rootEl.querySelectorAll('.audit-event[data-audit-line]').forEach(eventRow => {
+    eventRow.addEventListener('toggle', () => {
+      const lineNo = eventRow.dataset.auditLine;
+      if (eventRow.open) state.auditExpandedEvents.add(lineNo);
+      else state.auditExpandedEvents.delete(lineNo);
+    });
+  });
   rootEl.querySelectorAll('[data-actor-group-guid]').forEach(row => {
     const toggleGroup = () => {
       const scrollState = {
