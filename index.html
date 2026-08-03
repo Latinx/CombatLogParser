@@ -4835,7 +4835,13 @@ function getFightPlayerFilterList(fights = getFightListModel()) {
 
 function getFilteredFightListModel(fights = getFightListModel()) {
   if (!state.fightPlayerFilter) return fights;
-  return fights.filter(({ players }) => players.some(player => player.guid === state.fightPlayerFilter));
+  const filteredFights = fights.filter(({ players }) => players.some(player => player.guid === state.fightPlayerFilter));
+  if (filteredFights.length > 0) return filteredFights;
+
+  // A player filter can persist across logs; clear it when that player is absent.
+  state.fightPlayerFilter = null;
+  persistFightPlayerFilter(null);
+  return fights;
 }
 
 function attachFightPlayerFilter() {
