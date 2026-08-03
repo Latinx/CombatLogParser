@@ -6016,7 +6016,12 @@ function renderUtilityDetailRows(details, actorGuid = '') {
     if (detail.kind === 'resources') text = `gained ${formatNumber(detail.resourceAmount)} ${escapeHtml(detail.resourceName)} from ${renderSpellName(spell)}${detail.sourceGuid ? ` · caused by ${renderActorName(detail.sourceName, detail.sourceGuid)}` : ''}`;
     else if (detail.kind === 'interrupts') text = `interrupted ${renderSpellName({ spellId: detail.extraSpellId, name: detail.extraSpellName, school: detail.extraSpellSchool })} on ${renderActorName(detail.targetName, detail.targetGuid)} with ${renderSpellName(spell)}`;
     else if (detail.kind === 'deaths') text = detail.killerGuid ? `killed by ${renderActorName(detail.killerName, detail.killerGuid)} using ${renderSpellName(spell)}` : 'killer unknown';
-    else if (detail.kind === 'kills') text = detail.targetGuid ? `killed ${renderActorName(detail.targetName, detail.targetGuid)} using ${renderSpellName(spell)}` : 'target unknown';
+    else if (detail.kind === 'kills') {
+      const petKiller = detail.killerGuid && detail.killerGuid !== actorGuid
+        ? ` via ${renderActorName(detail.killerName, detail.killerGuid)}`
+        : '';
+      text = detail.targetGuid ? `killed ${renderActorName(detail.targetName, detail.targetGuid)} using ${renderSpellName(spell)}${petKiller}` : 'target unknown';
+    }
     else text = `${renderSpellName(spell)} from ${detail.sourceGuid ? renderActorName(detail.sourceName, detail.sourceGuid) : '<span class="breakdown-row__sub">unknown source</span>'}`;
     const audit = isValidActorGuid(actorGuid) ? renderAuditTrigger(actorGuid, detail.kind, `${detail.spellId || 0}:${detail.spellName}`) : '';
     return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(spell)}"><span><span class="breakdown-row__sub">${index + 1}</span> <strong>${text}</strong>${audit}</span><span class="spell-bar-container"><div class="spell-bar-fill" style="width:${pct}%;"></div></span><span style="font-family:var(--font-mono);text-align:right;">${formatNumber(detail.count)}</span></div>`;
@@ -6146,7 +6151,7 @@ function getAdvancedHealthSnapshot(payload) {
   return { health, maxHealth };
 }
 
-function getUtilityAuditInfo(event, kind, fields) {
+function getUtilityAuditInfo(event, kind, fields, recentDamage = null, recentPartyKillLine = -Infinity) {
   const payload = fields.payload;
   const spellId = parseInt(payload[0], 10) || 0;
   const spellName = payload[1] || event.type;
@@ -6162,10 +6167,24 @@ function getUtilityAuditInfo(event, kind, fields) {
   }
 
   if (kind === 'kills') {
-    if (event.type !== 'PARTY_KILL') return null;
-    if (!isPlayerOrPlayerOwned(fields.sourceGuid)) return null;
-    if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid)) return null;
-    return { ...base, actorGuid: fields.sourceGuid };
+    if (event.type === 'PARTY_KILL') {
+      if (!isPlayerOrPlayerOwned(fields.sourceGuid)) return null;
+      if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid)) return null;
+      return { ...base, actorGuid: fields.sourceGuid };
+    }
+    if (!['UNIT_DIED', 'UNIT_DESTROYED'].includes(event.type)
+      || event.lineNo - recentPartyKillLine <= 12
+      || !recentDamage
+      || event.lineNo - recentDamage.lineNo > 250
+      || !isPlayerOrPlayerOwned(recentDamage.sourceGuid)
+      || (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid))) return null;
+    return {
+      ...base,
+      actorGuid: recentDamage.sourceGuid,
+      spellId: recentDamage.spellId || 0,
+      spellName: recentDamage.spellName || 'Inferred killing blow',
+      spellSchool: recentDamage.spellSchool || ''
+    };
   }
 
   if (kind === 'deaths') {
@@ -6207,8 +6226,19 @@ function getUtilityAuditInfo(event, kind, fields) {
 
 function getAuditRecords(fight, selection) {
   const records = [];
+  const lastDamageByTarget = new Map();
+  const recentPartyKills = new Map();
   for (const event of getFightEvents(fight)) {
     const fields = parseCombatLogFields(event.params);
+    const recentDamage = selection.kind === 'kills' ? lastDamageByTarget.get(fields.destGuid) : null;
+    const recentPartyKillLine = selection.kind === 'kills' ? (recentPartyKills.get(fields.destGuid) ?? -Infinity) : -Infinity;
+    if (selection.kind === 'kills') {
+      const damage = parseDamageEvent(event.type, event.params);
+      if (damage && damage.amount > 0 && isValidActorGuid(damage.destGuid)) {
+        lastDamageByTarget.set(damage.destGuid, { ...damage, lineNo: event.lineNo });
+      }
+      if (event.type === 'PARTY_KILL') recentPartyKills.set(fields.destGuid, event.lineNo);
+    }
     let detail = null;
     let actorMatches = false;
     let spellKey = '';
@@ -6234,7 +6264,7 @@ function getAuditRecords(fight, selection) {
       rawAmount = detail.rawAmount ?? detail.amount ?? 0;
       effectiveAmount = detail.effectiveAmount ?? detail.amount ?? 0;
     } else {
-      const utility = getUtilityAuditInfo(event, selection.kind, fields);
+      const utility = getUtilityAuditInfo(event, selection.kind, fields, recentDamage, recentPartyKillLine);
       if (!utility) continue;
       detail = utility;
       actorMatches = auditActorMatches(utility.actorGuid, selection.actorGuid);
@@ -7588,16 +7618,46 @@ function computeUtilityRows(fight, kind) {
         killerGuid: recentKiller?.sourceGuid || '', killerName: getDisplayName(recentKiller?.sourceName || '', recentKiller?.sourceGuid || ''), count: 1
       };
       if (event.type === 'PARTY_KILL') recentPartyKills.set(guid, event.lineNo);
-    } else if (kind === 'kills' && event.type === 'PARTY_KILL') {
-      // Kills are sourced from players; player mode additionally limits targets to players.
-      if (!isPlayerOrPlayerOwned(fields.sourceGuid)) continue;
+    } else if (kind === 'kills' && (event.type === 'PARTY_KILL' || event.type === 'UNIT_DIED' || event.type === 'UNIT_DESTROYED')) {
       if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid)) continue;
-      guid = fields.sourceGuid;
-      name = fields.sourceName;
-      flags = fields.sourceFlags;
+      let killer = null;
+      if (event.type === 'PARTY_KILL') {
+        if (!isPlayerOrPlayerOwned(fields.sourceGuid)) continue;
+        killer = {
+          sourceGuid: fields.sourceGuid,
+          sourceName: fields.sourceName,
+          sourceFlags: fields.sourceFlags,
+          spellId: parseInt(fields.payload[0], 10) || 0,
+          spellName: fields.payload[1] || 'Killing blow',
+          spellSchool: fields.payload[2] || ''
+        };
+        recentPartyKills.set(fields.destGuid, event.lineNo);
+      } else {
+        if (event.lineNo - (recentPartyKills.get(fields.destGuid) || -Infinity) <= 12) continue;
+        const recentDamage = lastDamageByTarget.get(fields.destGuid);
+        if (!recentDamage || event.lineNo - recentDamage.lineNo > 250 || !isPlayerOrPlayerOwned(recentDamage.sourceGuid)) continue;
+        killer = {
+          sourceGuid: recentDamage.sourceGuid,
+          sourceName: recentDamage.sourceName,
+          sourceFlags: recentDamage.sourceFlags,
+          spellId: recentDamage.spellId || 0,
+          spellName: recentDamage.spellName || 'Inferred killing blow',
+          spellSchool: recentDamage.spellSchool || ''
+        };
+      }
+      guid = killer.sourceGuid;
+      name = killer.sourceName;
+      flags = killer.sourceFlags;
       detail = {
-        kind, spellId: parseInt(fields.payload[0], 10) || 0, spellName: fields.payload[1] || 'Killing blow', spellSchool: fields.payload[2] || '',
-        targetGuid: fields.destGuid, targetName: getDisplayName(fields.destName, fields.destGuid), count: 1
+        kind,
+        spellId: killer.spellId,
+        spellName: killer.spellName,
+        spellSchool: killer.spellSchool,
+        targetGuid: fields.destGuid,
+        targetName: getDisplayName(fields.destName, fields.destGuid),
+        killerGuid: event.type === 'PARTY_KILL' ? '' : killer.sourceGuid,
+        killerName: event.type === 'PARTY_KILL' ? '' : getDisplayName(killer.sourceName, killer.sourceGuid),
+        count: 1
       };
     } else continue;
     // Filter the report's primary actor later, but retain NPC counterparts so
