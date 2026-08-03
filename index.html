@@ -6169,7 +6169,7 @@ function getUtilityAuditInfo(event, kind, fields, recentDamage = null, recentPar
   if (kind === 'kills') {
     if (event.type === 'PARTY_KILL') {
       if (!isPlayerOrPlayerOwned(fields.sourceGuid)) return null;
-      if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid)) return null;
+      if (!isPlayerGuid(fields.destGuid)) return null;
       return { ...base, actorGuid: fields.sourceGuid };
     }
     if (!['UNIT_DIED', 'UNIT_DESTROYED'].includes(event.type)
@@ -6177,7 +6177,7 @@ function getUtilityAuditInfo(event, kind, fields, recentDamage = null, recentPar
       || !recentDamage
       || event.lineNo - recentDamage.lineNo > 250
       || !isPlayerOrPlayerOwned(recentDamage.sourceGuid)
-      || (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid))) return null;
+      || (state.actorFilter === 'players' && !isPlayerGuid(fields.destGuid))) return null;
     return {
       ...base,
       actorGuid: recentDamage.sourceGuid,
@@ -6190,7 +6190,19 @@ function getUtilityAuditInfo(event, kind, fields, recentDamage = null, recentPar
   if (kind === 'deaths') {
     if (!['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL'].includes(event.type)) return null;
     if (!isPlayerOrPlayerOwned(fields.destGuid)) return null;
-    return { ...base, actorGuid: fields.destGuid, spellName: event.type === 'PARTY_KILL' ? 'Killing blow' : 'Death event' };
+    if (event.type === 'UNIT_DIED' && event.lineNo - recentPartyKillLine <= 12) return null;
+    const recentKiller = event.type === 'PARTY_KILL' && isValidActorGuid(fields.sourceGuid)
+      ? { spellId: 0, spellName: 'Killing blow', spellSchool: '' }
+      : recentDamage && event.lineNo - recentDamage.lineNo <= 250
+        ? recentDamage
+        : null;
+    return {
+      ...base,
+      actorGuid: fields.destGuid,
+      spellId: recentKiller?.spellId || 0,
+      spellName: recentKiller?.spellName || 'Unknown attack',
+      spellSchool: recentKiller?.spellSchool || ''
+    };
   }
 
   if (kind === 'interrupts') {
@@ -6230,9 +6242,10 @@ function getAuditRecords(fight, selection) {
   const recentPartyKills = new Map();
   for (const event of getFightEvents(fight)) {
     const fields = parseCombatLogFields(event.params);
-    const recentDamage = selection.kind === 'kills' ? lastDamageByTarget.get(fields.destGuid) : null;
-    const recentPartyKillLine = selection.kind === 'kills' ? (recentPartyKills.get(fields.destGuid) ?? -Infinity) : -Infinity;
-    if (selection.kind === 'kills') {
+    const tracksDeathData = selection.kind === 'kills' || selection.kind === 'deaths';
+    const recentDamage = tracksDeathData ? lastDamageByTarget.get(fields.destGuid) : null;
+    const recentPartyKillLine = tracksDeathData ? (recentPartyKills.get(fields.destGuid) ?? -Infinity) : -Infinity;
+    if (tracksDeathData) {
       const damage = parseDamageEvent(event.type, event.params);
       if (damage && damage.amount > 0 && isValidActorGuid(damage.destGuid)) {
         lastDamageByTarget.set(damage.destGuid, { ...damage, lineNo: event.lineNo });
@@ -7603,7 +7616,7 @@ function computeUtilityRows(fight, kind) {
         action: event.type, count: 1
       };
     } else if (kind === 'deaths' && (event.type === 'UNIT_DIED' || event.type === 'UNIT_DESTROYED' || event.type === 'PARTY_KILL')) {
-      // Only track deaths where the victim (dest) is a player
+      // Only track deaths where the victim is a player; pets remain attached to their owner's death details.
       if (!isPlayerOrPlayerOwned(fields.destGuid)) continue;
       guid = fields.destGuid;
       name = fields.destName;
@@ -7619,7 +7632,7 @@ function computeUtilityRows(fight, kind) {
       };
       if (event.type === 'PARTY_KILL') recentPartyKills.set(guid, event.lineNo);
     } else if (kind === 'kills' && (event.type === 'PARTY_KILL' || event.type === 'UNIT_DIED' || event.type === 'UNIT_DESTROYED')) {
-      if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid)) continue;
+      if (!isPlayerGuid(fields.destGuid)) continue;
       let killer = null;
       if (event.type === 'PARTY_KILL') {
         if (!isPlayerOrPlayerOwned(fields.sourceGuid)) continue;
