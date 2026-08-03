@@ -319,7 +319,16 @@ function startServer(port) {
       res.end('Forbidden');
       return;
     }
-    sendFile(res, filePath);
+    // Check if file exists, if not serve index.html for SPA routing
+    fs.access(filePath, fs.constants.F_OK, (err) => {
+      if (err) {
+        // Serve index.html for SPA routes (catchall)
+        const indexPath = path.join(ROOT, 'index.html');
+        sendFile(res, indexPath);
+      } else {
+        sendFile(res, filePath);
+      }
+    });
   });
 
   server.on('error', err => {

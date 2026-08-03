@@ -1478,6 +1478,34 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 .report-panel--expanded .breakdown-list {
   max-height: min(68vh, 620px);
   overflow-y: auto;
+}
+
+.report-panel[data-lazy-panel] {
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.report-panel[data-lazy-panel]:hover {
+  background-color: rgba(137, 171, 255, 0.12);
+  border-color: rgba(137, 171, 255, 0.35);
+}
+
+.report-panel[data-lazy-panel]:focus {
+  outline: 2px solid var(--gold-vein);
+  outline-offset: -2px;
+}
+
+.report-panel[data-lazy-panel].loading {
+  opacity: 0.7;
+}
+
+.report-panel__lazy {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
   overflow-x: hidden;
 }
 
@@ -1495,7 +1523,6 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
 
 .report-panel .breakdown-row__spells {
   margin-right: 4px;
-  overflow: hidden;
 }
 
 .report-panel .spell-row > .breakdown-row__spells {
@@ -1525,7 +1552,6 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
     rgba(9, 14, 27, 0.90);
   border: 1px solid rgba(137, 171, 255, 0.09);
   border-radius: 7px;
-  overflow: hidden;
   transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
 }
 
@@ -2055,6 +2081,1303 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
   .track__name { font-size: var(--text-xs); }
   .player-card__stats { grid-template-columns: 1fr; }
 }
+:root {
+  --surface-0: #0a1220;
+  --surface-1: #101d30;
+  --surface-2: #17283d;
+  --surface-3: #1d3148;
+  --line-soft: rgba(163, 193, 230, 0.15);
+  --line-strong: rgba(163, 193, 230, 0.27);
+  --gold-vein: #f2ad52;
+  --gold-glint: #ffd28f;
+  --healer-mint: #69e6c1;
+}
+
+html { background: var(--ink-well); }
+
+body {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(92, 117, 213, 0.17), transparent 30rem),
+    radial-gradient(circle at 88% 8%, rgba(242, 173, 82, 0.10), transparent 26rem),
+    linear-gradient(180deg, #0a1220 0%, #080e1a 54%, #070c16 100%);
+  line-height: 1.5;
+}
+
+.header {
+  padding-inline: clamp(1rem, 4vw, 3.5rem);
+  background: rgba(8, 14, 26, 0.92);
+  border-bottom-color: var(--line-soft);
+  box-shadow: 0 10px 30px rgba(3, 8, 17, 0.22);
+}
+
+.header__title {
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.header__actions { gap: 0.55rem; }
+
+.header__tab,
+.header .btn--primary { min-height: 34px; }
+
+.header__tab {
+  border-radius: 9px;
+  background: rgba(23, 40, 61, 0.64);
+  border-color: var(--line-soft);
+}
+
+.header__tab:hover { background: rgba(242, 173, 82, 0.12); }
+
+.header__tab[aria-selected="true"] {
+  background: rgba(242, 173, 82, 0.14);
+  border-color: rgba(242, 173, 82, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(242, 173, 82, 0.16);
+}
+
+.main {
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+  padding: clamp(1.5rem, 3vw, 3rem) clamp(1rem, 3.5vw, 3.5rem);
+}
+
+.main::before {
+  opacity: 0.18;
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, black, transparent 78%);
+}
+
+.upload-zone {
+  min-height: min(460px, calc(100vh - 160px));
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: clamp(3rem, 8vw, 6rem) 2rem;
+  border-radius: 18px;
+  border-color: rgba(105, 230, 193, 0.30);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(105, 230, 193, 0.12), transparent 22rem),
+    linear-gradient(135deg, rgba(29, 49, 72, 0.95), rgba(10, 18, 32, 0.96));
+  box-shadow: 0 26px 70px rgba(2, 7, 15, 0.34), inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.upload-zone::before { opacity: 0.22; animation-duration: 8s; }
+
+.upload-zone__icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1.25rem;
+}
+
+.upload-zone__title {
+  max-width: 760px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.upload-zone__desc {
+  max-width: 520px;
+  margin-bottom: 1.5rem;
+  color: #b8c7dc;
+}
+
+.upload-zone__hint {
+  color: var(--healer-mint);
+  background: rgba(6, 13, 24, 0.54);
+  border-color: var(--line-soft);
+}
+
+.btn {
+  min-height: 36px;
+  border-radius: 9px;
+  border-color: var(--line-soft);
+  background: rgba(23, 40, 61, 0.82);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+}
+
+.btn:hover {
+  border-color: rgba(242, 173, 82, 0.72);
+  background: rgba(242, 173, 82, 0.12);
+}
+
+.btn--primary {
+  background: var(--gold-vein);
+  border-color: var(--gold-vein);
+  box-shadow: 0 6px 18px rgba(242, 173, 82, 0.18);
+}
+
+.breakdown-view { gap: 1rem; }
+
+.breakdown-controls {
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border-color: var(--line-soft);
+  background: rgba(16, 29, 48, 0.78);
+}
+
+.breakdown-controls > .breakdown-row__sub:first-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.filter-btn {
+  border-radius: 8px;
+  border-color: var(--line-soft);
+  background: rgba(10, 18, 32, 0.42);
+}
+
+.filter-btn--active {
+  background: rgba(242, 173, 82, 0.92);
+  border-color: rgba(255, 210, 143, 0.92);
+  box-shadow: 0 4px 14px rgba(242, 173, 82, 0.14);
+}
+
+.fight-list { gap: 0.75rem; }
+
+.fight-card {
+  grid-template-columns: minmax(240px, 1.2fr) minmax(180px, 0.88fr) minmax(170px, 0.78fr) minmax(190px, 0.9fr) minmax(250px, 1.25fr);
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  border-color: var(--line-soft);
+  background:
+    linear-gradient(105deg, rgba(242, 173, 82, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(23, 40, 61, 0.92), rgba(13, 24, 40, 0.88));
+  box-shadow: 0 8px 24px rgba(2, 7, 15, 0.14);
+}
+
+.fight-card:hover {
+  border-color: rgba(242, 173, 82, 0.58);
+  background:
+    linear-gradient(105deg, rgba(242, 173, 82, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(29, 49, 72, 0.98), rgba(13, 24, 40, 0.94));
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(2, 7, 15, 0.25);
+}
+
+.fight-card__boss {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  letter-spacing: -0.025em;
+}
+
+.fight-card__signal,
+.fight-card__spotlight,
+.fight-card__composition,
+.fight-card__players {
+  padding-left: 1rem;
+  border-left: 1px solid var(--line-soft);
+}
+
+.fight-card__bar,
+.fight-card__composition-bar { height: 6px; }
+
+.fight-card__bar-fill { animation: none; }
+
+.timeline {
+  margin-bottom: 2rem;
+  border-radius: 16px;
+  border-color: var(--line-soft);
+  background: linear-gradient(180deg, rgba(16, 29, 48, 0.92), rgba(10, 18, 32, 0.90));
+  box-shadow: 0 14px 34px rgba(2, 7, 15, 0.18);
+}
+
+.timeline__title,
+.fight-detail__boss {
+  font-family: var(--font-body);
+  letter-spacing: -0.035em;
+}
+
+.fight-detail__boss { color: var(--ink); }
+
+.fight-subnav {
+  margin-bottom: 1.5rem;
+  padding: 0.3rem;
+  border-radius: 12px;
+  border-color: var(--line-soft);
+  background: rgba(10, 18, 32, 0.58);
+}
+
+.fight-subnav__item { border-radius: 8px; }
+
+.fight-subnav__item:hover,
+.fight-subnav__item[aria-selected="true"] {
+  background: rgba(242, 173, 82, 0.14);
+  color: var(--gold-glint);
+}
+
+.overall-hero {
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.overall-hero__stat {
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border-color: var(--line-soft);
+  background: linear-gradient(135deg, rgba(23, 40, 61, 0.92), rgba(13, 24, 40, 0.84));
+}
+
+.overall-hero__value { font-size: clamp(1.6rem, 2.8vw, 2.25rem); }
+
+.report-grid { gap: 1rem; }
+
+.report-panel {
+  border-radius: 14px;
+  border-color: var(--line-soft);
+  background:
+    linear-gradient(180deg, rgba(105, 230, 193, 0.05), transparent 56px),
+    rgba(10, 18, 32, 0.78);
+  box-shadow: 0 12px 28px rgba(2, 7, 15, 0.18), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.report-panel__header {
+  min-height: 50px;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(90deg, rgba(242, 173, 82, 0.11), transparent 56%), rgba(16, 29, 48, 0.86);
+  border-bottom-color: var(--line-soft);
+}
+
+.report-panel__title { font-size: 0.9rem; }
+.report-panel__meta { color: #9eafc7; }
+
+.report-panel__lazy {
+  min-height: 112px;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  color: #b8c7dc;
+}
+
+.report-panel[data-lazy-panel]:hover {
+  background-color: rgba(105, 230, 193, 0.07);
+  border-color: rgba(105, 230, 193, 0.38);
+}
+
+.report-panel .breakdown-list { padding: 0.7rem; }
+
+.breakdown-list {
+  gap: 0.45rem;
+  font-size: 0.82rem;
+}
+
+.breakdown-row {
+  border-radius: 10px;
+  border-color: rgba(163, 193, 230, 0.13);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 45%),
+    rgba(16, 29, 48, 0.82);
+}
+
+.breakdown-row:hover {
+  border-color: rgba(242, 173, 82, 0.34);
+  background:
+    linear-gradient(90deg, rgba(242, 173, 82, 0.10), transparent 48%),
+    rgba(23, 40, 61, 0.96);
+}
+
+.breakdown-row__header,
+.report-panel .breakdown-row__header,
+.spell-row,
+.report-panel .spell-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(150px, auto);
+  gap: 0.9rem;
+  height: 44px;
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+}
+
+.breakdown-row__info { gap: 0.55rem; }
+
+.breakdown-row__info strong,
+.spell-row strong { font-size: 0.82rem; }
+
+.breakdown-row__metrics {
+  grid-template-columns: repeat(3, minmax(42px, auto));
+  gap: 0.7rem;
+  font-size: 0.72rem;
+}
+
+.breakdown-row__val { font-size: 0.78rem; }
+
+.metric-bar {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.breakdown-row__spells {
+  margin-bottom: 0.55rem;
+  border-color: rgba(105, 230, 193, 0.18);
+  background: rgba(10, 18, 32, 0.65);
+}
+
+.spell-row,
+.report-panel .spell-row {
+  height: auto;
+  min-height: 34px;
+  border-radius: 8px;
+}
+
+.breakdown-row[aria-expanded="true"] {
+  border-color: rgba(242, 173, 82, 0.52);
+  box-shadow: inset 3px 0 0 var(--gold-vein), 0 0 0 1px rgba(242, 173, 82, 0.08);
+}
+
+.breakdown-row--minion {
+  background:
+    linear-gradient(90deg, rgba(105, 230, 193, 0.065), transparent 42%),
+    rgba(10, 25, 29, 0.78);
+}
+
+.death-card,
+.aura-card,
+.player-card {
+  border-color: var(--line-soft);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(23, 40, 61, 0.92), rgba(13, 24, 40, 0.84));
+}
+
+.death-card { border-color: rgba(255, 91, 110, 0.36); }
+
+.death-card__header {
+  background: rgba(255, 91, 110, 0.11);
+  border-bottom-color: rgba(255, 91, 110, 0.24);
+}
+
+.raw-log {
+  border-radius: 14px;
+  border-color: var(--line-soft);
+  background: rgba(7, 13, 24, 0.9);
+}
+
+.raw-log__header {
+  padding: 0.85rem 1rem;
+  background: rgba(23, 40, 61, 0.82);
+  border-bottom-color: var(--line-soft);
+}
+
+[role="button"]:focus-visible,
+.fight-card:focus-visible,
+.report-panel[data-lazy-panel]:focus-visible {
+  outline: 2px solid var(--healer-mint);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1280px) {
+  .fight-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fight-card__topline,
+  .fight-card__players { grid-column: 1 / -1; }
+}
+
+@media (max-width: 1024px) {
+  .fight-card { grid-template-columns: 1fr; }
+
+  .fight-card__topline,
+  .fight-card__players { grid-column: auto; }
+
+  .fight-card__signal,
+  .fight-card__spotlight,
+  .fight-card__composition,
+  .fight-card__players {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .breakdown-row__header,
+  .report-panel .breakdown-row__header,
+  .spell-row,
+  .report-panel .spell-row {
+    height: auto;
+    min-height: 44px;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .header__title::before { content: ''; }
+
+  .header__title {
+    font-size: 0.8rem;
+    letter-spacing: 0.045em;
+  }
+
+  .header__actions { gap: 0.35rem; }
+
+  .header__actions > .btn:not(.header__tab):not(.btn--primary) { display: none; }
+
+  .upload-zone {
+    min-height: 420px;
+    border-radius: 14px;
+  }
+
+  .upload-zone__title { font-size: 2rem; }
+
+  .breakdown-row__metrics {
+    justify-content: space-between;
+    grid-template-columns: repeat(3, auto);
+  }
+
+  .report-panel .breakdown-list { padding: 0.5rem; }
+}
+:root {
+  --font-display: 'Inter Tight', system-ui, sans-serif;
+  --font-body: 'Inter Tight', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --ink-well: #0a0f16;
+  --parchment: #101821;
+  --parchment-raised: #17222e;
+  --surface-0: #0c131c;
+  --surface-1: #121c27;
+  --surface-2: #182531;
+  --gridline: rgba(176, 199, 220, 0.14);
+  --line-soft: rgba(176, 199, 220, 0.18);
+  --gold-vein: #f2a65a;
+  --gold-glint: #ffd09a;
+  --healer-mint: #6ee7c8;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(74, 117, 166, 0.13), transparent 34rem),
+    #0a0f16;
+  color: #e8eef5;
+  letter-spacing: 0;
+}
+
+.header {
+  height: 64px;
+  padding-inline: clamp(1rem, 3vw, 3rem);
+  background: rgba(10, 15, 22, 0.98);
+  border-bottom: 1px solid rgba(176, 199, 220, 0.20);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.header__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+
+.header__title::before {
+  content: 'PVP / ';
+  color: var(--gold-vein);
+}
+
+.header__actions { gap: 0.35rem; }
+
+.header__tab,
+.header .btn--primary {
+  min-height: 32px;
+}
+
+.header__tab,
+.btn {
+  border-radius: 5px;
+  box-shadow: none;
+}
+
+.header__tab {
+  background: transparent;
+  border-color: transparent;
+  color: #94a5b8;
+}
+
+.header__tab:hover {
+  border-color: var(--line-soft);
+  background: rgba(176, 199, 220, 0.07);
+  color: var(--ink);
+}
+
+.header__tab[aria-selected="true"] {
+  background: rgba(242, 166, 90, 0.13);
+  border-color: rgba(242, 166, 90, 0.62);
+  box-shadow: none;
+  color: var(--gold-glint);
+}
+
+.header .btn--primary {
+  background: var(--gold-vein);
+  border-color: var(--gold-vein);
+  color: #1b130d;
+}
+
+.header__monitor {
+  border-left-color: var(--line-soft);
+}
+
+.main {
+  max-width: 1720px;
+  padding: clamp(1.25rem, 2.5vw, 2.75rem) clamp(1rem, 3vw, 3rem);
+}
+
+.main::before { display: none; }
+
+.upload-zone {
+  min-height: min(420px, calc(100vh - 150px));
+  padding: clamp(3rem, 8vw, 6rem) 2rem;
+  border-radius: 8px;
+  border: 1px solid rgba(110, 231, 200, 0.34);
+  background:
+    linear-gradient(90deg, transparent 0 15%, rgba(110, 231, 200, 0.06) 15% 15.2%, transparent 15.2% 84.8%, rgba(242, 166, 90, 0.06) 84.8% 85%, transparent 85%),
+    #101b27;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.upload-zone::before {
+  inset: 0;
+  opacity: 0.35;
+  transform: none;
+  animation: none;
+  background:
+    linear-gradient(90deg, transparent 0 49.9%, rgba(176, 199, 220, 0.08) 50%, transparent 50.1%),
+    linear-gradient(180deg, rgba(176, 199, 220, 0.08) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 36px;
+}
+
+.upload-zone::after {
+  content: 'PVP / COMBAT TELEMETRY';
+  position: absolute;
+  top: 1.15rem;
+  left: 1.35rem;
+  color: #8da2b8;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-active {
+  border-color: var(--healer-mint);
+  transform: none;
+}
+
+.upload-zone__icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 1rem;
+  stroke: var(--healer-mint);
+  opacity: 0.72;
+  animation: none;
+}
+
+.upload-zone__title {
+  font-size: clamp(2.5rem, 6vw, 4.8rem);
+  font-weight: 700;
+  letter-spacing: -0.065em;
+  line-height: 0.92;
+}
+
+.upload-zone__desc {
+  max-width: 520px;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  color: #acbdcf;
+  font-size: 1rem;
+}
+
+.upload-zone__hint {
+  margin-bottom: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  color: var(--healer-mint);
+  background: rgba(10, 15, 22, 0.72);
+  border-color: var(--line-soft);
+  letter-spacing: 0.04em;
+}
+
+.btn {
+  min-height: 34px;
+  padding: 0.45rem 0.75rem;
+  border-color: var(--line-soft);
+  background: var(--surface-2);
+  color: #e6edf5;
+  font-size: 0.8rem;
+}
+
+.btn:hover {
+  border-color: rgba(242, 166, 90, 0.66);
+  background: rgba(242, 166, 90, 0.10);
+}
+
+.btn--primary {
+  background: var(--gold-vein);
+  border-color: var(--gold-vein);
+  box-shadow: none;
+}
+
+.breakdown-view,
+.fight-subpanel { gap: 0.75rem; }
+
+.breakdown-controls {
+  min-height: 38px;
+  padding: 0.35rem 0.55rem;
+  border-radius: 5px;
+  border-color: var(--line-soft);
+  background: var(--surface-1);
+}
+
+.breakdown-controls > .breakdown-row__sub:first-child {
+  color: #dce6f0;
+}
+
+.filter-btn {
+  padding: 0.3rem 0.55rem;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.filter-btn--active {
+  background: rgba(242, 166, 90, 0.88);
+  border-color: var(--gold-vein);
+  color: #1b130d;
+  box-shadow: none;
+}
+
+.fight-list { gap: 0.5rem; }
+
+.fight-card {
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 6px;
+  border-color: var(--line-soft);
+  background: var(--surface-1);
+  box-shadow: none;
+  animation: none;
+}
+
+.fight-card::after { display: none; }
+
+.fight-card:hover {
+  border-color: rgba(242, 166, 90, 0.62);
+  background: var(--surface-2);
+  transform: none;
+  box-shadow: none;
+}
+
+.fight-card__boss {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.fight-card__signal,
+.fight-card__spotlight,
+.fight-card__composition,
+.fight-card__players {
+  padding-left: 0.85rem;
+  border-left-color: var(--line-soft);
+}
+
+.fight-card__bar,
+.fight-card__composition-bar {
+  height: 5px;
+  border-radius: 2px;
+}
+
+.fight-card__bar-fill {
+  animation: none;
+  box-shadow: none;
+}
+
+.timeline {
+  margin-bottom: 1.5rem;
+  border-radius: 6px;
+  border-color: var(--line-soft);
+  background: var(--surface-1);
+  box-shadow: none;
+}
+
+.timeline::before { height: 1px; }
+
+.timeline__title,
+.fight-detail__boss {
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+
+.fight-detail__boss {
+  color: var(--ink);
+  font-size: clamp(2.1rem, 5vw, 3.4rem);
+}
+
+.fight-subnav {
+  margin-bottom: 1rem;
+  padding: 0.2rem;
+  border-radius: 5px;
+  border-color: var(--line-soft);
+  background: var(--surface-0);
+}
+
+.fight-subnav__item {
+  border-radius: 3px;
+  padding: 0.45rem 0.65rem;
+}
+
+.fight-subnav__item:hover,
+.fight-subnav__item[aria-selected="true"] {
+  background: rgba(242, 166, 90, 0.13);
+  color: var(--gold-glint);
+}
+
+.overall-hero {
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.overall-hero__stat {
+  padding: 0.8rem 0.9rem;
+  border-radius: 5px;
+  border-color: var(--line-soft);
+  background: var(--surface-1);
+}
+
+.overall-hero__value {
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+}
+
+.report-grid { gap: 0.65rem; }
+
+.report-panel {
+  border-radius: 6px;
+  border-color: var(--line-soft);
+  background: var(--surface-0);
+  box-shadow: none;
+}
+
+.report-panel__header {
+  min-height: 42px;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-1);
+  border-bottom-color: var(--line-soft);
+}
+
+.report-panel__title {
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+}
+
+.report-panel__meta {
+  color: #93a7bc;
+  font-size: 0.64rem;
+}
+
+.report-panel__lazy {
+  min-height: 84px;
+  padding: 1rem;
+  color: #aebfd0;
+}
+
+.report-panel[data-lazy-panel]:hover {
+  background-color: var(--surface-1);
+  border-color: rgba(110, 231, 200, 0.44);
+}
+
+.report-panel .breakdown-list {
+  max-height: min(72vh, 720px);
+  padding: 0.45rem;
+}
+
+.breakdown-list {
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.breakdown-row {
+  border-radius: 4px;
+  border-color: rgba(176, 199, 220, 0.12);
+  background: var(--surface-1);
+  box-shadow: none;
+}
+
+.breakdown-row:hover {
+  border-color: rgba(242, 166, 90, 0.40);
+  background: var(--surface-2);
+}
+
+.breakdown-row__header,
+.report-panel .breakdown-row__header,
+.spell-row,
+.report-panel .spell-row {
+  gap: 0.7rem;
+  height: 40px;
+  min-height: 40px;
+  padding: 0.3rem 0.6rem;
+}
+
+.breakdown-row__header::after { opacity: 0.82; }
+
+.breakdown-row__info { gap: 0.45rem; }
+
+.breakdown-row__info strong,
+.spell-row strong {
+  font-size: 0.78rem;
+}
+
+.breakdown-row__sub {
+  color: #92a6ba;
+  font-size: 0.64rem;
+}
+
+.breakdown-row__metrics {
+  grid-template-columns: repeat(3, minmax(38px, auto));
+  gap: 0.55rem;
+  font-size: 0.66rem;
+}
+
+.breakdown-row__val {
+  font-size: 0.72rem;
+  text-shadow: none;
+}
+
+.metric-bar {
+  height: 8px;
+  border: 0;
+  border-radius: 2px;
+  background: #263646;
+  box-shadow: none;
+}
+
+.metric-bar::after,
+.spell-bar-container::after { display: none; }
+
+.metric-bar__fill {
+  box-shadow: none;
+}
+
+.breakdown-row__spells {
+  margin-bottom: 0.35rem;
+  padding: 0.45rem 0 0.5rem 0.8rem;
+  border-radius: 4px;
+  background: #0d1721;
+}
+
+.spell-row,
+.report-panel .spell-row {
+  min-height: 30px;
+  border-radius: 3px;
+  background: #111d28;
+}
+
+.breakdown-row[aria-expanded="true"] {
+  border-color: rgba(242, 166, 90, 0.58);
+  box-shadow: inset 2px 0 0 var(--gold-vein);
+}
+
+.death-card,
+.aura-card,
+.player-card {
+  border-color: var(--line-soft);
+  border-radius: 6px;
+  background: var(--surface-1);
+  box-shadow: none;
+}
+
+.death-card { border-color: rgba(255, 91, 110, 0.40); }
+
+.death-card__header {
+  background: rgba(255, 91, 110, 0.11);
+  border-bottom-color: rgba(255, 91, 110, 0.24);
+}
+
+.raw-log {
+  border-radius: 6px;
+  border-color: var(--line-soft);
+  background: #080d13;
+}
+
+.raw-log__header {
+  padding: 0.65rem 0.75rem;
+  background: var(--surface-1);
+  border-bottom-color: var(--line-soft);
+}
+
+.main,
+.fight-detail,
+.player-card,
+.report-panel,
+.fight-card,
+.breakdown-row {
+  animation: none !important;
+}
+
+[role="button"]:focus-visible,
+.fight-card:focus-visible,
+.report-panel[data-lazy-panel]:focus-visible {
+  outline: 2px solid var(--healer-mint);
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .header__title::before { content: 'PVP / '; }
+  .header__title { font-size: 0.72rem; }
+  .upload-zone { min-height: 390px; }
+  .upload-zone::after { left: 1rem; }
+}
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.report-grid__column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.report-grid__column > .report-panel {
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .report-grid__column { display: contents; }
+  .report-grid { grid-template-columns: 1fr; }
+}
+.breakdown-row__header,
+.spell-row {
+  min-width: 0;
+}
+
+.breakdown-row__info,
+.breakdown-row__metrics,
+.spell-row > * {
+  min-width: 0;
+}
+
+.breakdown-row__info {
+  white-space: nowrap;
+}
+
+.breakdown-row__info strong,
+.breakdown-row__info .actor-name,
+.spell-row strong,
+.spell-row .actor-name,
+.report-panel__title,
+.report-panel__meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breakdown-row__info .actor-name,
+.spell-row .actor-name {
+  flex: 1 1 auto;
+}
+
+.breakdown-row__metrics > * {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .breakdown-row__info,
+  .breakdown-row__metrics {
+    width: 100%;
+  }
+}
+.fight-card__composition {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label counts"
+    "composition composition"
+    "signal signal"
+    "activity activity";
+  align-content: center;
+  overflow: hidden;
+}
+
+.fight-card__composition-label { grid-area: label; min-width: 0; }
+
+.fight-card__composition-bar {
+  grid-area: composition;
+  min-width: 0;
+  width: 100%;
+}
+
+.fight-card__composition-counts {
+  grid-area: counts;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.fight-card__composition > .fight-card__signal-label {
+  grid-area: signal;
+  min-width: 0;
+}
+
+.fight-card__composition > .fight-card__bar {
+  grid-area: activity;
+  min-width: 0;
+  width: 100%;
+}
+.spell-row,
+.report-panel .spell-row {
+  height: auto;
+  min-height: 40px;
+  align-content: start;
+  overflow: visible;
+}
+
+.spell-row > .breakdown-row__spells {
+  width: calc(100% - 14px);
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.spell-target-group {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.spell-target-group__children {
+  min-width: 0;
+  max-width: 100%;
+}
+.report-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.report-grid__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.report-grid__pair > .report-panel {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .report-grid__pair {
+    grid-template-columns: 1fr;
+  }
+}
+.audit-trigger {
+  flex: 0 0 auto;
+  margin-left: 0.65rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid rgba(105, 230, 196, 0.38);
+  border-radius: 4px;
+  background: rgba(105, 230, 196, 0.08);
+  color: var(--healer-mint);
+  font: 600 0.62rem/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.audit-trigger:hover,
+.audit-trigger:focus-visible {
+  border-color: var(--healer-mint);
+  background: rgba(105, 230, 196, 0.16);
+  outline: none;
+}
+
+.report-panel-audit-dock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+  gap: var(--space-3);
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+.report-panel-audit-dock > .report-panel,
+.report-panel-audit-dock > .audit-panel {
+  min-width: 0;
+}
+
+@media (min-width: 1025px) {
+  .report-grid__pair:has(> .report-panel-audit-dock) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(320px, 0.85fr);
+  }
+
+  .report-grid__pair > .report-panel-audit-dock {
+    display: contents;
+  }
+
+  .report-grid__pair:has(> .report-panel-audit-dock:first-child) > .report-panel-audit-dock > .report-panel {
+    grid-column: 1;
+  }
+
+  .report-grid__pair:has(> .report-panel-audit-dock:nth-child(2)) > .report-panel-audit-dock > .report-panel {
+    grid-column: 2;
+  }
+
+  .report-grid__pair > .report-panel-audit-dock > .audit-panel {
+    grid-column: 3;
+  }
+}
+
+@media (max-width: 1024px) {
+  .report-grid__pair > .report-panel-audit-dock {
+    grid-template-columns: 1fr;
+  }
+}
+
+.report-panel-audit-dock > .audit-panel {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  max-height: min(76vh, 760px);
+  margin-top: 0;
+}
+
+.report-panel-audit-dock > .audit-panel .audit-events {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.report-panel-audit-dock > .audit-analysis-target {
+  min-width: 0;
+}
+
+.audit-panel {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-3);
+  border: 1px solid rgba(105, 230, 196, 0.24);
+  border-radius: 10px;
+  background: rgba(5, 16, 20, 0.72);
+  overflow: hidden;
+}
+
+.audit-panel__header,
+.audit-panel__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.audit-panel__header {
+  border-bottom: 1px solid rgba(105, 230, 196, 0.16);
+}
+
+.audit-panel__header > div,
+.audit-panel__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.audit-panel__sub {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--ink-muted);
+  font: 0.68rem/1.4 var(--font-mono);
+}
+
+.audit-panel__summary {
+  color: var(--ink-muted);
+  font: 0.7rem/1.3 var(--font-mono);
+  background: rgba(105, 230, 196, 0.05);
+}
+
+.audit-panel__summary b {
+  color: var(--ink);
+}
+
+.audit-panel__warning,
+.audit-event__flag {
+  color: var(--wipe-red);
+}
+
+.audit-events {
+  display: grid;
+  gap: 1px;
+  max-height: 34rem;
+  overflow: auto;
+}
+
+.audit-event {
+  background: rgba(6, 9, 20, 0.62);
+}
+
+.audit-event > summary {
+  display: grid;
+  grid-template-columns: auto auto minmax(90px, auto) minmax(120px, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem var(--space-4);
+  color: var(--ink-muted);
+  font: 0.68rem/1.3 var(--font-mono);
+  cursor: pointer;
+}
+
+.audit-event > summary:hover {
+  background: rgba(105, 230, 196, 0.07);
+}
+
+.audit-event__line,
+.audit-event__amount {
+  color: var(--ink);
+}
+
+.audit-event__body {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.65rem var(--space-4) 0.8rem 3.5rem;
+  border-top: 1px solid rgba(137, 171, 255, 0.1);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.audit-event__health,
+.audit-event__reason {
+  color: var(--gold-glint);
+}
+
+.audit-event pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-faint);
+  font: 0.65rem/1.45 var(--font-mono);
+}
+
+@media (max-width: 720px) {
+  .audit-event > summary {
+    grid-template-columns: auto 1fr auto;
+  }
+  .audit-event__time,
+  .audit-event__type,
+  .audit-event__spell {
+    grid-column: span 1;
+  }
+  .audit-event__amount {
+    grid-column: 2;
+  }
+  .report-panel-audit-dock {
+    grid-template-columns: 1fr;
+  }
+  .report-panel-audit-dock > .audit-panel {
+    position: static;
+    max-height: none;
+  }
+}
 </style>
 </head>
 <body>
@@ -2107,12 +3430,12 @@ strong { color: var(--ink); font-family: var(--font-mono); font-variant-numeric:
       <path d="M12 8v8"/>
       <path d="M12 4c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8 3.58-8 8-8z"/>
     </svg>
-    <h2 class="upload-zone__title">Replay the fight from the wreckage</h2>
-    <p class="upload-zone__desc">Drop a WoWCombatLog file to split combat windows, rank damage, and drill into the player who bent the pull.</p>
-    <span class="upload-zone__hint">Local parse · no upload · built for arena nights and raid review</span>
+    <h2 class="upload-zone__title">Read the exchange.</h2>
+    <p class="upload-zone__desc">Drop a WoW combat log to map pressure, cooldowns, interrupts, deaths, and kill windows.</p>
+    <span class="upload-zone__hint">LOCAL ONLY · NO UPLOAD · PVP TELEMETRY</span>
     <div class="header__actions">
-      <label class="btn btn--primary" for="upload-input">Choose File</label>
-      <label class="btn" for="upload-directory-input">Choose Directory</label>
+      <label class="btn btn--primary" for="upload-input">Load combat log</label>
+      <label class="btn" for="upload-directory-input">Load directory</label>
     </div>
     <span class="upload-zone__status" id="upload-status" aria-live="polite"></span>
     <input type="file" id="upload-input" class="hidden" accept=".txt" aria-label="Choose combat log file">
@@ -2335,7 +3658,7 @@ function splitLine(line) {
       nestingType = null;
     }
   }
-  parts.push(line.substr(currentPartStartIndex));
+  parts.push(line.substr(currentPartStartIndex).replace(/\r$/, ''));
   return parts;
 }
 
@@ -2429,6 +3752,7 @@ let state = {
   selectedSpellKey: null,
   selectedDamageTakenGuid: null,
   selectedDamageTakenSourceGuid: null,
+  auditSelection: null,
   expandedActorGroups: new Set(),
   selectedFightPanel: 'summary',
   selectedOverallPanel: 'summary',
@@ -2890,9 +4214,14 @@ function setUploadStatus(message) {
   if (uploadStatus) uploadStatus.textContent = message;
 }
 
+let lastImportProgressPaint = 0;
+
 function setImportProgress(title, current, total, detail = '') {
   const pct = total > 0 ? Math.max(0, Math.min(100, (current / total) * 100)) : 0;
   const message = `${title}: ${Math.round(pct)}%${detail ? ` · ${detail}` : ''}`;
+  const now = performance.now();
+  if (pct < 100 && now - lastImportProgressPaint < 80) return;
+  lastImportProgressPaint = now;
   setUploadStatus(message);
   if (!fightList) return;
   fightList.innerHTML = `<div class="import-progress" role="status" aria-live="polite">
@@ -2918,8 +4247,9 @@ async function parseLogFile(file) {
     });
     setImportProgress('Parsing combat log', 1, 1, `${formatNumber(text.length)} characters`);
     await yieldToBrowser();
-    persistCurrentLog(text);
     loadLogText(text);
+    await yieldToBrowser();
+    setTimeout(() => persistCurrentLog(text), 0);
   } catch (err) {
     console.error('File read error:', err);
     setImportProgress('Could not read combat log', 0, 1, err.message || String(err));
@@ -2982,6 +4312,7 @@ function resetLogState(rawLines) {
     selectedSpellKey: null,
     selectedDamageTakenGuid: null,
     selectedDamageTakenSourceGuid: null,
+    auditSelection: null,
     expandedActorGroups: new Set(),
     selectedFightPanel: 'summary',
     selectedOverallPanel: 'summary',
@@ -3114,7 +4445,7 @@ function getStoredValue(db, key) {
 function parseRawLines() {
   const COMBAT_GAP_THRESHOLD = 12000;
   const MIN_FIGHT_DURATION = 5000;
-  const MAX_FIGHT_DURATION = 5 * 60 * 1000;
+  const MAX_FIGHT_DURATION = Infinity;
   const fights = [];
   let currentFightStart = null;
 
@@ -3540,10 +4871,10 @@ function renderOverallSubnav() {
     ['damageTaken', 'Damage Taken'],
     ['healingDone', 'Healing Done'],
     ['healingTaken', 'Healing Taken'],
-    ['threat', 'Threat'],
     ['buffs', 'Buffs'],
     ['debuffs', 'Debuffs'],
     ['deaths', 'Deaths'],
+    ['kills', 'Kills'],
     ['interrupts', 'Interrupts'],
     ['dispels', 'Dispels'],
     ['resources', 'Resources'],
@@ -3562,7 +4893,7 @@ function renderOverallContent() {
     case 'damageTaken': return renderSingleReportContent('Damage Taken', filterActorRows(buildDamageTakenRows(fight)), fight);
     case 'healingDone': return renderSingleReportContent('Healing Done', filterActorRows(buildHealingRows(fight, 'source')), fight);
     case 'healingTaken': return renderSingleReportContent('Healing Taken', filterActorRows(buildHealingRows(fight, 'dest')), fight);
-    case 'threat': return renderEventCountReport('Threat', fight, ['THREAT']);
+    case 'kills': return renderUtilityReport('Kills', fight, 'kills');
     case 'buffs': return renderUtilityReport('Buffs', fight, 'buffs');
     case 'debuffs': return renderUtilityReport('Debuffs', fight, 'debuffs');
     case 'deaths': return renderUtilityReport('Deaths', fight, 'deaths');
@@ -3576,43 +4907,63 @@ function renderOverallContent() {
 }
 
 function renderOverallSummaryContent(fight) {
+  // Only compute hero stats (fast), defer row computation to lazy loading
   const damageDoneRows = filterActorRows(buildDamageDoneRows(fight));
-  const damageTakenRows = filterActorRows(buildDamageTakenRows(fight));
-  const healingDoneRows = filterActorRows(buildHealingRows(fight, 'source'));
-  const healingTakenRows = filterActorRows(buildHealingRows(fight, 'dest'));
-  const buffRows = filterActorRows(buildUtilityRows(fight, 'buffs'));
-  const debuffRows = filterActorRows(buildUtilityRows(fight, 'debuffs'));
-  const deathRows = filterActorRows(buildUtilityRows(fight, 'deaths'));
-  const interruptRows = filterActorRows(buildUtilityRows(fight, 'interrupts'));
-  const resourceRows = filterActorRows(buildUtilityRows(fight, 'resources'));
-  const dispelRows = filterActorRows(buildDispelRows(fight));
-  const castRows = filterActorRows(buildEventCountRows(fight, ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']));
-
   const totalDamage = damageDoneRows.reduce((sum, r) => sum + r.amount, 0);
-  const totalHealing = healingDoneRows.reduce((sum, r) => sum + r.amount, 0);
   const totalSeconds = Math.max(1, fight.duration / 1000);
   const totalLines = state.rawLines.length;
 
-  return `
-    <div class="overall-hero">
-      <div class="overall-hero__stat"><span class="overall-hero__label">Total Damage</span><span class="overall-hero__value">${formatNumber(totalDamage)}</span><span class="overall-hero__sub">${formatNumber(Math.round(totalDamage / totalSeconds))} DPS</span></div>
-      <div class="overall-hero__stat"><span class="overall-hero__label">Total Healing</span><span class="overall-hero__value">${formatNumber(totalHealing)}</span><span class="overall-hero__sub">${formatNumber(Math.round(totalHealing / totalSeconds))} HPS</span></div>
-      <div class="overall-hero__stat"><span class="overall-hero__label">Fights</span><span class="overall-hero__value">${state.fights.length}</span><span class="overall-hero__sub">${state.fights.filter(f => f.kill).length} kills</span></div>
-      <div class="overall-hero__stat"><span class="overall-hero__label">Lines</span><span class="overall-hero__value">${formatNumber(totalLines)}</span><span class="overall-hero__sub">${state.events.length} events</span></div>
-    </div>
-    <div class="report-grid">
-      ${renderReportPanel('Damage Done', damageDoneRows, fight, true)}
-      ${renderReportPanel('Damage Taken', damageTakenRows, fight, true)}
-      ${renderReportPanel('Healing Done', healingDoneRows, fight, true)}
-      ${renderReportPanel('Healing Taken', healingTakenRows, fight, true)}
-      ${renderReportPanel('Casts', castRows, fight, false, 'casts')}
-      ${renderUtilityPanel('Buffs', buffRows, fight, 'buffs')}
-      ${renderUtilityPanel('Debuffs', debuffRows, fight, 'debuffs')}
-      ${renderUtilityPanel('Deaths', deathRows, fight, 'deaths')}
-      ${renderUtilityPanel('Interrupts', interruptRows, fight, 'interrupts')}
-      ${renderDispelPanel(dispelRows, fight)}
-      ${renderUtilityPanel('Resources', resourceRows, fight, 'resources')}
-    </div>`;
+  // We need totalHealing for hero stats - compute it once
+  const healingDoneRows = filterActorRows(buildHealingRows(fight, 'source'));
+  const totalHealing = healingDoneRows.reduce((sum, r) => sum + r.amount, 0);
+
+  // Keep paired Overall panels in independent columns so one tall table
+  // cannot push unrelated sections out of alignment.
+  const renderLazyPanel = (key, title) =>
+    '<div class="report-panel" data-lazy-panel="' + key + '">' +
+      '<div class="report-panel__header">' +
+        '<span class="report-panel__title">' + title + '</span>' +
+        '<span class="report-panel__meta">Click to load</span>' +
+      '</div>' +
+      '<div class="report-panel__lazy">Click to load detailed breakdown</div>' +
+    '</div>';
+  const lazyPanels =
+    '<div class="report-grid">' +
+      '<div class="report-grid__pair">' +
+        renderLazyPanel('damageDone', 'Damage Done') +
+        renderLazyPanel('damageTaken', 'Damage Taken') +
+      '</div>' +
+      '<div class="report-grid__pair">' +
+        renderLazyPanel('healingDone', 'Healing Done') +
+        renderLazyPanel('healingTaken', 'Healing Taken') +
+      '</div>' +
+      '<div class="report-grid__pair">' +
+        renderLazyPanel('buffs', 'Buffs') +
+        renderLazyPanel('debuffs', 'Debuffs') +
+      '</div>' +
+      '<div class="report-grid__pair">' +
+        renderLazyPanel('kills', 'Kills') +
+        renderLazyPanel('deaths', 'Deaths') +
+      '</div>' +
+      '<div class="report-grid__pair">' +
+        renderLazyPanel('interrupts', 'Interrupts') +
+        renderLazyPanel('dispels', 'Dispels') +
+      '</div>' +
+      '<div class="report-grid__pair">' +
+        renderLazyPanel('resources', 'Resources') +
+        renderLazyPanel('casts', 'Casts') +
+      '</div>' +
+    '</div>';
+
+
+    return (
+    '<div class="overall-hero">' +
+      '<div class="overall-hero__stat"><span class="overall-hero__label">Total Damage</span><span class="overall-hero__value">' + formatNumber(totalDamage) + '</span><span class="overall-hero__sub">' + formatNumber(Math.round(totalDamage / totalSeconds)) + ' DPS</span></div>' +
+      '<div class="overall-hero__stat"><span class="overall-hero__label">Total Healing</span><span class="overall-hero__value">' + formatNumber(totalHealing) + '</span><span class="overall-hero__sub">' + formatNumber(Math.round(totalHealing / totalSeconds)) + ' HPS</span></div>' +
+      '<div class="overall-hero__stat"><span class="overall-hero__label">Fights</span><span class="overall-hero__value">' + state.fights.length + '</span><span class="overall-hero__sub">' + state.fights.filter(f => f.kill).length + ' kills</span></div>' +
+      '<div class="overall-hero__stat"><span class="overall-hero__label">Lines</span><span class="overall-hero__value">' + formatNumber(totalLines) + '</span><span class="overall-hero__sub">' + state.events.length + ' events</span></div>' +
+    '</div>' +
+    lazyPanels);
 }
 
 function renderOverallView() {
@@ -3901,7 +5252,7 @@ function selectFight(index, preservePanel = false) {
   state.selectedSpellKey = null;
   state.selectedDamageTakenGuid = null;
   state.selectedDamageTakenSourceGuid = null;
-  state.expandedActorGroups = new Set();
+  state.auditSelection = null;
   if (!preservePanel) state.selectedFightPanel = 'summary';
   renderFightDetail();
   resetMainScroll();
@@ -4039,10 +5390,10 @@ function renderFightSubnav() {
     ['damageTaken', 'Damage Taken'],
     ['healingDone', 'Healing Done'],
     ['healingTaken', 'Healing Taken'],
-    ['threat', 'Threat'],
     ['buffs', 'Buffs'],
     ['debuffs', 'Debuffs'],
     ['deaths', 'Deaths'],
+    ['kills', 'Kills'],
     ['interrupts', 'Interrupts'],
     ['dispels', 'Dispels'],
     ['resources', 'Resources'],
@@ -4081,7 +5432,28 @@ function renderOverallSubpanel() {
     renderOverallView();
     return;
   }
+
+  // Preserve already-loaded lazy panel contents so drill-downs don't
+  // collapse them back to "Click to load".
+  const loadedPanels = new Map();
+  subpanel.querySelectorAll('.report-panel.loaded').forEach(panel => {
+    loadedPanels.set(panel.dataset.lazyPanel, panel.innerHTML);
+  });
+
   subpanel.innerHTML = renderOverallContent();
+
+  // Re-render loaded panels from current state so row drilldowns reflect
+  // the expanded groups after a summary update.
+  loadedPanels.forEach((html, key) => {
+    const panel = subpanel.querySelector(`[data-lazy-panel="${cssEscape(key)}"]`);
+    if (panel) {
+      panel.innerHTML = renderLazyPanelContent(key) || html;
+      panel.classList.add('loaded');
+      panel.classList.remove('loading');
+    }
+  });
+
+
   document.querySelectorAll('[data-overall-panel]').forEach(button => {
     button.setAttribute('aria-selected', button.dataset.overallPanel === state.selectedOverallPanel);
   });
@@ -4108,7 +5480,7 @@ function renderFightSubpanelContent() {
     case 'damageTaken': return renderSingleReportContent('Damage Taken', filterActorRows(buildDamageTakenRows(state.currentFight)), state.currentFight);
     case 'healingDone': return renderSingleReportContent('Healing Done', filterActorRows(buildHealingRows(state.currentFight, 'source')), state.currentFight);
     case 'healingTaken': return renderSingleReportContent('Healing Taken', filterActorRows(buildHealingRows(state.currentFight, 'dest')), state.currentFight);
-    case 'threat': return renderEventCountReport('Threat', state.currentFight, ['THREAT']);
+    case 'kills': return renderUtilityReport('Kills', state.currentFight, 'kills');
     case 'buffs': return renderUtilityReport('Buffs', state.currentFight, 'buffs');
     case 'debuffs': return renderUtilityReport('Debuffs', state.currentFight, 'debuffs');
     case 'deaths': return renderUtilityReport('Deaths', state.currentFight, 'deaths');
@@ -4427,10 +5799,10 @@ function renderSummaryContent(fight) {
   const damageTakenRows = filterActorRows(buildDamageTakenRows(fight));
   const healingDoneRows = filterActorRows(buildHealingRows(fight, 'source'));
   const healingTakenRows = filterActorRows(buildHealingRows(fight, 'dest'));
-  const threatRows = filterActorRows(buildEventCountRows(fight, ['THREAT']));
   const buffRows = filterActorRows(buildUtilityRows(fight, 'buffs'));
   const debuffRows = filterActorRows(buildUtilityRows(fight, 'debuffs'));
   const deathRows = filterActorRows(buildUtilityRows(fight, 'deaths'));
+  const killRows = filterActorRows(buildUtilityRows(fight, 'kills'));
   const interruptRows = filterActorRows(buildUtilityRows(fight, 'interrupts'));
   const dispelRows = filterActorRows(buildDispelRows(fight));
   const resourceRows = filterActorRows(buildUtilityRows(fight, 'resources'));
@@ -4441,18 +5813,30 @@ function renderSummaryContent(fight) {
       <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)} · paired report tables</span>
     </div>
     <div class="report-grid">
-      ${renderReportPanel('Damage Done', damageDoneRows, fight, true)}
-      ${renderReportPanel('Damage Taken', damageTakenRows, fight, true)}
-      ${renderReportPanel('Healing Done', healingDoneRows, fight, true)}
-      ${renderReportPanel('Healing Taken', healingTakenRows, fight, true)}
-      ${renderReportPanel('Threat', threatRows, fight, false, 'events')}
-      ${renderReportPanel('Casts', castRows, fight, false, 'casts')}
-      ${renderUtilityPanel('Buffs', buffRows, fight, 'buffs')}
-      ${renderUtilityPanel('Debuffs', debuffRows, fight, 'debuffs')}
-      ${renderUtilityPanel('Deaths', deathRows, fight, 'deaths')}
-      ${renderUtilityPanel('Interrupts', interruptRows, fight, 'interrupts')}
-      ${renderDispelPanel(dispelRows, fight)}
-      ${renderUtilityPanel('Resources', resourceRows, fight, 'resources')}
+      <div class="report-grid__pair">
+        ${renderReportPanel('Damage Done', damageDoneRows, fight, true)}
+        ${renderReportPanel('Damage Taken', damageTakenRows, fight, true)}
+      </div>
+      <div class="report-grid__pair">
+        ${renderReportPanel('Healing Done', healingDoneRows, fight, true)}
+        ${renderReportPanel('Healing Taken', healingTakenRows, fight, true)}
+      </div>
+      <div class="report-grid__pair">
+        ${renderUtilityPanel('Buffs', buffRows, fight, 'buffs')}
+        ${renderUtilityPanel('Debuffs', debuffRows, fight, 'debuffs')}
+      </div>
+      <div class="report-grid__pair">
+        ${renderUtilityPanel('Kills', killRows, fight, 'kills')}
+        ${renderUtilityPanel('Deaths', deathRows, fight, 'deaths')}
+      </div>
+      <div class="report-grid__pair">
+        ${renderUtilityPanel('Interrupts', interruptRows, fight, 'interrupts')}
+        ${renderDispelPanel(dispelRows, fight)}
+      </div>
+      <div class="report-grid__pair">
+        ${renderUtilityPanel('Resources', resourceRows, fight, 'resources')}
+        ${renderReportPanel('Casts', castRows, fight, false, 'casts')}
+      </div>
     </div>`;
 }
 
@@ -4544,7 +5928,7 @@ function renderDamageTakenSourceRow(row, rank, totalDamage, fightSeconds, maxAmo
         <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
       </div>
     </div>
-    ${isSelected ? renderInlineSpellRows(row) : ''}
+    ${isSelected ? renderInlineSpellRows(row, 'none') : ''}
   </div>`;
 }
 
@@ -4568,13 +5952,16 @@ function renderDispelReport(fight) {
 function renderDispelPanel(rows, fight) {
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
   const topRows = rows.slice(0, 18);
-  return `<section class="report-panel ${hasExpandedActorGroup(topRows, 'dispels') ? 'report-panel--expanded' : ''}">
+  const panel = `<section class="report-panel ${hasExpandedActorGroup(topRows, 'dispels') ? 'report-panel--expanded' : ''}">
       <div class="report-panel__header">
         <span class="report-panel__title">Dispels</span>
         <span class="report-panel__meta">${formatNumber(total)} dispels</span>
       </div>
       ${topRows.length > 0 ? renderDispelTable(topRows, total, fight) : renderCompactEmptyRow('Dispels')}
     </section>`;
+  return state.auditSelection?.reportKey === 'dispels'
+    ? `<div class="report-panel-audit-dock">${panel}${renderAuditPanel(fight, 'dispels')}</div>`
+    : panel;
 }
 
 function renderUtilityReport(title, fight, kind) {
@@ -4588,10 +5975,13 @@ function renderUtilityReport(title, fight, kind) {
 function renderUtilityPanel(title, rows, fight, kind) {
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
   const topRows = rows.slice(0, 18);
-  return `<section class="report-panel ${hasExpandedActorGroup(topRows, kind) ? 'report-panel--expanded' : ''}">
+  const panel = `<section class="report-panel ${hasExpandedActorGroup(topRows, kind) ? 'report-panel--expanded' : ''}">
     <div class="report-panel__header"><span class="report-panel__title">${escapeHtml(title)}</span><span class="report-panel__meta">${formatNumber(total)} events</span></div>
     ${topRows.length > 0 ? renderUtilityTable(topRows, total, fight, kind) : renderCompactEmptyRow(title)}
   </section>`;
+  return state.auditSelection?.reportKey === kind
+    ? `<div class="report-panel-audit-dock">${panel}${renderAuditPanel(fight, kind)}</div>`
+    : panel;
 }
 
 function renderUtilityTable(rows, total, fight, kind) {
@@ -4600,16 +5990,16 @@ function renderUtilityTable(rows, total, fight, kind) {
   const maxAmount = Math.max(...hierarchy.map(group => group.total), 1);
   return `<div class="breakdown-list">${renderGroupedActorSections(hierarchy, (group, index) => {
     const expanded = isActorGroupExpanded(group.player.guid, kind);
-    return `${renderActorTotalRow(group.player, group.total, index, total, fightSeconds, maxAmount, kind)}${expanded ? renderUtilityGroupDetails(group, total, fightSeconds, maxAmount) : ''}`;
+    return `${renderActorTotalRow(group.player, group.total, index, total, fightSeconds, maxAmount, kind)}${expanded ? renderUtilityGroupDetails(group, total, fightSeconds, maxAmount, kind) : ''}`;
   })}</div>`;
 }
 
-function renderUtilityGroupDetails(group, total, fightSeconds, maxAmount) {
-  if (group.children.length === 1 && group.children[0].isPlayerActual) return renderUtilityDetailRows(group.children[0].details || []);
-  return group.children.map(child => `${renderActorChildRow(child, total, fightSeconds, maxAmount)}${renderUtilityDetailRows(child.details || [])}`).join('');
+function renderUtilityGroupDetails(group, total, fightSeconds, maxAmount, kind) {
+  if (group.children.length === 1 && group.children[0].isPlayerActual) return renderUtilityDetailRows(group.children[0].details || [], group.children[0].guid);
+  return group.children.map(child => `${renderActorChildRow(child, total, fightSeconds, maxAmount)}${renderUtilityDetailRows(child.details || [], child.guid)}`).join('');
 }
 
-function renderUtilityDetailRows(details) {
+function renderUtilityDetailRows(details, actorGuid = '') {
   if (details.length === 0) return `<div class="breakdown-row__sub">No event payload details were recorded.</div>`;
   const maxCount = Math.max(...details.map(detail => detail.count), 1);
   return `<div class="breakdown-row__spells">${details.map((detail, index) => {
@@ -4619,11 +6009,12 @@ function renderUtilityDetailRows(details) {
     if (detail.kind === 'resources') text = `gained ${formatNumber(detail.resourceAmount)} ${escapeHtml(detail.resourceName)} from ${renderSpellName(spell)}${detail.sourceGuid ? ` · caused by ${renderActorName(detail.sourceName, detail.sourceGuid)}` : ''}`;
     else if (detail.kind === 'interrupts') text = `interrupted ${renderSpellName({ spellId: detail.extraSpellId, name: detail.extraSpellName, school: detail.extraSpellSchool })} on ${renderActorName(detail.targetName, detail.targetGuid)} with ${renderSpellName(spell)}`;
     else if (detail.kind === 'deaths') text = detail.killerGuid ? `killed by ${renderActorName(detail.killerName, detail.killerGuid)} using ${renderSpellName(spell)}` : 'killer unknown';
+    else if (detail.kind === 'kills') text = detail.targetGuid ? `killed ${renderActorName(detail.targetName, detail.targetGuid)} using ${renderSpellName(spell)}` : 'target unknown';
     else text = `${renderSpellName(spell)} from ${detail.sourceGuid ? renderActorName(detail.sourceName, detail.sourceGuid) : '<span class="breakdown-row__sub">unknown source</span>'}`;
-    return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(spell)}"><span><span class="breakdown-row__sub">${index + 1}</span> <strong>${text}</strong></span><span class="spell-bar-container"><div class="spell-bar-fill" style="width:${pct}%;"></div></span><span style="font-family:var(--font-mono);text-align:right;">${formatNumber(detail.count)}</span></div>`;
+    const audit = isValidActorGuid(actorGuid) ? renderAuditTrigger(actorGuid, detail.kind, `${detail.spellId || 0}:${detail.spellName}`) : '';
+    return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(spell)}"><span><span class="breakdown-row__sub">${index + 1}</span> <strong>${text}</strong>${audit}</span><span class="spell-bar-container"><div class="spell-bar-fill" style="width:${pct}%;"></div></span><span style="font-family:var(--font-mono);text-align:right;">${formatNumber(detail.count)}</span></div>`;
   }).join('')}</div>`;
 }
-
 function renderDispelTable(rows, total, fight) {
   const hierarchy = buildActorHierarchy(rows);
   const fightSeconds = Math.max(1, fight.duration / 1000);
@@ -4638,12 +6029,12 @@ function renderDispelTable(rows, total, fight) {
 
 function renderDispelGroupDetails(group, total, fightSeconds, maxAmount) {
   if (group.children.length === 1 && group.children[0].isPlayerActual) {
-    return renderDispelDetailRows(group.children[0].dispels || []);
+    return renderDispelDetailRows(group.children[0].dispels || [], group.children[0].guid);
   }
-  return group.children.map(child => `${renderActorChildRow(child, total, fightSeconds, maxAmount)}${renderDispelDetailRows(child.dispels || [])}`).join('');
+  return group.children.map(child => `${renderActorChildRow(child, total, fightSeconds, maxAmount)}${renderDispelDetailRows(child.dispels || [], child.guid)}`).join('');
 }
 
-function renderDispelDetailRows(details) {
+function renderDispelDetailRows(details, actorGuid = '') {
   if (details.length === 0) return `<div class="breakdown-row__sub">No dispel payload details were recorded.</div>`;
   const maxCount = Math.max(...details.map(detail => detail.amount), 1);
   const total = details.reduce((sum, detail) => sum + detail.amount, 0);
@@ -4656,8 +6047,9 @@ function renderDispelDetailRows(details) {
         ? renderActorName(detail.originalSourceName, detail.originalSourceGuid)
         : '<span class="breakdown-row__sub">unknown source</span>';
       const action = detail.failed ? 'failed to dispel' : (detail.stolen ? 'stole' : 'dispelled');
+      const audit = isValidActorGuid(actorGuid) ? renderAuditTrigger(actorGuid, 'dispels', `${detail.dispelSpellId || 0}:${detail.dispelSpellName}`) : '';
       return `<div class="spell-row spell-row--target" style="${getSpellSchoolStyle(aura)}">
-        <span><span class="breakdown-row__sub">${index + 1}</span> <strong>${action} ${renderSpellName(aura)}</strong><span class="breakdown-row__sub"> from </span>${renderActorName(detail.targetName, detail.targetGuid)}<span class="breakdown-row__sub"> · applied by </span>${appliedBy}</span>
+        <span><span class="breakdown-row__sub">${index + 1}</span> <strong>${action} ${renderSpellName(aura)}</strong><span class="breakdown-row__sub"> from </span>${renderActorName(detail.targetName, detail.targetGuid)}<span class="breakdown-row__sub"> · applied by </span>${appliedBy}${audit}</span>
         <span class="spell-bar-container" data-tooltip="${escapeHtml(`${detail.auraName}\nTarget: ${detail.targetName}\nApplied by: ${detail.originalSourceName || 'Unknown'}\nDispel ability: ${detail.dispelSpellName}\nCount: ${detail.amount}`)}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
         <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(detail.amount)}</span><span class="breakdown-row__sub">${pctOfActor.toFixed(1)}%</span></span>
       </div>`;
@@ -4678,13 +6070,16 @@ function renderReportPanel(title, rows, fight, interactive = false, unit = 'tota
   const topRows = rows.slice(0, 18);
   const reportKey = getReportKey(title);
   const expanded = hasExpandedActorGroup(topRows, reportKey);
-  return `<section class="report-panel ${expanded ? 'report-panel--expanded' : ''}">
+  const panel = `<section class="report-panel ${expanded ? 'report-panel--expanded' : ''}">
     <div class="report-panel__header">
       <span class="report-panel__title">${escapeHtml(title)}</span>
       <span class="report-panel__meta">${formatNumber(total)} ${escapeHtml(unit)}</span>
     </div>
     ${topRows.length > 0 ? (interactive ? renderDamageDoneTable(topRows, total, fight, reportKey) : renderHierarchicalReportTable(topRows, total, fight, reportKey)) : renderCompactEmptyRow(title)}
   </section>`;
+  return state.auditSelection?.reportKey === reportKey
+    ? `<div class="report-panel-audit-dock">${panel}${renderAuditPanel(fight, reportKey)}</div>`
+    : panel;
 }
 
 function getReportKey(title) {
@@ -4707,6 +6102,212 @@ function filterEventByActor(sourceGuid, destGuid) {
   if (state.actorFilter !== 'players') return true;
   return (isPlayerOrPlayerOwned(sourceGuid) || !sourceGuid || sourceGuid === '0000000000000000')
       && (isPlayerOrPlayerOwned(destGuid) || !destGuid || destGuid === '0000000000000000');
+}
+
+function getAuditKind(reportKey) {
+  return {
+    'damage-done': 'damageDone',
+    'damage-taken': 'damageTaken',
+    'healing-done': 'healingDone',
+    'healing-taken': 'healingTaken',
+    buffs: 'buffs',
+    debuffs: 'debuffs',
+    kills: 'kills',
+    deaths: 'deaths',
+    interrupts: 'interrupts',
+    dispels: 'dispels',
+    resources: 'resources',
+    casts: 'casts'
+  }[reportKey] || '';
+}
+
+function renderAuditTrigger(actorGuid, reportKey, spellKey = '') {
+  const kind = getAuditKind(reportKey);
+  if (!kind || !actorGuid) return '';
+  return `<button class="audit-trigger" type="button" data-audit-kind="${kind}" data-audit-actor="${escapeHtml(actorGuid)}" data-audit-report="${escapeHtml(reportKey)}"${spellKey ? ` data-audit-spell="${escapeHtml(spellKey)}"` : ''}>Audit</button>`;
+}
+
+function auditActorMatches(guid, actorGuid) {
+  return guid === actorGuid || state.petOwners.get(guid) === actorGuid;
+}
+
+function getAdvancedHealthSnapshot(payload) {
+  if (!isGuidLike(payload[3])) return null;
+  const health = Number(payload[5]);
+  const maxHealth = Number(payload[6]);
+  if (!Number.isFinite(health) || !Number.isFinite(maxHealth) || maxHealth <= 0) return null;
+  return { health, maxHealth };
+}
+
+function getUtilityAuditInfo(event, kind, fields) {
+  const payload = fields.payload;
+  const spellId = parseInt(payload[0], 10) || 0;
+  const spellName = payload[1] || event.type;
+  const spellSchool = payload[2] || '';
+  const base = { spellId, spellName, spellSchool, amount: 1 };
+
+  if (kind === 'buffs' || kind === 'debuffs') {
+    if (!event.type.includes('AURA_')) return null;
+    const isBrokenBySpell = event.type === 'SPELL_AURA_BROKEN_SPELL';
+    const auraType = String(isBrokenBySpell ? payload[6] : payload[3] || '').toLowerCase();
+    if (auraType !== (kind === 'buffs' ? 'buff' : 'debuff')) return null;
+    return { ...base, actorGuid: fields.destGuid };
+  }
+
+  if (kind === 'kills') {
+    if (event.type !== 'PARTY_KILL') return null;
+    if (!isPlayerOrPlayerOwned(fields.sourceGuid)) return null;
+    if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid)) return null;
+    return { ...base, actorGuid: fields.sourceGuid };
+  }
+
+  if (kind === 'deaths') {
+    if (!['UNIT_DIED', 'UNIT_DESTROYED', 'PARTY_KILL'].includes(event.type)) return null;
+    if (!isPlayerOrPlayerOwned(fields.destGuid)) return null;
+    return { ...base, actorGuid: fields.destGuid, spellName: event.type === 'PARTY_KILL' ? 'Killing blow' : 'Death event' };
+  }
+
+  if (kind === 'interrupts') {
+    if (event.type !== 'SPELL_INTERRUPT' || !filterEventByActor(fields.sourceGuid, fields.destGuid)) return null;
+    return { ...base, actorGuid: fields.sourceGuid };
+  }
+
+  if (kind === 'dispels') {
+    if (!['SPELL_DISPEL', 'SPELL_STOLEN', 'SPELL_DISPEL_FAILED'].includes(event.type)) return null;
+    if (!filterEventByActor(fields.sourceGuid, fields.destGuid)) return null;
+    return { ...base, actorGuid: fields.sourceGuid };
+  }
+
+  if (kind === 'casts') {
+    if (!['SPELL_CAST_SUCCESS', 'SPELL_CAST_START'].includes(event.type)) return null;
+    if (!filterEventByActor(fields.sourceGuid, fields.destGuid)) return null;
+    return { ...base, actorGuid: fields.sourceGuid };
+  }
+
+  if (kind === 'resources') {
+    if (!(event.type.includes('ENERGIZE') || event.type.includes('DRAIN') || event.type.includes('LEECH'))) return null;
+    const amountIndex = getCombatLogAmountIndex(payload, 3);
+    const isGain = event.type.includes('ENERGIZE') || event.type.includes('LEECH');
+    return {
+      ...base,
+      actorGuid: isGain ? fields.destGuid : fields.sourceGuid,
+      amount: Math.abs(Number(payload[amountIndex]) || 0) || 1
+    };
+  }
+
+  return null;
+}
+
+function getAuditRecords(fight, selection) {
+  const records = [];
+  for (const event of getFightEvents(fight)) {
+    const fields = parseCombatLogFields(event.params);
+    let detail = null;
+    let actorMatches = false;
+    let spellKey = '';
+    let rawAmount = 0;
+    let effectiveAmount = 0;
+
+    if (selection.kind === 'damageDone' || selection.kind === 'damageTaken') {
+      detail = parseDamageEvent(event.type, event.params);
+      if (!detail) continue;
+      actorMatches = selection.kind === 'damageDone'
+        ? auditActorMatches(detail.sourceGuid, selection.actorGuid)
+        : auditActorMatches(detail.destGuid, selection.actorGuid);
+      spellKey = `${detail.spellId || 0}:${detail.spellName}`;
+      rawAmount = detail.amount || 0;
+      effectiveAmount = rawAmount;
+    } else if (selection.kind === 'healingDone' || selection.kind === 'healingTaken') {
+      detail = parseHealingEvent(event.type, event.params);
+      if (!detail) continue;
+      actorMatches = selection.kind === 'healingDone'
+        ? auditActorMatches(detail.sourceGuid, selection.actorGuid)
+        : auditActorMatches(detail.destGuid, selection.actorGuid);
+      spellKey = `${detail.spellId || 0}:${detail.spellName}`;
+      rawAmount = detail.rawAmount ?? detail.amount ?? 0;
+      effectiveAmount = detail.effectiveAmount ?? detail.amount ?? 0;
+    } else {
+      const utility = getUtilityAuditInfo(event, selection.kind, fields);
+      if (!utility) continue;
+      detail = utility;
+      actorMatches = auditActorMatches(utility.actorGuid, selection.actorGuid);
+      spellKey = `${utility.spellId || 0}:${utility.spellName}`;
+      rawAmount = utility.amount;
+      effectiveAmount = utility.amount;
+    }
+
+    if (!actorMatches || (selection.spellKey && selection.spellKey !== spellKey)) continue;
+
+    const targetGuid = fields.destGuid;
+    const targetIsNpc = targetGuid && !isPlayerOrPlayerOwned(targetGuid);
+    const targetMaxHealth = detail.targetMaxHealth || 0;
+    const implausibleHeal = selection.kind.startsWith('healing')
+      && targetMaxHealth > 0
+      && rawAmount > Math.max(targetMaxHealth * 4, 1000000);
+    const legacyDamage = selection.kind.startsWith('damage')
+      && targetIsNpc
+      && rawAmount > Math.max(targetMaxHealth * 4, 1000000);
+    const suspectReason = implausibleHeal
+      ? 'heal exceeds target health by legacy-scaling threshold'
+      : legacyDamage
+        ? 'damage targets an NPC with legacy-scaled magnitude'
+        : '';
+
+    records.push({
+      lineNo: event.lineNo,
+      timestamp: event.rawDateTime,
+      eventType: event.type,
+      sourceGuid: fields.sourceGuid,
+      sourceName: fields.sourceName,
+      destGuid: fields.destGuid,
+      destName: fields.destName,
+      spellId: detail.spellId || 0,
+      spellName: detail.spellName || event.type,
+      rawAmount,
+      effectiveAmount,
+      targetHealth: detail.targetHealth || 0,
+      targetMaxHealth,
+      suspectReason,
+      rawLine: state.rawLines[event.lineNo] || ''
+    });
+  }
+  return records;
+}
+
+function renderAuditPanel(fight, reportKey) {
+  const selection = state.auditSelection;
+  if (!selection || selection.reportKey !== reportKey) return '';
+  const records = getAuditRecords(fight, selection);
+  const rawTotal = records.reduce((sum, record) => sum + record.rawAmount, 0);
+  const effectiveTotal = records.reduce((sum, record) => sum + record.effectiveAmount, 0);
+  const suspectCount = records.filter(record => record.suspectReason).length;
+  const amountAudit = ['damageDone', 'damageTaken', 'healingDone', 'healingTaken'].includes(selection.kind);
+  const title = selection.spellKey
+    ? records.find(record => record.spellName)?.spellName || selection.spellKey
+    : getDisplayName('', selection.actorGuid);
+  const rows = records.length > 0
+    ? records.map(record => `<details class="audit-event">
+        <summary><span class="audit-event__line">L${record.lineNo + 1}</span><span class="audit-event__time">${escapeHtml(record.timestamp)}</span><span class="audit-event__type">${escapeHtml(record.eventType)}</span><span class="audit-event__spell">${escapeHtml(record.spellName)}</span><span class="audit-event__amount">${formatNumber(record.rawAmount)}${record.effectiveAmount !== record.rawAmount ? ` · ${formatNumber(record.effectiveAmount)} effective` : ''}</span>${record.suspectReason ? '<span class="audit-event__flag">flagged</span>' : ''}</summary>
+        <div class="audit-event__body">
+          <div class="audit-event__route">${escapeHtml(record.sourceName || record.sourceGuid || 'unknown')} → ${escapeHtml(record.destName || record.destGuid || 'unknown')}</div>
+          ${record.targetMaxHealth ? `<div class="audit-event__health">Target health snapshot: ${formatNumber(record.targetHealth)} / ${formatNumber(record.targetMaxHealth)}</div>` : ''}
+          ${record.suspectReason ? `<div class="audit-event__reason">${escapeHtml(record.suspectReason)}</div>` : ''}
+          <pre>${escapeHtml(record.rawLine)}</pre>
+        </div>
+      </details>`).join('')
+    : '<div class="audit-empty">No matching events were found in this fight window.</div>';
+
+  return `<section class="audit-panel">
+    <div class="audit-panel__header">
+      <div><strong>Audit · ${escapeHtml(title)}</strong><span class="audit-panel__sub">${records.length} matching events · raw lines preserved</span></div>
+      <button class="btn audit-panel__close" type="button" data-audit-close>Close audit</button>
+    </div>
+    <div class="audit-panel__summary">
+      ${amountAudit ? `<span><b>Raw total</b> ${formatNumber(rawTotal)}</span><span><b>Effective total</b> ${formatNumber(effectiveTotal)}</span>` : `<span><b>Events</b> ${formatNumber(records.length)}</span>`}
+      <span class="${suspectCount ? 'audit-panel__warning' : ''}"><b>Flagged</b> ${suspectCount}</span>
+    </div>
+    <div class="audit-events">${rows}</div>
+  </section>`;
 }
 
 function hasExpandedActorGroup(rows, reportKey) {
@@ -4762,7 +6363,7 @@ function renderActorTotalRow(player, amount, rank, total, fightSeconds, maxAmoun
   return `<div class="breakdown-row breakdown-row--total ${getActorGroupClass(player)}" data-actor-group-guid="${escapeHtml(player.guid)}" data-report-key="${escapeHtml(reportKey)}" role="button" tabindex="0" aria-expanded="${expanded}">
     <div class="breakdown-row__header" style="--actor-color: ${actorColor};">
       <div class="breakdown-row__bg-bar" style="width: ${pctOfMax}%; background-color: ${actorColor};"></div>
-      <div class="breakdown-row__info"><span class="breakdown-row__sub">${expanded ? '−' : '+'} ${rank}</span>${renderActorName(player.name, player.guid)}<span class="breakdown-row__sub">total</span></div>
+      <div class="breakdown-row__info"><span class="breakdown-row__sub">${expanded ? '−' : '+'} ${rank}</span>${renderActorName(player.name, player.guid)}<span class="breakdown-row__sub">total</span>${renderAuditTrigger(player.guid, reportKey)}</div>
       <div class="metric-bar" aria-hidden="true"><div class="metric-bar__fill" style="width: ${pctOfMax}%;"></div></div>
       <div class="breakdown-row__metrics">
         <span class="breakdown-row__val">${formatNumber(amount)}</span>
@@ -4843,24 +6444,104 @@ function renderCompactEmptyRow(title) {
 function renderBreakdownContent(fight) {
   const sourceRows = filterActorRows(buildDamageDoneRows(fight));
   const totalDamage = sourceRows.reduce((sum, row) => sum + row.amount, 0);
+  const table = renderDamageDoneTable(sourceRows, totalDamage, fight);
+  const tableWithAudit = state.auditSelection?.reportKey === 'damage-done'
+    ? `<div class="report-panel-audit-dock"><div class="audit-analysis-target">${table}</div>${renderAuditPanel(fight, 'damage-done')}</div>`
+    : table;
 
   return `
     <div class="breakdown-controls">
       <button class="filter-btn filter-btn--active">Damage Done</button>
       <span class="breakdown-row__sub">${escapeHtml(fight.bossName)} · ${formatDuration(fight.duration)} · ${formatNumber(totalDamage)} total</span>
     </div>
-    ${renderDamageDoneTable(sourceRows, totalDamage, fight)}
+    ${tableWithAudit}
   `;
 }
 
+
+function renderLazyPanelContent(panelKey) {
+  const fight = state.currentFight || state.fights[0];
+  if (!fight) return '';
+
+  switch (panelKey) {
+    case 'damageDone': return renderBreakdownContent(getMetaFight());
+    case 'damageTaken': return renderSingleReportContent('Damage Taken', filterActorRows(buildDamageTakenRows(getMetaFight())), getMetaFight());
+    case 'healingDone': return renderSingleReportContent('Healing Done', filterActorRows(buildHealingRows(getMetaFight(), 'source')), getMetaFight());
+    case 'healingTaken': return renderSingleReportContent('Healing Taken', filterActorRows(buildHealingRows(getMetaFight(), 'dest')), getMetaFight());
+    case 'kills': return renderUtilityReport('Kills', getMetaFight(), 'kills');
+    case 'buffs': return renderUtilityReport('Buffs', getMetaFight(), 'buffs');
+    case 'debuffs': return renderUtilityReport('Debuffs', getMetaFight(), 'debuffs');
+    case 'deaths': return renderUtilityReport('Deaths', getMetaFight(), 'deaths');
+    case 'interrupts': return renderUtilityReport('Interrupts', getMetaFight(), 'interrupts');
+    case 'dispels': return renderDispelReport(getMetaFight());
+    case 'resources': return renderUtilityReport('Resources', getMetaFight(), 'resources');
+    case 'casts': return renderEventCountReport('Casts', getMetaFight(), ['SPELL_CAST_SUCCESS', 'SPELL_CAST_START']);
+    default: return '';
+  }
+}
+
+function loadLazyPanel(panel) {
+  if (panel.classList.contains('loaded')) return;
+  const panelKey = panel.dataset.lazyPanel;
+  if (!panelKey) return;
+  
+  const fight = state.currentFight || state.fights[0];
+  if (!fight) return;
+  
+  panel.classList.add('loading');
+  panel.innerHTML = '<div class="report-panel__header"><span class="report-panel__title">Loading...</span></div>';
+  
+  // Use setTimeout to yield to main thread
+  setTimeout(() => {
+    panel.innerHTML = renderLazyPanelContent(panelKey);
+    panel.classList.remove('loading');
+    panel.classList.add('loaded');
+    attachBreakdownHandlers(panel);
+  }, 0);
+}
 function attachBreakdownHandlers(rootEl) {
+  rootEl.querySelectorAll('[data-audit-kind]').forEach(button => {
+    const openAudit = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      state.auditSelection = {
+        kind: button.dataset.auditKind,
+        actorGuid: button.dataset.auditActor,
+        reportKey: button.dataset.auditReport,
+        spellKey: button.dataset.auditSpell || ''
+      };
+      rerenderBreakdowns();
+    };
+    button.addEventListener('click', openAudit);
+    button.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') openAudit(event);
+    });
+  });
+
+  const auditCloseButton = rootEl.querySelector('[data-audit-close]');
+  if (auditCloseButton) {
+    auditCloseButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      state.auditSelection = null;
+      rerenderBreakdowns();
+    });
+  }
   rootEl.querySelectorAll('[data-actor-group-guid]').forEach(row => {
     const toggleGroup = () => {
-      const previousTop = row.getBoundingClientRect().top;
+      const scrollState = {
+        windowX: window.scrollX,
+        windowY: window.scrollY,
+        mainTop: mainEl?.scrollTop || 0,
+        mainLeft: mainEl?.scrollLeft || 0
+      };
       toggleActorGroup(row.dataset.actorGroupGuid, row.dataset.reportKey || 'default');
       rerenderBreakdowns();
-      const nextRow = document.querySelector(`[data-actor-group-guid="${cssEscape(row.dataset.actorGroupGuid)}"][data-report-key="${cssEscape(row.dataset.reportKey || 'default')}"]`);
-      if (nextRow) window.scrollBy(0, nextRow.getBoundingClientRect().top - previousTop);
+      window.scrollTo(scrollState.windowX, scrollState.windowY);
+      if (mainEl) {
+        mainEl.scrollTop = scrollState.mainTop;
+        mainEl.scrollLeft = scrollState.mainLeft;
+      }
     };
     row.addEventListener('click', toggleGroup);
     row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(); } });
@@ -4915,6 +6596,13 @@ function attachBreakdownHandlers(rootEl) {
   rootEl.querySelectorAll('.spell-row__link').forEach(link => {
     link.addEventListener('click', event => event.stopPropagation());
     link.addEventListener('keydown', event => event.stopPropagation());
+  });
+
+  // Lazy panel loading
+  rootEl.querySelectorAll('[data-lazy-panel]').forEach(panel => {
+    panel.addEventListener('click', (e) => { e.stopPropagation(); loadLazyPanel(panel); });
+    panel.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); loadLazyPanel(panel); } });
+    panel.tabIndex = 0;
   });
 
   const backButton = rootEl.querySelector('[data-breakdown-back]');
@@ -5059,7 +6747,7 @@ function renderDamageDoneTable(rows, totalDamage, fight, reportKey = 'damage-don
 
 function renderExpandedActorGroup(group, totalDamage, fightSeconds, maxAmount, reportKey) {
   const playerChild = group.children.find(child => child.isPlayerActual);
-  if (group.children.length === 1 && playerChild) return renderInlineSpellRows(playerChild);
+  if (group.children.length === 1 && playerChild) return renderInlineSpellRows(playerChild, reportKey);
   return group.children.map(child => renderDamageRow(child, '', totalDamage, fightSeconds, maxAmount, true, reportKey)).join('');
 }
 
@@ -5142,6 +6830,7 @@ function mergeSpellRows(existingSpells, nextSpells) {
       return;
     }
     const current = spells.get(spell.key);
+    current.rawAmount += spell.rawAmount || 0;
     current.amount += spell.amount;
     current.events += spell.events || 0;
     current.casts += spell.casts || 0;
@@ -5216,11 +6905,11 @@ function renderDamageRow(row, rank, totalDamage, fightSeconds, maxAmount, isMini
         <span class="breakdown-row__sub" style="text-align:right;">${pctOfTotal.toFixed(1)}%</span>
       </div>
     </div>
-    ${isSelected && row.spells?.length ? renderInlineSpellRows(row) : ''}
+    ${isSelected && row.spells?.length ? renderInlineSpellRows(row, reportKey) : ''}
   </div>`;
 }
 
-function renderInlineSpellRows(row) {
+function renderInlineSpellRows(row, reportKey = 'damage-done') {
   const maxSpellAmount = row.spells[0]?.amount || 1;
   return `<div class="breakdown-row__spells">
     ${row.spells.map(spell => {
@@ -5228,8 +6917,9 @@ function renderInlineSpellRows(row) {
       const pctOfSource = row.amount > 0 ? (spell.amount / row.amount) * 100 : 0;
       const selectionKey = getSpellSelectionKey(row, spell);
       const expanded = state.selectedSpellKey === selectionKey;
+      const auditActorGuid = row.selectionGuid || row.guid;
       return `<div class="spell-row" style="${getSpellSchoolStyle(spell)}" data-spell-key="${escapeHtml(selectionKey)}" role="button" tabindex="0" aria-expanded="${expanded}">
-        <span><strong>${expanded ? '−' : '+'} ${renderSpellName(spell)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span></span>
+        <span><strong>${expanded ? '−' : '+'} ${renderSpellName(spell)}</strong><span class="breakdown-row__sub"> · ${escapeHtml(formatSpellActivity(spell))}</span>${getAuditKind(reportKey) && isValidActorGuid(auditActorGuid) ? renderAuditTrigger(auditActorGuid, reportKey, spell.key) : ''}</span>
         <span class="spell-bar-container" data-tooltip="${escapeHtml(formatSpellTooltip(spell))}" tabindex="0"><div class="spell-bar-fill" style="width: ${pctOfMax}%;"></div></span>
         <span style="display:grid;grid-template-columns:82px 54px;gap:8px;font-family:var(--font-mono);text-align:right;"><span>${formatNumber(spell.amount)}</span><span class="breakdown-row__sub">${pctOfSource.toFixed(1)}%</span></span>
         ${expanded ? renderInlineSpellTargetRows(spell) : ''}
@@ -5521,6 +7211,60 @@ function getCachedReportRows(kind, fight, detail, buildRows) {
   return rows;
 }
 
+function getActivePlayerLineRanges(fight) {
+  const playerGuid = state.fightPlayerFilter;
+  if (!playerGuid) return null;
+
+  // Use raw events (no recursive filter) to compute active ranges
+  const events = state.events;
+  let low = 0;
+  let high = events.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (events[mid].lineNo < fight.startLineNo) low = mid + 1;
+    else high = mid;
+  }
+  const start = low;
+  high = events.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (events[mid].lineNo <= fight.endLineNo) low = mid + 1;
+    else high = mid;
+  }
+  const fightEvents = events.slice(start, low);
+
+  const GAP = 250;
+  const ranges = [];
+  let rangeStart = -1;
+  let rangeEnd = -1;
+
+  for (const event of fightEvents) {
+    const fields = parseCombatLogFields(event.params);
+    const sourceGuid = fields.sourceGuid;
+    const destGuid = fields.destGuid;
+    const sourceActive = sourceGuid && (sourceGuid === playerGuid || state.petOwners.get(sourceGuid) === playerGuid);
+    const destActive = destGuid && (destGuid === playerGuid || state.petOwners.get(destGuid) === playerGuid);
+    if (!sourceActive && !destActive) continue;
+
+    if (rangeStart === -1) {
+      rangeStart = event.lineNo;
+      rangeEnd = event.lineNo;
+    } else if (event.lineNo - rangeEnd <= GAP) {
+      rangeEnd = event.lineNo;
+    } else {
+      ranges.push([rangeStart, rangeEnd]);
+      rangeStart = event.lineNo;
+      rangeEnd = event.lineNo;
+    }
+  }
+
+  if (rangeStart !== -1) {
+    ranges.push([rangeStart, rangeEnd]);
+  }
+
+  return ranges.length > 0 ? ranges : null;
+}
+
 function getFightEvents(fight) {
   const events = state.events;
   let low = 0;
@@ -5537,7 +7281,30 @@ function getFightEvents(fight) {
     if (events[mid].lineNo <= fight.endLineNo) low = mid + 1;
     else high = mid;
   }
-  return events.slice(start, low);
+  const allEvents = events.slice(start, low);
+
+  // When a specific player filter is active, restrict events to that player's
+  // active combat ranges so other players' data is time-aligned to the filtered
+  // player. The filtered player's own events are always within these ranges
+  // since they define the ranges.
+  const playerGuid = state.fightPlayerFilter;
+  if (!playerGuid) return allEvents;
+
+  const ranges = getActivePlayerLineRanges(fight);
+  if (!ranges) return allEvents;
+
+  const filtered = [];
+  let rangeIdx = 0;
+  for (const event of allEvents) {
+    while (rangeIdx < ranges.length && event.lineNo > ranges[rangeIdx][1]) {
+      rangeIdx++;
+    }
+    if (rangeIdx >= ranges.length) break;
+    if (event.lineNo >= ranges[rangeIdx][0] && event.lineNo <= ranges[rangeIdx][1]) {
+      filtered.push(event);
+    }
+  }
+  return filtered;
 }
 
 function buildDamageDoneRows(fight) {
@@ -5666,7 +7433,7 @@ function computeHealingRows(fight, actorSide) {
   const actors = new Map();
   for (const event of getFightEvents(fight)) {
     const healing = parseHealingEvent(event.type, event.params);
-    if (!healing || healing.amount <= 0) continue;
+    if (!healing || healing.rawAmount <= 0) continue;
     if (!filterEventByActor(healing.sourceGuid, healing.destGuid)) continue;
     const guid = actorSide === 'dest' ? healing.destGuid : healing.sourceGuid;
     const name = actorSide === 'dest' ? healing.destName : healing.sourceName;
@@ -5682,15 +7449,18 @@ function computeHealingRows(fight, actorSide) {
         ownerGuid,
         faction: getReactionGroup(flags),
         amount: 0,
+        rawAmount: 0,
         spells: new Map()
       });
     }
     const actor = actors.get(guid);
-    actor.amount += healing.amount;
+    actor.amount += healing.effectiveAmount;
+    actor.rawAmount += healing.rawAmount;
     const spellKey = `${healing.spellId || 0}:${healing.spellName}`;
     const currentSpell = actor.spells.get(spellKey) || createSpellRow(spellKey, healing.spellName, healing.spellSchool);
     addAmountToSpellRow(currentSpell, {
-      amount: healing.amount,
+      amount: healing.effectiveAmount,
+      rawAmount: healing.rawAmount,
       isCrit: healing.isCrit,
       isMiss: false,
       peerGuid,
@@ -5739,7 +7509,7 @@ function computeUtilityRows(fight, kind) {
   const lastDamageByTarget = new Map();
   const recentPartyKills = new Map();
   for (const event of getFightEvents(fight)) {
-    if (kind === 'deaths') {
+    if (kind === 'deaths' || kind === 'kills') {
       const damage = parseDamageEvent(event.type, event.params);
       if (damage && damage.amount > 0 && isValidActorGuid(damage.destGuid)) {
         lastDamageByTarget.set(damage.destGuid, { ...damage, lineNo: event.lineNo });
@@ -5766,6 +7536,7 @@ function computeUtilityRows(fight, kind) {
       guid = fields.sourceGuid;
       name = fields.sourceName;
       flags = fields.sourceFlags;
+      if (!filterEventByActor(fields.sourceGuid, fields.destGuid)) continue;
       detail = {
         kind, spellId: parseInt(fields.payload[0], 10) || 0, spellName: fields.payload[1] || 'Interrupt', spellSchool: fields.payload[2] || '',
         extraSpellId: parseInt(fields.payload[3], 10) || 0, extraSpellName: fields.payload[4] || 'Unknown spell', extraSpellSchool: fields.payload[5] || '',
@@ -5787,6 +7558,8 @@ function computeUtilityRows(fight, kind) {
         action: event.type, count: 1
       };
     } else if (kind === 'deaths' && (event.type === 'UNIT_DIED' || event.type === 'UNIT_DESTROYED' || event.type === 'PARTY_KILL')) {
+      // Only track deaths where the victim (dest) is a player
+      if (!isPlayerOrPlayerOwned(fields.destGuid)) continue;
       guid = fields.destGuid;
       name = fields.destName;
       flags = fields.destFlags;
@@ -5800,6 +7573,17 @@ function computeUtilityRows(fight, kind) {
         killerGuid: recentKiller?.sourceGuid || '', killerName: getDisplayName(recentKiller?.sourceName || '', recentKiller?.sourceGuid || ''), count: 1
       };
       if (event.type === 'PARTY_KILL') recentPartyKills.set(guid, event.lineNo);
+    } else if (kind === 'kills' && event.type === 'PARTY_KILL') {
+      // Kills are sourced from players; player mode additionally limits targets to players.
+      if (!isPlayerOrPlayerOwned(fields.sourceGuid)) continue;
+      if (state.actorFilter === 'players' && !isPlayerOrPlayerOwned(fields.destGuid)) continue;
+      guid = fields.sourceGuid;
+      name = fields.sourceName;
+      flags = fields.sourceFlags;
+      detail = {
+        kind, spellId: parseInt(fields.payload[0], 10) || 0, spellName: fields.payload[1] || 'Killing blow', spellSchool: fields.payload[2] || '',
+        targetGuid: fields.destGuid, targetName: getDisplayName(fields.destName, fields.destGuid), count: 1
+      };
     } else continue;
     // Filter the report's primary actor later, but retain NPC counterparts so
     // player rows can still explain who applied an aura, dealt the killing
@@ -5817,7 +7601,11 @@ function computeUtilityRows(fight, kind) {
 function mergeUtilityDetails(details) {
   const merged = new Map();
   for (const detail of details) {
-    const key = [detail.kind, detail.spellId, detail.extraSpellId, detail.targetGuid, detail.sourceGuid, detail.killerGuid, detail.resourceName, detail.action].join(':');
+    // For buffs/debuffs, exclude the action (APPLIED/REMOVED/REFRESH/DOSE)
+    // to avoid dupes for the same spell from the same source.
+    const key = detail.kind === 'buffs' || detail.kind === 'debuffs'
+      ? [detail.kind, detail.spellId, detail.sourceGuid].join(':')
+      : [detail.kind, detail.spellId, detail.extraSpellId, detail.targetGuid, detail.sourceGuid, detail.killerGuid, detail.resourceName, detail.action].join(':');
     if (!merged.has(key)) merged.set(key, { ...detail });
     else {
       const current = merged.get(key);
@@ -5840,23 +7628,19 @@ function computeDispelRows(fight) {
     const isAuraRemoved = event.type === 'SPELL_AURA_REMOVED';
     if (!isDispel && !isAuraRemoved) continue;
     const fields = parseCombatLogFields(event.params);
-
     if (isAuraRemoved) {
       const auraSpellId = parseInt(fields.payload[0], 10) || 0;
       const pendingKey = `${fields.destGuid}:${auraSpellId}`;
-      const queue = pendingByAura.get(pendingKey) || [];
-      while (queue.length > 0 && event.lineNo - queue[0].lineNo > 12) queue.shift();
-      const detail = queue.shift();
-      if (detail) {
-        detail.originalSourceGuid = fields.sourceGuid;
-        detail.originalSourceName = getDisplayName(fields.sourceName, fields.sourceGuid);
+      const pending = pendingByAura.get(pendingKey);
+      if (pending) {
+        pending.forEach(detail => {
+          detail.originalSourceGuid = fields.sourceGuid || '';
+          detail.originalSourceName = fields.sourceName || '';
+        });
+        pendingByAura.delete(pendingKey);
       }
-      if (queue.length > 0) pendingByAura.set(pendingKey, queue);
-      else pendingByAura.delete(pendingKey);
       continue;
     }
-
-    if (!isValidActorGuid(fields.sourceGuid)) continue;
     if (!filterEventByActor(fields.sourceGuid, fields.destGuid)) continue;
     const ownerGuid = state.petOwners.get(fields.sourceGuid) || null;
     if (!actors.has(fields.sourceGuid)) {
@@ -5952,6 +7736,7 @@ function createSpellRow(key, name, school = '') {
     school,
     schoolName: formatSpellSchool(school),
     amount: 0,
+    rawAmount: 0,
     events: 0,
     casts: 0,
     applications: 0,
@@ -6012,6 +7797,7 @@ function addDamageToTargetRows(spell, damage) {
 }
 
 function addAmountToSpellRow(spell, detail) {
+  spell.rawAmount = (spell.rawAmount || 0) + (detail.rawAmount ?? detail.amount);
   spell.amount += detail.amount;
   spell.events += 1;
   if (detail.isMiss) spell.misses += 1;
@@ -6054,10 +7840,9 @@ function addAmountToSpellRow(spell, detail) {
 function mapToSortedRows(map) {
   return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
 }
-
 function mapToSortedRowsWithSpells(map) {
   return Array.from(map.values())
-    .filter(row => row.amount > 0)
+    .filter(row => row.amount > 0 || row.rawAmount > 0)
     .map(row => ({
       ...row,
       spells: Array.from(row.spells.values()).sort((a, b) => b.amount - a.amount)
@@ -6071,6 +7856,12 @@ function parseHealingEvent(type, rawEventParams) {
   const payload = fields.payload;
   if (payload.length < 4) return null;
   const amountIndex = getCombatLogAmountIndex(payload, 3);
+  const rawAmount = readPositiveNumber(payload[amountIndex]) || readPositiveNumber(payload[3]) || readPositiveNumber(payload[7]) || readFirstLikelyAmount(payload, 3);
+  const healthSnapshot = getAdvancedHealthSnapshot(payload);
+  const playerTarget = isPlayerOrPlayerOwned(fields.destGuid);
+  const effectiveAmount = playerTarget && healthSnapshot
+    ? Math.min(rawAmount, Math.max(0, healthSnapshot.maxHealth - healthSnapshot.health))
+    : rawAmount;
   return {
     sourceGuid: fields.sourceGuid,
     sourceName: fields.sourceName,
@@ -6081,7 +7872,11 @@ function parseHealingEvent(type, rawEventParams) {
     spellId: parseInt(payload[0], 10) || 0,
     spellName: payload[1] || type,
     spellSchool: payload[2] || '',
-    amount: readPositiveNumber(payload[amountIndex]) || readPositiveNumber(payload[3]) || readPositiveNumber(payload[7]) || readFirstLikelyAmount(payload, 3),
+    amount: rawAmount,
+    rawAmount,
+    effectiveAmount,
+    targetHealth: healthSnapshot?.health || 0,
+    targetMaxHealth: healthSnapshot?.maxHealth || 0,
     isCrit: payload[amountIndex + 5] === '1' || readHitFlags(payload[amountIndex + 5]).crit
   };
 }
